@@ -1,66 +1,54 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { ParentIcon, TherapistIcon } from './UserTypeIcons';
 
-const RegisterPage = () => {
+const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState<'parent' | 'therapist' | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
-    if (!userType) {
-      Alert.alert('Error', 'Please select whether you are a parent or therapist');
-      return;
-    }
-
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in both email and password');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
       return;
     }
 
     setLoading(true);
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      
-      // TODO: Save user type to database along with user profile
-      console.log('User type:', userType);
-      
-      Alert.alert('Success', 'Account created successfully!');
+      await signInWithEmailAndPassword(auth, email, password);
+
+      Alert.alert('Success', 'Logged in successfully!');
       
       // Navigate to main app
       router.replace('/(tabs)/' as any);
 
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('Login error:', error);
 
-      let errorMessage = 'Registration failed';
+      let errorMessage = 'Login failed';
       switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = 'This email is already registered';
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Incorrect password';
           break;
         case 'auth/invalid-email':
           errorMessage = 'Invalid email address';
           break;
-        case 'auth/weak-password':
-          errorMessage = 'Password is too weak';
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled';
           break;
         default:
-          errorMessage = error.message || 'Registration failed';
+          errorMessage = error.message || 'Login failed';
       }
 
-      Alert.alert('Registration Error', errorMessage);
+      Alert.alert('Login Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -70,6 +58,15 @@ const RegisterPage = () => {
     router.back();
   };
 
+  const navigateToRegister = () => {
+    router.push('/register');
+  };
+
+  const handleForgotPassword = () => {
+    // TODO: Implement forgot password functionality
+    Alert.alert('Forgot Password', 'Forgot password functionality coming soon!');
+  };
+
   return (
     <View style={styles.container}>
       {/* Back button */}
@@ -77,54 +74,9 @@ const RegisterPage = () => {
         <Text style={styles.backIcon}>←</Text>
       </TouchableOpacity>
 
-      {/* User type selection */}
-      <View style={styles.userTypeSection}>
-        <Text style={styles.questionText}>Are you a parent or therapist?</Text>
-        
-        <View style={styles.userTypeOptions}>
-          <TouchableOpacity
-            style={[
-              styles.userTypeButton,
-              userType === 'parent' && styles.userTypeButtonSelected
-            ]}
-            onPress={() => setUserType('parent')}
-          >
-            <ParentIcon 
-              size={40} 
-              color={userType === 'parent' ? '#007bff' : '#000'} 
-            />
-            <Text style={[
-              styles.userTypeText,
-              userType === 'parent' && styles.userTypeTextSelected
-            ]}>
-              Parent
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.userTypeButton,
-              userType === 'therapist' && styles.userTypeButtonSelected
-            ]}
-            onPress={() => setUserType('therapist')}
-          >
-            <TherapistIcon 
-              size={40} 
-              color={userType === 'therapist' ? '#007bff' : '#000'} 
-            />
-            <Text style={[
-              styles.userTypeText,
-              userType === 'therapist' && styles.userTypeTextSelected
-            ]}>
-              Therapist
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Sign Up form */}
+      {/* Login form */}
       <View style={styles.formSection}>
-        <Text style={styles.formTitle}>Sign Up</Text>
+        <Text style={styles.title}>Log In</Text>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Email address</Text>
@@ -164,18 +116,31 @@ const RegisterPage = () => {
           </View>
         </View>
 
-        {/* Sign Up Button */}
+        {/* Forgot Password Link */}
+        <TouchableOpacity style={styles.forgotPasswordContainer} onPress={handleForgotPassword}>
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
+
+        {/* Login Button */}
         <TouchableOpacity
           style={[
-            styles.signUpButton,
-            loading && styles.signUpButtonDisabled
+            styles.loginButton,
+            loading && styles.loginButtonDisabled
           ]}
-          onPress={handleRegister}
+          onPress={handleLogin}
           disabled={loading}
         >
-          <Text style={styles.signUpButtonText}>
-            {loading ? 'Creating Account...' : 'Sign Up'}
+          <Text style={styles.loginButtonText}>
+            {loading ? 'Logging In...' : 'Log In'}
           </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Sign Up Link */}
+      <View style={styles.signUpContainer}>
+        <Text style={styles.signUpPrompt}>Don&apos;t have an account? </Text>
+        <TouchableOpacity onPress={navigateToRegister}>
+          <Text style={styles.signUpLink}>Sign Up</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -199,54 +164,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#000',
   },
-  userTypeSection: {
-    marginTop: 60,
-    marginBottom: 40,
-  },
-  questionText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 30,
-    textAlign: 'left',
-  },
-  userTypeOptions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 15,
-  },
-  userTypeButton: {
-    flex: 1,
-    height: 120,
-    borderWidth: 2,
-    borderColor: '#000',
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  userTypeButtonSelected: {
-    backgroundColor: '#f0f0f0',
-    borderColor: '#007bff',
-  },
-
-  userTypeText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  userTypeTextSelected: {
-    color: '#007bff',
-  },
   formSection: {
     flex: 1,
+    marginTop: 60,
+    paddingTop: 20,
   },
-  formTitle: {
+  title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#000',
-    marginBottom: 30,
+    marginBottom: 40,
     textAlign: 'left',
   },
   inputGroup: {
@@ -285,22 +212,49 @@ const styles = StyleSheet.create({
     right: 15,
     top: 15,
   },
-  signUpButton: {
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    marginBottom: 30,
+    marginTop: -10,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: '#000',
+    textDecorationLine: 'none',
+  },
+  loginButton: {
     backgroundColor: '#ccc',
     height: 50,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 20,
   },
-  signUpButtonDisabled: {
+  loginButtonDisabled: {
     backgroundColor: '#eee',
   },
-  signUpButtonText: {
+  loginButtonText: {
     color: '#888',
     fontSize: 16,
     fontWeight: '600',
   },
+  signUpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 40,
+    marginTop: 'auto',
+  },
+  signUpPrompt: {
+    fontSize: 16,
+    color: '#000',
+  },
+  signUpLink: {
+    fontSize: 16,
+    color: '#000',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
 });
 
-export default RegisterPage;
+export default LoginPage;
