@@ -31,11 +31,13 @@ const accounts: Account[] = [
 const AccountSelectionPage = () => {
   const handleAccountSelect = (account: Account) => {
     if (account.isLocked) {
-      // Connect to PIN entry screen
-      router.replace('/pin-entry' as any);
+      // Navigate to PIN entry screen for locked accounts
+      router.push('/pin-entry' as any);
+      return;
     }
     
     // Navigate to main app with selected account
+    console.log('Selected account:', account);
     router.replace('/(tabs)/' as any);
   };
 
