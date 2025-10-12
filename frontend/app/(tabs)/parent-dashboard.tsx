@@ -11,7 +11,7 @@ export default function ParentDashboard() {
   return (
     <SafeAreaView style={styles.container}>
       <Text variant='titleLarge' style={styles.title}>Good evening, {parent_user}!</Text>
-      <Text variant="bodyMedium" style={styles.subtitle}>{selected_child}'s progress this week.</Text>
+      <Text variant="bodyMedium" style={styles.subtitle}>{selected_child}&apos;s progress this week.</Text>
       <Filters />
     </SafeAreaView>
   );
