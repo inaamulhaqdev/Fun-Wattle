@@ -7,14 +7,14 @@ const MembershipPage = () => {
 
   const handleStartFreeTrial = () => {
     setSelectedPlan('trial');
-    // Navigate to main app with trial status
-    router.replace('/(tabs)/' as any);
+    // Navigate to profile creation
+    router.push('/profile-creation' as any);
   };
 
   const handlePaidSubscription = () => {
     setSelectedPlan('paid');
-    // Navigate to payment flow or main app with paid status
-    router.replace('/(tabs)/' as any);
+    // Navigate to profile creation
+    router.push('/profile-creation' as any);
   };
 
   return (
