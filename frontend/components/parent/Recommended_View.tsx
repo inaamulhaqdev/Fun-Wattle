@@ -8,7 +8,7 @@ import StatsGrid from "../ui/StatsGrid";
 import { calculateTaskStats } from "../util/calculateTaskStats";
 
 const tasks: TaskCardProps[] = [
-  { id: 3, title: "Pronoun Practice", status: "Not Started", progress: "0/5" },
+  { key: 3, title: "Pronoun Practice", status: "Not Started", progress: "0/5" },
 ];
 
 const { activitiesDone, overallTime } = calculateTaskStats(tasks);
@@ -29,7 +29,7 @@ export default function RecommendedView() {
         ) : (
           tasks.map((task) => (
             <TaskCard
-              id={task.id}
+              key={task.key}
               title={task.title}
               status={task.status}
               progress={task.progress}

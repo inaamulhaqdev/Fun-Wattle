@@ -5,7 +5,7 @@ import { Card, Text } from "react-native-paper";
 const screenWidth = Dimensions.get("window").width;
 
 export interface TaskCardProps {
-  id: number;
+  key: number;
   title: string;
   status: string;
   progress: string;
