@@ -1,18 +1,13 @@
-import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 
 const MembershipPage = () => {
-  const [selectedPlan, setSelectedPlan] = useState<'trial' | 'paid' | null>(null);
-
   const handleStartFreeTrial = () => {
-    setSelectedPlan('trial');
     // Navigate to profile creation
     router.push('/profile-creation' as any);
   };
 
   const handlePaidSubscription = () => {
-    setSelectedPlan('paid');
     // Navigate to profile creation
     router.push('/profile-creation' as any);
   };

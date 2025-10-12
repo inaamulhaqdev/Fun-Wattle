@@ -1,57 +1,14 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in both email and password');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-
-      Alert.alert('Success', 'Logged in successfully!');
-      
-      // Navigate to main app
-      router.replace('/(tabs)/' as any);
-
-    } catch (error: any) {
-      console.error('Login error:', error);
-
-      let errorMessage = 'Login failed';
-      switch (error.code) {
-        case 'auth/user-not-found':
-          errorMessage = 'No account found with this email';
-          break;
-        case 'auth/wrong-password':
-          errorMessage = 'Incorrect password';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Invalid email address';
-          break;
-        case 'auth/user-disabled':
-          errorMessage = 'This account has been disabled';
-          break;
-        default:
-          errorMessage = error.message || 'Login failed';
-      }
-
-      Alert.alert('Login Error', errorMessage);
-    } finally {
-      setLoading(false);
-    }
+    // Navigate to account selection
+    router.push('/account-selection' as any);
   };
 
   const goBack = () => {
@@ -64,7 +21,6 @@ const LoginPage = () => {
 
   const handleForgotPassword = () => {
     // TODO: Implement forgot password functionality
-    Alert.alert('Forgot Password', 'Forgot password functionality coming soon!');
   };
 
   return (
@@ -77,13 +33,10 @@ const LoginPage = () => {
       {/* Login form */}
       <View style={styles.formSection}>
         <Text style={styles.title}>Log In</Text>
-
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Email address</Text>
           <TextInput
             style={styles.input}
-            value={email}
-            onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -96,8 +49,6 @@ const LoginPage = () => {
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
-              value={password}
-              onChangeText={setPassword}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoCorrect={false}
@@ -123,16 +74,10 @@ const LoginPage = () => {
 
         {/* Login Button */}
         <TouchableOpacity
-          style={[
-            styles.loginButton,
-            loading && styles.loginButtonDisabled
-          ]}
+          style={styles.loginButton}
           onPress={handleLogin}
-          disabled={loading}
         >
-          <Text style={styles.loginButtonText}>
-            {loading ? 'Logging In...' : 'Log In'}
-          </Text>
+          <Text style={styles.loginButtonText}>Log In</Text>
         </TouchableOpacity>
       </View>
 
