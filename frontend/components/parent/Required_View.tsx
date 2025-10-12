@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     position: "absolute",
-    marginTop: "110%",
+    marginTop: "125%",
     left: 0,
     right: 0,
     alignItems: "center",
