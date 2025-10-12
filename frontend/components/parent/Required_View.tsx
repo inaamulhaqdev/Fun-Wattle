@@ -6,6 +6,7 @@ import { Text } from "react-native-paper";
 import AssignButton from "@/components/ui/AssignButton";
 import StatsGrid from "../ui/StatsGrid";
 import { calculateTaskStats } from "../util/calculateTaskStats";
+import { router } from "expo-router";
 
 const tasks: TaskCardProps[] = [
   { key: 1, title: "M sound", status: "Completed", progress: "5/5", time: "12" },
@@ -35,6 +36,7 @@ export default function RequiredView() {
               status={task.status}
               progress={task.progress}
               time={task.time}
+              onPress={() => router.push('/learning-unit-details')}
             />
           ))
         )}

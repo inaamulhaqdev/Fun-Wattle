@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card, Text, ProgressBar, Chip, useTheme, Button } from "react-native-paper";
+import { Card, Text, ProgressBar, Chip, useTheme} from "react-native-paper";
 
 interface UnitCardProps {
   title: string;
@@ -16,15 +16,17 @@ export const UnitCard: React.FC<UnitCardProps> = ({ title, duration, progress, a
         <Card style={styles.unitCard} mode='elevated'>
             <Card.Content style={{ flex:1, justifyContent: "space-between"}}>
             <Text variant="titleLarge" style={styles.title}>{title}</Text>
-
-            <Chip icon="clock-outline" style={styles.timeIcon} textStyle={{ color: theme.colors.primary}}>{duration}</Chip>
-
-            <View style={styles.progressContainer} >
-                <ProgressBar progress={progress} color={theme.colors.primary} style={styles.progressBar} />
-                <Text variant="labelMedium" style={styles.progressText}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+              <Chip icon="clock-outline" style={{ backgroundColor: "rgba(0,0,0,0.05)" }} textStyle={{ color: theme.colors.primary }}>
+                    {duration}
+                </Chip>
+                <Text variant="labelMedium" style={{ fontWeight: "600" }}>
                     {accuracy}
                 </Text>
+                
             </View>
+            <ProgressBar progress={progress} color={theme.colors.primary} style={styles.progressBar} />
+
             </Card.Content>
       </Card>
     );
@@ -34,9 +36,9 @@ export default UnitCard;
 
 const styles = StyleSheet.create({
   unitCard: {
-    marginBottom: 20,
-    height: "25%",
+    marginBottom: 16,
     borderRadius: 16,
+    padding: 16,
   },
   title: {
     marginBottom: 10,
@@ -44,22 +46,21 @@ const styles = StyleSheet.create({
   }, 
   timeIcon: {
     alignSelf: "flex-start",
-    marginBottom: 10,
     backgroundColor: "rgb(0,0,0,0.05)",
   },
   progressContainer: {
-    position: "relative",
-    justifyContent: "center",
+    marginTop: 10,
+    alignItems: "flex-start",
   },
-
   progressBar: {
     height: 8,
-    borderRadius: 4
+    borderRadius: 4, 
+    width: "100%",
+    marginTop: 4,
   }, 
   progressText: {
-    position: "absolute", 
-    right: 0, 
-    top: -22,
+    alignSelf: "flex-end",
+    marginTop: 4,
     fontWeight: "600",
   }
 });                             

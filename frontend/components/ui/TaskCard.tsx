@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Dimensions, View } from "react-native";
+import { StyleSheet, Dimensions, View, TouchableOpacity } from "react-native";
 import { Card, Text } from "react-native-paper";
 
 const screenWidth = Dimensions.get("window").width;
@@ -10,10 +10,12 @@ export interface TaskCardProps {
   status: string;
   progress: string;
   time?: string;
+  onPress?: () => void;
 }
 
-export default function TaskCard({ title, status, progress, time }: TaskCardProps) {
+export default function TaskCard({ title, status, progress, time, onPress}: TaskCardProps) {
   return (
+    <TouchableOpacity onPress={onPress}>
     <Card style={styles.card}>
       <Card.Content>
         <View style={styles.row}>
@@ -26,6 +28,7 @@ export default function TaskCard({ title, status, progress, time }: TaskCardProp
         </View>
       </Card.Content>
     </Card>
+    </TouchableOpacity>
   );
 }
 

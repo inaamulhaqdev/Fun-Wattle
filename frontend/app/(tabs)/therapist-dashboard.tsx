@@ -1,31 +1,37 @@
 import React from "react";
+import { StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Text } from "react-native-paper";
+import Filters from "../../components/parent/Filters";
 import { useRouter } from "expo-router";
-import { View, StyleSheet } from "react-native";
- import { Text, Provider as PaperProvider } from "react-native-paper";
 
-const TherapistDashboard = () => {
+export default function TherapistDashboard() {
+  let therapist_user = "Dwight";
+  let selected_child = "Phillip";
+
   return (
-    <PaperProvider>
-      <View style={styles.container}>
-        <View>
-          <ProfileCircle initials="FW" />
-        </View>
-      </View>
-
-      <View>
-        <Text variant="headlineMedium">Good morning!</Text>
-        <Text variant="bodyMedium">Here is your schedule for today.</Text>
-      </View>
-    </PaperProvider>
+    <SafeAreaView style={styles.container}>
+      <Text variant='titleLarge' style={styles.title}>Good evening, {therapist_user}!</Text>
+      <Text variant="bodyMedium" style={styles.subtitle}>{selected_child}&apos;s progress this week.</Text>
+      <Filters />
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    paddingHorizontal: 20,
+    backgroundColor: "#fff7de",
   },
+  title: {
+    paddingTop: "10%",
+    fontWeight: "bold",
+    color: "black",
+  },
+  subtitle: {
+    color: "black",
+    paddingTop: 5,
+    fontSize: 15,
+  }
 });
-
-export default TherapistDashboard;  
