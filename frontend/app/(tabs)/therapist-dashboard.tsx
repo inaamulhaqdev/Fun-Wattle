@@ -3,7 +3,6 @@ import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "react-native-paper";
 import Filters from "../../components/parent/Filters";
-import { useRouter } from "expo-router";
 
 export default function TherapistDashboard() {
   let therapist_user = "Dwight";

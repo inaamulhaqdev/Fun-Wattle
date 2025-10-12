@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card, Divider, Text, useTheme } from "react-native-paper";
+import { Card, Divider, Text } from "react-native-paper";
 
 interface ActivityCardsProps {
   title: string;
@@ -11,10 +11,8 @@ interface ActivityCardsProps {
 }
 
 export const ActivityCards: React.FC<ActivityCardsProps> = ({ title, completed, correct, incorrect, accuracy }) => {
-    const theme = useTheme();
 
     return (
-      
         <Card style={styles.activityCard} mode='elevated'>
             <Card.Content>
               <View style={styles.titleRow}>
@@ -68,6 +66,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 16,
     padding: 16,
+    backgroundColor: "#fff",
   },
   titleRow: {
     flexDirection: "row",

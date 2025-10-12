@@ -1,6 +1,6 @@
 import React from "react";
-import { ScrollView, StyleSheet, Touchable, TouchableOpacity, View } from "react-native";
-import { Text, Button, Provider as PaperProvider } from "react-native-paper";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text, Provider as PaperProvider } from "react-native-paper";
 import { ActivityCards } from "@/components/ui/ActivityCards";
 import { UnitCard } from "@/components/ui/UnitCard";
 
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1, 
         padding: 16,
-        backgroundColor: "#fff",
+        backgroundColor: "#fff7de",
     },
     scrollContainer: {
         paddingBottom: 16, 
