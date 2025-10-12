@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { ParentIcon, TherapistIcon } from './UserTypeIcons';
@@ -11,59 +9,9 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<'parent' | 'therapist' | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
-    if (!userType) {
-      Alert.alert('Error', 'Please select whether you are a parent or therapist');
-      return;
-    }
-
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in both email and password');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      
-      // TODO: Save user type to database along with user profile
-      console.log('User type:', userType);
-      
-      Alert.alert('Success', 'Account created successfully!');
-      
-      // Navigate to main app
-      router.replace('/(tabs)/' as any);
-
-    } catch (error: any) {
-      console.error('Registration error:', error);
-
-      let errorMessage = 'Registration failed';
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = 'This email is already registered';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Invalid email address';
-          break;
-        case 'auth/weak-password':
-          errorMessage = 'Password is too weak';
-          break;
-        default:
-          errorMessage = error.message || 'Registration failed';
-      }
-
-      Alert.alert('Registration Error', errorMessage);
-    } finally {
-      setLoading(false);
-    }
+  const handleRegister = async () => {    
+    router.push('/terms' as any);
   };
 
   const goBack = () => {
@@ -166,15 +114,11 @@ const RegisterPage = () => {
 
         {/* Sign Up Button */}
         <TouchableOpacity
-          style={[
-            styles.signUpButton,
-            loading && styles.signUpButtonDisabled
-          ]}
+          style={styles.signUpButton}
           onPress={handleRegister}
-          disabled={loading}
         >
           <Text style={styles.signUpButtonText}>
-            {loading ? 'Creating Account...' : 'Sign Up'}
+            Sign Up
           </Text>
         </TouchableOpacity>
       </View>
