@@ -31,6 +31,7 @@ export default function RootLayout() {
         <Stack.Screen name="profile-confirmation" options={{ headerShown: false }} />
         <Stack.Screen name="account-selection" options={{ headerShown: false }} />
         <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
+        <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>

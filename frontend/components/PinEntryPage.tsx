@@ -39,9 +39,9 @@ const PinEntryPage = () => {
   React.useEffect(() => {
     if (pin.every(digit => digit !== '')) {
       const enteredPin = pin.join('');
-      // TODO: Validate PIN with backend      
+      // TODO: Validate PIN with backend
       // Navigate to parent introduction page (only on first login)
-      router.replace('/(tabs)/' as any);
+      router.replace('/parent-introduction' as any);
     }
   }, [pin]);
 
