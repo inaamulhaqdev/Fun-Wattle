@@ -1,14 +1,15 @@
 import React from "react";
 import { ScrollView, View, StyleSheet } from "react-native";
 import TaskCard from "../ui/TaskCard";
+import { TaskCardProps } from '../ui/TaskCard';
 import { Text } from "react-native-paper";
 import StatsGrid from "../ui/StatsGrid";
 import { calculateTaskStats } from "../util/calculateTaskStats";
 
-const tasks = [
+const tasks: TaskCardProps[] = [
   { id: 1, title: "M sound", status: "Completed", progress: "5/5", time: "12" },
   { id: 2, title: "R sound", status: "In Progress", progress: "3/5", time: "10" },
-  { id: 3, title: "Pronoun Practice", status: "Yet to Start", progress: "0/5" },
+  { id: 3, title: "Pronoun Practice", status: "Not Started", progress: "0/5" },
 ];
 
 const { activitiesDone, overallTime } = calculateTaskStats(tasks);
@@ -31,7 +32,7 @@ export default function TotalView() {
         ) : (
           tasks.map((task) => (
             <TaskCard
-              key={task.id}
+              id={task.id}
               title={task.title}
               status={task.status}
               progress={task.progress}
