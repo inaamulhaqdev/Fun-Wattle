@@ -5,8 +5,8 @@ import Feather from '@expo/vector-icons/Feather';
 
 const ConfirmationPage = () => {
   const handleContinue = () => {
-    // Navigate to main app
-    router.replace('/(tabs)/' as any);
+    // Navigate to membership selection
+    router.push('/membership' as any);
   };
 
   return (
