@@ -17,7 +17,7 @@ const TermsAndConditionsPage = () => {
     }
     
     // Navigate to main app after agreeing
-    router.replace('/(tabs)/' as any);
+    router.replace('/confirmation' as any);
   };
 
   return (
