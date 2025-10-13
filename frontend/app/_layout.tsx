@@ -1,8 +1,14 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { IconButton } from 'react-native-paper';
+
+export const unstable_settings = {
+  anchor: '(tabs)',
+};
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -33,6 +39,20 @@ export default function RootLayout() {
         <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
         <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="learning-unit-details" options={{ 
+          title: 'Unit Details',
+          headerLeft: ({ tintColor}) => (
+            <IconButton
+              icon="arrow-left"
+              size={24}
+              onPress={() => {
+                router.back();
+              }}
+              iconColor={tintColor}
+            />
+          )  
+          }} />
       </Stack>
     </ThemeProvider>
   );
