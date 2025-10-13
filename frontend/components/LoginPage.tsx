@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -29,8 +30,19 @@ const LoginPage = () => {
     router.push('/register');
   };
 
-  const handleForgotPassword = () => {
-    // TODO: Implement forgot password functionality
+  const handleForgotPassword = async() => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address to reset your password');
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert('Success', 'Password reset email sent');
+
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send password reset email');
+    }
   };
 
   return (
