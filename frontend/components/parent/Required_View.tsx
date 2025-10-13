@@ -1,9 +1,7 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import TaskCard from "../ui/TaskCard";
-import { TaskCardProps } from "../ui/TaskCard";
+import TaskCard, { TaskCardProps } from "../ui/TaskCard";
 import { Text } from "react-native-paper";
-import AssignButton from "@/components/ui/AssignButton";
 import StatsGrid from "../ui/StatsGrid";
 import { calculateTaskStats } from "../util/calculateTaskStats";
 import { router } from "expo-router";
@@ -36,15 +34,16 @@ export default function RequiredView() {
               status={task.status}
               progress={task.progress}
               time={task.time}
-              onPress={() => router.push('/learning-unit-details')}
+              onPress={() => router.push({
+                pathname: "/learning-unit-details",
+                params: { 
+                  id: task.key.toString() 
+                },
+              })}
             />
           ))
         )}
       </ScrollView>
-
-      <View style={styles.buttonWrapper}>
-        <AssignButton />
-      </View>
     </View>
   );
 }

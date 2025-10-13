@@ -20,7 +20,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ title, duration, progress, a
               <Chip icon="clock-outline" style={{ backgroundColor: "#fff" }} textStyle={{ color: theme.colors.primary }}>
                     {duration}
                 </Chip>
-                <Text variant="labelMedium" style={{ fontWeight: "600" }}>
+                <Text variant="labelLarge" style={{ fontWeight: "600" }}>
                     {accuracy}
                 </Text>
                 

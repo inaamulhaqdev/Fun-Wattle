@@ -1,14 +1,18 @@
-import React from "react";
+import React, { use } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text, Provider as PaperProvider } from "react-native-paper";
 import { ActivityCards } from "@/components/ui/ActivityCards";
 import { UnitCard } from "@/components/ui/UnitCard";
+import { useLocalSearchParams } from "expo-router";
 
 const LearningUnitDetails = () => {
+    const { id } = useLocalSearchParams();
+
     // TODO dummy data for learning unit, to be replaced with real data
-    const selectedUnit = [
-        {id: 1, title: "M sounds: Mmm-Magic words Articulation", duration: 12, progress: 100, accuracy: 83},
-    ];
+    const units = [
+        {key: 1, title: "M sounds: Mmm-Magic words Articulation", duration: 12, progress: 100, accuracy: 83},
+        {key: 2, title: "R sound", duration: 10, progress: 50, accuracy: 78},
+   ];
 
     const dummyActivityUnits = [
         {id: 1, title: "Sound safari", completed: "3/3", correct: 0, incorrect: 0, accuracy: "83%"},
@@ -17,19 +21,23 @@ const LearningUnitDetails = () => {
         {id: 4, title: "Mini story time", completed: "6/6", correct: 4, incorrect: 2, accuracy: "90%"},
     ];
 
+     const selectedUnit = units.find(unit => unit.key.toString() === id);
+
+
     return (
         <PaperProvider>
             <View style={styles.container}>
                 <TouchableOpacity onPress={() => { console.log("Unit card clicked.") }}>
-                {selectedUnit.map(unit => (
+                {selectedUnit ? (
                     <UnitCard
-                        key={unit.id}
-                        title={unit.title}
-                        duration={`${unit.duration} mins`}
-                        progress={unit.accuracy / 100}
-                        accuracy={`${unit.accuracy}% accuracy`}
+                        title={selectedUnit.title}
+                        duration={`${selectedUnit.duration} mins`}
+                        progress={selectedUnit.accuracy / 100}
+                        accuracy={`${selectedUnit.accuracy}% accuracy`}
                     />
-                ))}
+                ) : (
+                <Text>Unit not found</Text>
+                )}
                 </TouchableOpacity>
 
             <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600" }}>Activities</Text>

@@ -1,9 +1,7 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import TaskCard from "../ui/TaskCard";
-import { TaskCardProps } from "../ui/TaskCard";
+import TaskCard, { TaskCardProps } from "../ui/TaskCard";
 import { Text } from "react-native-paper";
-import AssignButton from "@/components/ui/AssignButton";
 import StatsGrid from "../ui/StatsGrid";
 import { calculateTaskStats } from "../util/calculateTaskStats";
 
@@ -38,10 +36,6 @@ export default function RecommendedView() {
           ))
         )}
       </ScrollView>
-
-      <View style={styles.buttonWrapper}>
-        <AssignButton />
-      </View>
     </View>
   );
 }

@@ -1,7 +1,6 @@
 import React from "react";
 import { ScrollView, View, StyleSheet } from "react-native";
-import TaskCard from "../ui/TaskCard";
-import { TaskCardProps } from '../ui/TaskCard';
+import TaskCard, { TaskCardProps } from "../ui/TaskCard";
 import { Text } from "react-native-paper";
 import StatsGrid from "../ui/StatsGrid";
 import { calculateTaskStats } from "../util/calculateTaskStats";
@@ -10,7 +9,6 @@ import { router } from "expo-router";
 const tasks: TaskCardProps[] = [
   { key: 1, title: "M sound", status: "Completed", progress: "5/5", time: "12" },
   { key: 2, title: "R sound", status: "In Progress", progress: "3/5", time: "10" },
-  { key: 3, title: "Pronoun Practice", status: "Not Started", progress: "0/5" },
 ];
 
 const { activitiesDone, overallTime } = calculateTaskStats(tasks);
@@ -38,7 +36,12 @@ export default function TotalView() {
               status={task.status}
               progress={task.progress}
               time={task.time}
-              onPress={() => router.push('/learning-unit-details')}
+               onPress={() => router.push({
+                pathname: "/learning-unit-details",
+                params: { 
+                id: task.key.toString() 
+              },
+            })}
             />
           ))
         )}

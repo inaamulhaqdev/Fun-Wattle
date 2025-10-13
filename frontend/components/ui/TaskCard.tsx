@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Dimensions, View, TouchableOpacity } from "react-native";
 import { Card, Text } from "react-native-paper";
+import { router } from "expo-router";
 
 const screenWidth = Dimensions.get("window").width;
 
