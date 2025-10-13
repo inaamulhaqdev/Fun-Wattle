@@ -1,12 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { updateProfile, getAuth } from 'firebase/auth';
+import { firestore } from '../config/firebase';
+import { updateDoc, doc } from 'firebase/firestore';
+import bcrypt from 'react-native-bcrypt';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
   const [pin, setPin] = useState(['', '', '', '']);
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
+  const [loading, setLoading] = useState(false);
 
   const handlePinChange = (index: number, value: string) => {
     // Only allow single digits
@@ -29,18 +33,45 @@ const ProfileCreationPage = () => {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+    if (pin.join('').length !== 4) {
+      Alert.alert('Error', 'Please complete your 4-digit PIN');
+      return;
+    }
+
     // Save profile info (name and pin) to backend here
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
-      // Update user display name in Firebase Auth - not sure if needed, might be useful
-      updateProfile(user, { displayName: name });
+      const uid = user.uid;
+
+      setLoading(true);
+
+      try {
+        // Update user display name in Firebase Auth - not sure if needed, might be useful
+        await updateProfile(user, { displayName: name });
+
+        // Save name and pin to Firestore database
+        const pinHash = bcrypt.hashSync(pin.join(''), 10); // Hash the PIN before storing
+        await updateDoc(doc(firestore, 'users', uid), {
+          name,
+          pinHash
+        });
+
+        // Navigate to profile confirmation
+        router.replace('/profile-confirmation');
+
+      } catch (error) {
+        console.error('Profile Creation error:', error);
+        Alert.alert('Profile Creation Error', 'Profile Creation failed. Please try again and contact support if the issue persists.');
+      } finally {
+        setLoading(false);
+      }
     }
-
-
-    // Navigate to profile confirmation
-    router.push('/profile-confirmation' as any);
   };
 
   const isPinComplete = pin.every(digit => digit !== '');
