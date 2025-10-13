@@ -1,38 +1,52 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
+import { Video } from 'expo-av';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 
 export default function IntroVideoScreen() {
+  const videoRef = useRef<Video>(null);
+  const [progress, setProgress] = useState(0);
+
   const skipToWelcome = () => {
     router.push('/welcome');
   };
 
+  const handlePlaybackStatusUpdate = (status: any) => {
+    if (status.isLoaded && status.durationMillis) {
+      setProgress(status.positionMillis / status.durationMillis);
+    }
+  };
+
+  const VideoComponent: any = Video;
+
   return (
-    <View style={styles.container}>      
-      {/* Video placeholder container */}
+    <View style={styles.container}>
+      {/* Video */}
       <View style={styles.videoContainer}>
-        <View style={styles.videoPlaceholder}>
-          {/* Play button icon */}
-          <View style={styles.playButton}>
-            <ThemedText style={styles.playIcon}>▷</ThemedText>
-          </View>
-        </View>
-        
-        {/* Video description text */}
+        <VideoComponent
+        ref={videoRef}
+        source={{ uri: 'https://www.w3schools.com/html/mov_bbb.mp4' }} // sample video
+        style={styles.video}
+        useNativeControls
+        resizeMode="contain"
+        onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+      />
+
+        {/* Video description */}
         <ThemedText style={styles.videoDescription}>
           Watch the following video for an {'\n'}
           introduction to the app.
         </ThemedText>
       </View>
-      
+
       {/* Progress bar */}
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
-          <View style={styles.progressFill} />
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
       </View>
-      
+
       {/* Skip button */}
       <Pressable style={styles.skipButton} onPress={skipToWelcome}>
         <ThemedText style={styles.skipText}>Skip</ThemedText>
@@ -50,39 +64,17 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     justifyContent: 'space-between',
   },
-  title: {
-    fontSize: 20,
-    color: '#999',
-    textAlign: 'left',
-    marginTop: 20,
-  },
   videoContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
   },
-  videoPlaceholder: {
+  video: {
     width: '100%',
-    height: 250,
-    backgroundColor: '#f5f5f5',
+    height: '80%',
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#000',
     marginBottom: 20,
-  },
-  playButton: {
-    width: 60,
-    height: 60,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playIcon: {
-    fontSize: 40,
-    color: '#666',
   },
   videoDescription: {
     fontSize: 14,
@@ -103,7 +95,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: {
-    width: '30%', // Shows 30% progress
     height: '100%',
     backgroundColor: '#000',
     borderRadius: 2,

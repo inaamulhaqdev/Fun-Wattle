@@ -30,13 +30,20 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />
-      {/* <Tabs.Screen
-        name="unit-outline"
+      <Tabs.Screen
+        name="therapist-dashboard"
         options={{
-          tabBarButton: () => null, // hides it from the tab bar
-          headerShown: false,        // optional
+          title: 'Home',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
-      /> */}
+      />
+      <Tabs.Screen
+        name="learning-unit-details"
+        options={{
+          title: 'Learning Unit',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

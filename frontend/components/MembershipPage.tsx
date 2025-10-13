@@ -1,15 +1,34 @@
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
+import { getAuth } from 'firebase/auth';
+import { firestore } from '../config/firebase';
+import { updateDoc, doc } from 'firebase/firestore';
 
 const MembershipPage = () => {
-  const handleStartFreeTrial = () => {
-    // Navigate to profile creation
-    router.push('/profile-creation' as any);
+
+  const handleStartFreeTrial = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user) {
+      await updateDoc(doc(firestore, 'users', user.uid), {
+        membershipType: 'free_trial',
+        trialStartDate: new Date(),
+        trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days free trial
+      });
+    }
+    router.push('/profile-creation');
   };
 
-  const handlePaidSubscription = () => {
-    // Navigate to profile creation
-    router.push('/profile-creation' as any);
+  const handlePaidSubscription = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user) {
+      await updateDoc(doc(firestore, 'users', user.uid), {
+        membershipType: 'paid',
+        subscriptionStartDate: new Date()
+      });
+    }
+    router.push('/profile-creation');
   };
 
   return (
@@ -19,7 +38,7 @@ const MembershipPage = () => {
         <Text style={styles.welcomeText}>
           Thank you for signing up to FunWattle.
         </Text>
-        
+
         <Text style={styles.subtitleText}>
           You can now choose either a free trial or a paid subscription:
         </Text>
@@ -27,7 +46,7 @@ const MembershipPage = () => {
         {/* Free Trial Card */}
         <View style={styles.planCard}>
           <Text style={styles.planTitle}>Free 7-day trial</Text>
-          
+
           <View style={styles.featuresList}>
             <Text style={styles.featureItem}>
               • Get a sneak peek into our content with limited access to the library
@@ -57,7 +76,7 @@ const MembershipPage = () => {
         {/* Paid Subscription Card */}
         <View style={styles.planCard}>
           <Text style={styles.planTitle}>Paid Subscription</Text>
-          
+
           <View style={styles.featuresList}>
             <Text style={styles.featureItem}>
               • Unlock 100+ learning units and guided adaptive paths
