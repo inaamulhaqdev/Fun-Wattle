@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { updateProfile, getAuth } from 'firebase/auth';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
@@ -30,6 +31,14 @@ const ProfileCreationPage = () => {
 
   const handleContinue = () => {
     // Save profile info (name and pin) to backend here
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user) {
+      // Update user display name in Firebase Auth - not sure if needed, might be useful
+      updateProfile(user, { displayName: name });
+    }
+
+
     // Navigate to profile confirmation
     router.push('/profile-confirmation' as any);
   };
@@ -41,7 +50,7 @@ const ProfileCreationPage = () => {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Complete your profile</Text>
-        
+
         {/* Name Input */}
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Name</Text>
@@ -58,7 +67,7 @@ const ProfileCreationPage = () => {
         {/* PIN Input */}
         <View style={styles.pinSection}>
           <Text style={styles.pinLabel}>Choose 4 digit PIN to secure your account</Text>
-          
+
           <View style={styles.pinContainer}>
             {pin.map((digit, index) => (
               <View key={index} style={styles.pinInputContainer}>

@@ -3,8 +3,9 @@ import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'reac
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { ParentIcon, TherapistIcon } from './UserTypeIcons';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, firestore } from '../config/firebase';
+import { setDoc, doc } from 'firebase/firestore';
 
 
 const RegisterPage = () => {
@@ -31,9 +32,14 @@ const RegisterPage = () => {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user; // might be useful later
+      const user = userCredential.user;
 
-      // TODO: (Back-end) Store userType in firestore database associated with user.uid
+      // Save user profile to Firestore db (later also stores name, pin, etc.)
+      const uid = user.uid;
+      await setDoc(doc(firestore, 'users', uid), {
+        email,
+        userType
+      });
 
       // TODO: (Back-end) Put terms in a protected route that requires authentication to access
       // Navigate to terms and conditions as new user (can't go back to register)
