@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -54,14 +55,14 @@ const LoginPage = () => {
               autoCorrect={false}
               placeholder=""
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.eyeButton}
               onPress={() => setShowPassword(!showPassword)}
             >
-              <Feather 
-                name={showPassword ? "eye-off" : "eye"} 
-                size={20} 
-                color="#666" 
+              <Feather
+                name={showPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#666"
               />
             </TouchableOpacity>
           </View>

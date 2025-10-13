@@ -1,17 +1,50 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { ParentIcon, TherapistIcon } from './UserTypeIcons';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebase';
+
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<'parent' | 'therapist' | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {    
-    router.push('/terms' as any);
+  const handleRegister = async () => {
+    if (!email || !password || !userType) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    // Strong password policy: at least 14 characters, one uppercase letter, one number, one special character
+    if (password.length < 14 || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      Alert.alert('Error', 'Password must be at least 14 characters long and include at least one uppercase letter, one number, and one special character.');
+      return;
+    }
+
+    // TODO: (Front-end) could add a loading spinner when setLoading state is true?
+    setLoading(true);
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user; // might be useful later
+
+      // TODO: (Back-end) Store userType in firestore database associated with user.uid
+
+      // TODO: (Back-end) Put terms in a protected route that requires authentication to access
+      // Navigate to terms and conditions as new user (can't go back to register)
+      router.replace('/terms');
+
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      Alert.alert('Registration Error', 'Registration failed. Please try again and contact support if the issue persists.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const goBack = () => {
@@ -28,7 +61,7 @@ const RegisterPage = () => {
       {/* User type selection */}
       <View style={styles.userTypeSection}>
         <Text style={styles.questionText}>Are you a parent or therapist?</Text>
-        
+
         <View style={styles.userTypeOptions}>
           <TouchableOpacity
             style={[
@@ -37,9 +70,9 @@ const RegisterPage = () => {
             ]}
             onPress={() => setUserType('parent')}
           >
-            <ParentIcon 
-              size={40} 
-              color={userType === 'parent' ? '#007bff' : '#000'} 
+            <ParentIcon
+              size={40}
+              color={userType === 'parent' ? '#007bff' : '#000'}
             />
             <Text style={[
               styles.userTypeText,
@@ -56,9 +89,9 @@ const RegisterPage = () => {
             ]}
             onPress={() => setUserType('therapist')}
           >
-            <TherapistIcon 
-              size={40} 
-              color={userType === 'therapist' ? '#007bff' : '#000'} 
+            <TherapistIcon
+              size={40}
+              color={userType === 'therapist' ? '#007bff' : '#000'}
             />
             <Text style={[
               styles.userTypeText,
@@ -99,14 +132,14 @@ const RegisterPage = () => {
               autoCorrect={false}
               placeholder=""
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.eyeButton}
               onPress={() => setShowPassword(!showPassword)}
             >
-              <Feather 
-                name={showPassword ? "eye-off" : "eye"} 
-                size={20} 
-                color="#666" 
+              <Feather
+                name={showPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#666"
               />
             </TouchableOpacity>
           </View>
@@ -116,6 +149,7 @@ const RegisterPage = () => {
         <TouchableOpacity
           style={styles.signUpButton}
           onPress={handleRegister}
+          disabled={loading}
         >
           <Text style={styles.signUpButtonText}>
             Sign Up
