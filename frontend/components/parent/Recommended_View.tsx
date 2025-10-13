@@ -38,10 +38,6 @@ export default function RecommendedView() {
           ))
         )}
       </ScrollView>
-
-      <View style={styles.buttonWrapper}>
-        <AssignButton />
-      </View>
     </View>
   );
 }
@@ -54,12 +50,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingTop: 15,
     paddingBottom: 120,
-  },
-  buttonWrapper: {
-    position: "absolute",
-    marginTop: "125%",
-    left: 0,
-    right: 0,
-    alignItems: "center",
   },
 });
