@@ -61,15 +61,17 @@ export default function LearningLibrary({ data }: LibraryProps) {
           <AssignmentStatus
             visible={showOverlay}
             status={selectedItem.status}
-            onClose={() => setShowOverlay(false)}
-            onSelect={(newStatus) => {
-              setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
-              
-              // Inform user of successful assignment with SnackBar
-              if (newStatus === 'Assigned as Required' || newStatus === 'Assigned as Recommended') {
-                setSnackbarMessage(`"${selectedItem.title}" ${newStatus.toLowerCase()}`);
+            onClose={() => {
+              setShowOverlay(false)
+
+              if (selectedItem.status === 'Assigned as Required' || selectedItem.status === 'Assigned as Recommended'
+              ) {
+                setSnackbarMessage(`"${selectedItem.title}" ${selectedItem.status.toLowerCase()}`);
                 setSnackbarVisible(true);
               }
+            }}
+            onSelect={(newStatus) => {
+              setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
             }}
           />
 
@@ -166,7 +168,7 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     position: 'absolute',
-    marginTop: '180%',
+    marginTop: '160%',
     left: 0,
     right: 0,
     alignItems: 'center',

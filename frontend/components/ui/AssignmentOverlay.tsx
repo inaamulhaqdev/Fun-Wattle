@@ -44,7 +44,6 @@ export default function AssignmentStatus({
                 onPress={() => {
                   setSelected(option);
                   onSelect(option);
-                  onClose();
                 }}
               >
                 <Text style={styles.optionText}>{option}</Text>
