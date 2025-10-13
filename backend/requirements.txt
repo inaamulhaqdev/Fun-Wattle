@@ -6,3 +6,7 @@ psycopg2-binary==2.9.10
 firebase-admin
 djangorestframework
 whitenoise==4.1.2  
+markdown
+django-filter
+PyYAML
+django-guardian

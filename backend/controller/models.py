@@ -1,5 +1,6 @@
 from django.db import models
 
+""" Sample for how to set Modles up 
 class LoginRequest(models.Model):
     email = models.EmailField()
     password = models.CharField(max_length=100)
@@ -19,5 +20,5 @@ class User(models.Model):
     accountType = models.CharField(max_length= 1, choices=ACCOUNT_TYPES)
 
     def __str__(self):
-        return f"{self.id}:{self.name}-({self.accountType})"
+        return f"{self.id}:{self.name}-({self.accountType})" """
     
