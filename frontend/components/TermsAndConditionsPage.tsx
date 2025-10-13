@@ -15,9 +15,8 @@ const TermsAndConditionsPage = () => {
       alert('Please agree to the Terms & Conditions to continue');
       return;
     }
-    
     // Navigate to main app after agreeing
-    router.replace('/confirmation' as any);
+    router.replace('/confirmation');
   };
 
   return (
@@ -120,8 +119,8 @@ const TermsAndConditionsPage = () => {
 
           {/* Agreement Section */}
           <View style={styles.agreementSection}>
-            <TouchableOpacity 
-              style={styles.checkboxContainer} 
+            <TouchableOpacity
+              style={styles.checkboxContainer}
               onPress={() => setAgreed(!agreed)}
             >
               <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>

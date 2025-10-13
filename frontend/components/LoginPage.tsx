@@ -2,13 +2,24 @@ import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 const LoginPage = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    // Navigate to account selection
-    router.push('/account-selection' as any);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Navigate to account selection
+      router.push('/account-selection');
+
+    } catch (error) {
+      Alert.alert('Login Error', 'Login failed, please try again.');
+    }
   };
 
   const goBack = () => {
@@ -19,8 +30,19 @@ const LoginPage = () => {
     router.push('/register');
   };
 
-  const handleForgotPassword = () => {
-    // TODO: Implement forgot password functionality
+  const handleForgotPassword = async() => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address to reset your password');
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert('Success', 'Password reset email sent');
+
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send password reset email');
+    }
   };
 
   return (
@@ -41,6 +63,8 @@ const LoginPage = () => {
             autoCapitalize="none"
             autoCorrect={false}
             placeholder=""
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -53,15 +77,17 @@ const LoginPage = () => {
               autoCapitalize="none"
               autoCorrect={false}
               placeholder=""
+              value={password}
+              onChangeText={setPassword}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.eyeButton}
               onPress={() => setShowPassword(!showPassword)}
             >
-              <Feather 
-                name={showPassword ? "eye-off" : "eye"} 
-                size={20} 
-                color="#666" 
+              <Feather
+                name={showPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#666"
               />
             </TouchableOpacity>
           </View>
