@@ -1,9 +1,9 @@
-import React, { use } from "react";
+import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text, Provider as PaperProvider } from "react-native-paper";
 import { ActivityCards } from "@/components/ui/ActivityCards";
 import { UnitCard } from "@/components/ui/UnitCard";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams} from "expo-router";
 
 const LearningUnitDetails = () => {
     const { id } = useLocalSearchParams();
