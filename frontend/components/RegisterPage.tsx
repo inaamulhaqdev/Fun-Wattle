@@ -3,17 +3,12 @@ import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'reac
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { ParentIcon, TherapistIcon } from './UserTypeIcons';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth, firestore } from '../config/firebase';
-import { setDoc, doc } from 'firebase/firestore';
+import { useRegistration } from '../context/RegistrationContext';
 
 
 const RegisterPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { email, setEmail, password, setPassword, userType, setUserType } = useRegistration();
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState<'parent' | 'therapist' | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     if (!email || !password || !userType) {
@@ -27,30 +22,8 @@ const RegisterPage = () => {
       return;
     }
 
-    // TODO: (Front-end) could add a loading spinner when setLoading state is true?
-    setLoading(true);
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Save user profile to Firestore db (later also stores name, pin, etc.)
-      const uid = user.uid;
-      await setDoc(doc(firestore, 'users', uid), {
-        email,
-        userType
-      });
-
-      // TODO: (Back-end) Put terms in a protected route that requires authentication to access
-      // Navigate to terms and conditions as new user (can't go back to register)
-      router.replace('/terms');
-
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      Alert.alert('Registration Error', 'Registration failed. Please try again and contact support if the issue persists.');
-    } finally {
-      setLoading(false);
-    }
+    // Navigate to terms and conditions to finalise registration
+    router.push('/terms');
   };
 
   const goBack = () => {
@@ -155,7 +128,6 @@ const RegisterPage = () => {
         <TouchableOpacity
           style={styles.signUpButton}
           onPress={handleRegister}
-          disabled={loading}
         >
           <Text style={styles.signUpButtonText}>
             Sign Up
