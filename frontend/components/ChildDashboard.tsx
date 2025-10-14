@@ -15,7 +15,7 @@ interface Task {
 
 // Sample tasks -
 const sampleTasks: Task[] = [
-  { id: '1', name: 'Spring Season', completed: false },
+  { id: '1', name: 'Spring Season', completed: true },
   { id: '2', name: 'Builders and Explorers', completed: false },
   { id: '3', name: 'Pronoun Practice', completed: false },
   { id: '4', name: 'Animal Sounds', completed: false },
@@ -161,6 +161,10 @@ const ChildDashboard = () => {
 
   const handleMascotCustomization = () => {
     router.push('/mascot-customization');
+  };
+
+  const handleSettings = () => {
+    router.push('/settings');
   };
 
   const completedTasks = tasks.filter(task => task.completed).length;
@@ -315,7 +319,7 @@ const ChildDashboard = () => {
           <MaterialCommunityIcons name="koala" size={60} color="white" />
         </AnimatedNavButton>
         
-        <AnimatedNavButton style={styles.navButton}>
+        <AnimatedNavButton style={styles.navButton} onPress={handleSettings}>
           <FontAwesome5 name="cog" size={40} color="white" />
         </AnimatedNavButton>
       </View>
