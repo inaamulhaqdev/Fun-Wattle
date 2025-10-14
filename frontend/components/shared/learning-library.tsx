@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { Card, IconButton, Divider, Text, Searchbar } from 'react-native-paper';
+import { Card, IconButton, Divider, Text, Searchbar, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
-import { Snackbar } from 'react-native-paper';
 
 interface LearningUnit {
   id: string;
