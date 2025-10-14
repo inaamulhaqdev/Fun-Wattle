@@ -52,12 +52,10 @@ const ProfileCreationPage = () => {
       setLoading(true);
 
       try {
-        // Update user display name in Firebase Auth - not sure if needed, might be useful
-        await updateProfile(user, { displayName: name });
 
         // Save name and pin to Firestore database
         const pinHash = bcrypt.hashSync(pin.join(''), 10); // Hash the PIN before storing
-        await updateDoc(doc(firestore, 'users', uid), {
+        await updateDoc(doc(firestore, 'profiles', uid), {
           name,
           pinHash
         });

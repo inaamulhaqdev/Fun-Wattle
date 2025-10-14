@@ -1,34 +1,37 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { getAuth } from 'firebase/auth';
 import { firestore } from '../config/firebase';
 import { updateDoc, doc } from 'firebase/firestore';
+import { useRegistration } from '../context/RegistrationContext';
 
 const MembershipPage = () => {
 
-  const handleStartFreeTrial = async () => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (user) {
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        membershipType: 'free_trial',
-        trialStartDate: new Date(),
-        trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days free trial
-      });
-    }
-    router.push('/profile-creation');
-  };
+  const { userType } = useRegistration();
 
-  const handlePaidSubscription = async () => {
+  const handleSubscription = async (type: 'free_trial' | 'paid') => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        membershipType: 'paid',
-        subscriptionStartDate: new Date()
+      if (type === 'free_trial') {
+        await updateDoc(doc(firestore, 'users', user.uid), {
+          membershipType: 'free_trial',
+          trialStartDate: new Date(),
+          trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days free trial
+        });
+      } else if (type === 'paid') {
+        await updateDoc(doc(firestore, 'users', user.uid), {
+          membershipType: 'paid',
+          subscriptionStartDate: new Date()
+        });
+      }
+      router.push({
+        pathname: '/profile-creation',
+        params: { userType: userType }
       });
+    } else {
+      Alert.alert('No user is currently logged in.');
     }
-    router.push('/profile-creation');
   };
 
   return (
@@ -68,7 +71,7 @@ const MembershipPage = () => {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.trialButton} onPress={handleStartFreeTrial}>
+          <TouchableOpacity style={styles.trialButton} onPress={() => handleSubscription('free_trial')}>
             <Text style={styles.trialButtonText}>Start free 7-day trial</Text>
           </TouchableOpacity>
         </View>
@@ -101,7 +104,7 @@ const MembershipPage = () => {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.paidButton} onPress={handlePaidSubscription}>
+          <TouchableOpacity style={styles.paidButton} onPress={() => handleSubscription('paid')}>
             <Text style={styles.paidButtonText}>Pay $30/month</Text>
           </TouchableOpacity>
         </View>
