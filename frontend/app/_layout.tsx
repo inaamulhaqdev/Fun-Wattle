@@ -38,7 +38,7 @@ export default function RootLayout() {
         <Stack.Screen name="account-selection" options={{ headerShown: false }} />
         <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
         <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(therapist-tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         <Stack.Screen name="learning-unit-details" options={{ 
           title: 'Unit Details',
@@ -53,6 +53,7 @@ export default function RootLayout() {
             />
           )  
           }} />
+        <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );
