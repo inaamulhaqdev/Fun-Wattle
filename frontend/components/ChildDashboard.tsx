@@ -22,36 +22,78 @@ const sampleTasks: Task[] = [
   { id: '5', name: 'Colors and Shapes', completed: false },
 ];
 
-const CompletedFlowerSVG = ({ size = 200 }) => {
+// Completed Task Image with shape-aware shadow and blooming animation
+const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
+  // Use fixed container size for consistent positioning
   const containerSize = 200;
+  
+  // Blooming animation for newly completed tasks
+  const scaleAnim = React.useRef(new Animated.Value(isNewlyCompleted ? 0 : 1)).current;
+  
+  React.useEffect(() => {
+    if (isNewlyCompleted) {
+      // Start blooming animation from scale 0 to 1 with bounce effect
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.2,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 100,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [isNewlyCompleted, scaleAnim]);
+  
   return (
-    <View style={{ width: containerSize, height: containerSize, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Shadow layer - black silhouette offset behind */}
-      <Image
-        source={require('@/assets/images/completed_task.png')}
-        style={{ 
-          width: size * 1.3, 
-          height: size * 1.3,
-          position: 'absolute',
-          top: 4,
-          left: 2,
-          opacity: 0.7,
-        }}
-        resizeMode="contain"
-        tintColor="#000000"
-      />
-      {/* Main flower on top */}
-      <Image
-        source={require('@/assets/images/completed_task.png')}
-        style={{ 
-          width: size * 1.3, 
-          height: size * 1.3,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-        }}
-        resizeMode="contain"
-      />
+    <View style={{ 
+      width: containerSize, 
+      height: containerSize, 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      overflow: 'hidden', // Prevent animation from affecting layout
+    }}>
+      <Animated.View style={{ 
+        transform: [{ scale: scaleAnim }],
+        position: 'absolute', // Absolutely position the animated content
+        alignItems: 'center',
+        justifyContent: 'center',
+        left: 70,  // Move more to the right
+        top: 30,   // Move slightly lower
+      }}>
+        {/* Shadow layer - black silhouette offset behind */}
+        <Image
+          source={require('@/assets/images/completed_task.png')}
+          style={{ 
+            width: size * 1.3, 
+            height: size * 1.3,
+            position: 'absolute',
+            top: -26,  // Shadow offset down
+            left: -78, // Shadow offset right
+            opacity: 0.7,
+          }}
+          resizeMode="contain"
+          // Apply black tint to create shadow effect
+          // Note: tintColor works on iOS, for Android we rely on the opacity + positioning
+          tintColor="#000000"
+        />
+        {/* Main flower on top */}
+        <Image
+          source={require('@/assets/images/completed_task.png')}
+          style={{ 
+            width: size * 1.3, 
+            height: size * 1.3,
+            position: 'absolute',
+            top: -30,
+            left: -80,
+          }}
+          resizeMode="contain"
+        />
+      </Animated.View>
     </View>
   );
 };
@@ -133,22 +175,98 @@ const AnimatedNavButton: React.FC<{ children: React.ReactNode; style?: any; onPr
 const ChildDashboard = () => {
   const { completedTaskId } = useLocalSearchParams();
   const [tasks, setTasks] = useState<Task[]>(sampleTasks);
-  const { width: screenWidth } = Dimensions.get('window');
+  const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const scrollViewRef = React.useRef<ScrollView>(null);
 
-  // Handle task completion from activity page
+  // Handle task completion from activity page with blooming animation
   useEffect(() => {
+    console.log('=== COMPLETION EFFECT TRIGGERED ===');
     console.log('completedTaskId received:', completedTaskId);
-    if (completedTaskId) {
-      console.log('Updating tasks, marking task', completedTaskId, 'as completed');
-      setTasks(prevTasks => {
-        const updatedTasks = prevTasks.map(task => 
-          task.id === completedTaskId ? { ...task, completed: true } : task
-        );
-        console.log('Updated tasks:', updatedTasks);
-        return updatedTasks;
-      });
+    console.log('Current tasks state:', tasks);
+    
+    if (completedTaskId && typeof completedTaskId === 'string') {
+      console.log('Processing completion for task ID:', completedTaskId);
+      
+      // Check if task is already completed to avoid duplicate processing
+      const currentTask = tasks.find(task => task.id === completedTaskId);
+      if (currentTask?.completed) {
+        console.log('Task already completed, skipping...');
+        return;
+      }
+      
+      // Find the completed task index for scrolling
+      const completedTaskIndex = tasks.findIndex(task => task.id === completedTaskId);
+      console.log('Task index found:', completedTaskIndex);
+      
+      // Scroll to center the blooming flower
+      if (scrollViewRef.current && completedTaskIndex !== -1) {
+        const taskPosition = completedTaskIndex * 200;
+        const centerOffset = taskPosition - (screenHeight / 2) + 100;
+        console.log('Scrolling to position:', centerOffset);
+        scrollViewRef.current.scrollTo({ 
+          y: Math.max(0, centerOffset), 
+          animated: true 
+        });
+      }
+      setBloomingTaskId(completedTaskId);
+      
+      // Update the task to completed and trigger blooming animation
+      const completionTimeout = setTimeout(() => {
+        console.log('=== EXECUTING TASK COMPLETION ===');
+        console.log('Updating tasks, marking task', completedTaskId, 'as completed');
+        
+        setTasks(prevTasks => {
+          console.log('Previous tasks:', prevTasks);
+          const updatedTasks = prevTasks.map(task => {
+            if (task.id === completedTaskId) {
+              console.log('Marking task as completed:', task);
+              return { ...task, completed: true };
+            }
+            return task;
+          });
+          console.log('Updated tasks after completion:', updatedTasks);
+          return updatedTasks;
+        });
+        
+        // After blooming animation, scroll to next incomplete task
+        setTimeout(() => {
+          setTasks(currentTasks => {
+            const nextIncompleteIndex = currentTasks.findIndex(t => !t.completed);
+            console.log('Next incomplete task index:', nextIncompleteIndex);
+            
+            if (scrollViewRef.current && nextIncompleteIndex !== -1) {
+              const nextTaskPosition = nextIncompleteIndex * 200;
+              const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
+              console.log('Scrolling to next task at position:', nextCenterOffset);
+              scrollViewRef.current.scrollTo({ 
+                y: Math.max(0, nextCenterOffset), 
+                animated: true 
+              });
+            }
+            return currentTasks;
+          });
+        }, 1000); // Wait for bloom animation to finish
+        
+        // Clear the blooming state after animation completes
+        setTimeout(() => {
+          console.log('Clearing blooming state');
+          setBloomingTaskId(null);
+        }, 1000);
+      }, 2000); // 2 second delay before blooming
+      
+      return () => clearTimeout(completionTimeout);
     }
-  }, [completedTaskId]);
+  }, [completedTaskId, tasks, screenHeight]);
+
+  // Debug effect to track task state changes
+  useEffect(() => {
+    console.log('=== TASKS STATE CHANGED ===');
+    console.log('Current tasks:', tasks);
+    tasks.forEach((task, index) => {
+      console.log(`Task ${index}: ${task.name} - completed: ${task.completed}`);
+    });
+  }, [tasks]);
 
   const handleTaskPress = (task: Task) => {
     if (!task.completed) {
@@ -194,6 +312,7 @@ const ChildDashboard = () => {
 
       {/* Main Content - Vertical ScrollView with Wave */}
       <ScrollView 
+        ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         style={styles.verticalScroll}
         contentContainerStyle={styles.scrollContent}
@@ -284,7 +403,10 @@ const ChildDashboard = () => {
                   disabled={task.completed || isAfterNextTask}
                 >
                   {task.completed ? (
-                    <CompletedFlowerSVG size={180} />
+                    <CompletedFlowerSVG 
+                      size={180} 
+                      isNewlyCompleted={bloomingTaskId === task.id}
+                    />
                   ) : (
                     <IncompleteTaskSVG size={60} isAfterNext={isAfterNextTask} />
                   )}
@@ -390,7 +512,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     minHeight: '100%',
     left: -40,
-    top: 20,
+    top: -20,
   },
   sineWavePath: {
     position: 'absolute',
