@@ -3,3 +3,4 @@ firebase-admin.json
 .vs-code
 __pycache__
 node_modules/
+.DS_Store
