@@ -282,7 +282,11 @@ const ChildDashboard = () => {
   };
 
   const handleSettings = () => {
-    router.push('/settings');
+    router.push('/child-settings');
+  };
+
+  const handleStats = () => {
+    router.push('/(tabs)/child-stats');
   };
 
   const completedTasks = tasks.filter(task => task.completed).length;
@@ -310,7 +314,7 @@ const ChildDashboard = () => {
             <Text style={styles.streakText}>12</Text>
           </View>
           <View style={styles.starContainer}>
-            <MaterialCommunityIcons name="star-circle" size={24} color="#0088ffff" />
+            <MaterialCommunityIcons name="star-circle" size={24} color="#007ae6ff" />
             <Text style={styles.starText}>120</Text>
           </View>
         </View>
@@ -436,10 +440,10 @@ const ChildDashboard = () => {
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <AnimatedNavButton style={styles.navButton}>
-          <FontAwesome6 name="house-chimney-window" size={40} color="white" />
+          <FontAwesome6 name="house-chimney-window" size={40} color="#FFD700" />
         </AnimatedNavButton>
         
-        <AnimatedNavButton style={styles.navButton}>
+        <AnimatedNavButton style={styles.navButton} onPress={handleStats}>
           <FontAwesome5 name="trophy" size={40} color="white" />
         </AnimatedNavButton>
         
@@ -469,8 +473,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     zIndex: -1,
-    opacity: 0.7,
-    filter: 'brightness(1.1)',
+    opacity: 0.3,
+    filter: 'brightness(1.3)',
   },
   
   header: {
@@ -514,7 +518,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   starContainer: {
     flexDirection: 'row',

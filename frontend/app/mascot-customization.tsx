@@ -14,12 +14,11 @@ const MascotCustomization = () => {
   };
 
   const handleHome = () => {
-    router.push('/child-dashboard');
+    router.push('/child-dashboard' as any);
   };
 
-  const handleRewards = () => {
-    // Navigate to rewards page when implemented
-    console.log('Rewards pressed');
+  const handleStats = () => {
+    router.push('/(tabs)/child-stats');
   };
 
   const handleMascotCustomization = () => {
@@ -27,8 +26,7 @@ const MascotCustomization = () => {
   };
 
   const handleSettings = () => {
-    // Navigate to settings page when implemented
-    console.log('Settings pressed');
+    router.push('/child-settings');
   };
 
   const bodyOptions = [
@@ -123,12 +121,12 @@ const MascotCustomization = () => {
           <FontAwesome6 name="house-chimney-window" size={40} color="white" />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navButton} onPress={handleRewards}>
+        <TouchableOpacity style={styles.navButton} onPress={handleStats}>
           <FontAwesome5 name="trophy" size={40} color="white" />
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navButton} onPress={handleMascotCustomization}>
-          <MaterialCommunityIcons name="koala" size={60} color="white" />
+          <MaterialCommunityIcons name="koala" size={60} color="#FFD700" />
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navButton} onPress={handleSettings}>

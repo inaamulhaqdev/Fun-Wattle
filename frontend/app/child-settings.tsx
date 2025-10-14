@@ -1,13 +1,39 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { Feather, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, FontAwesome5, FontAwesome6, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const SettingsPage = () => {
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
-  const handleBack = () => {
-    router.back();
+  
+  const handleHome = () => {
+    router.push('/(tabs)');
+  };
+
+  const handleStats = () => {
+    router.push('/(tabs)/child-stats');
+  };
+
+  const handleMascotCustomization = () => {
+    router.push('/mascot-customization');
+  };
+
+  // Animated Navigation Button Component
+  const AnimatedNavButton = ({ children, style, onPress = () => {} }: {
+    children: React.ReactNode;
+    style: any;
+    onPress?: () => void;
+  }) => {
+    return (
+      <TouchableOpacity
+        style={style}
+        onPress={onPress}
+        activeOpacity={0.8}
+      >
+        {children}
+      </TouchableOpacity>
+    );
   };
 
   type SettingItemProps = {
@@ -33,11 +59,7 @@ const SettingsPage = () => {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Feather name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
@@ -120,8 +142,27 @@ const SettingsPage = () => {
         </View>
 
         {/* Bottom padding */}
-        <View style={{ height: 50 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        <AnimatedNavButton style={styles.navButton} onPress={handleHome}>
+          <FontAwesome6 name="house-chimney-window" size={40} color="white" />
+        </AnimatedNavButton>
+        
+        <AnimatedNavButton style={styles.navButton} onPress={handleStats}>
+          <FontAwesome5 name="trophy" size={40} color="white" />
+        </AnimatedNavButton>
+        
+        <AnimatedNavButton style={styles.navButton} onPress={handleMascotCustomization}>
+          <MaterialCommunityIcons name="koala" size={60} color="white" />
+        </AnimatedNavButton>
+        
+        <AnimatedNavButton style={styles.navButton}>
+          <FontAwesome5 name="cog" size={40} color="#FFD700" />
+        </AnimatedNavButton>
+      </View>
     </View>
     </>
   );
@@ -137,22 +178,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     paddingTop: 50,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    padding: 8,
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    flex: 1,
     textAlign: 'center',
-  },
-  placeholder: {
-    width: 40, // Same width as back button for centering
   },
   content: {
     flex: 1,
@@ -206,6 +239,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#FFB366',
+    paddingVertical: 20,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  navButton: {
+    alignItems: 'center',
+    marginBottom: 10,
   },
 });
 
