@@ -30,15 +30,6 @@ const TermsAndConditionsPage = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Also save user to Firestore database (holds additional user info)
-      const uid = user.uid;
-      await setDoc(doc(firestore, 'users', uid), {
-        email,
-        userType,
-        signedPrivacyPolicy,
-        createdAt: new Date()
-      });
-
       // Navigate to confirmation page once registration complete (can't go back to terms)
       router.replace('/confirmation');
 

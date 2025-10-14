@@ -53,12 +53,8 @@ const ProfileCreationPage = () => {
 
       try {
 
-        // Save name and pin to Firestore database
+        // TODO: Save name and pin to postgres db
         const pinHash = bcrypt.hashSync(pin.join(''), 10); // Hash the PIN before storing
-        await updateDoc(doc(firestore, 'profiles', uid), {
-          name,
-          pinHash
-        });
 
         // Navigate to profile confirmation
         router.replace('/profile-confirmation');

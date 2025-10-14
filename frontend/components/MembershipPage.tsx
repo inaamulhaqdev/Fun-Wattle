@@ -14,20 +14,14 @@ const MembershipPage = () => {
     const user = auth.currentUser;
     if (user) {
       if (type === 'free_trial') {
-        await updateDoc(doc(firestore, 'users', user.uid), {
-          membershipType: 'free_trial',
-          trialStartDate: new Date(),
-          trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days free trial
-        });
+        // TODO: Save membership type (free), start and end date to postgres db
       } else if (type === 'paid') {
-        await updateDoc(doc(firestore, 'users', user.uid), {
-          membershipType: 'paid',
-          subscriptionStartDate: new Date()
-        });
+        // TODO: Save membership type (paid) and start date to postgres db
       }
+
       router.push({
         pathname: '/profile-creation',
-        params: { userType: userType }
+        params: { userType: userType } // Might do this differently with postgres....
       });
     } else {
       Alert.alert('No user is currently logged in.');
