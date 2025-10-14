@@ -32,6 +32,9 @@ export default function RootLayout() {
         <Stack.Screen name="account-selection" options={{ headerShown: false }} />
         <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
         <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
+        <Stack.Screen name="child-dashboard" options={{ headerShown: false }} />
+        <Stack.Screen name="activity" options={{ headerShown: false }} />
+        <Stack.Screen name="mascot-customization" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>

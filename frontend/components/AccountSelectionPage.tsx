@@ -19,6 +19,12 @@ const accounts: Account[] = [
     type: 'parent',
     isLocked: true,
   },
+  {
+    id: '2',
+    name: 'Max',
+    type: 'child',
+    isLocked: false,
+  },
   // Add more accounts here as needed
   // {
   //   id: '2',
@@ -36,9 +42,15 @@ const AccountSelectionPage = () => {
       return;
     }
     
-    // Navigate to main app with selected account
-    console.log('Selected account:', account);
-    router.replace('/(tabs)/' as any);
+    // Navigate based on account type
+    if (account.type === 'child') {
+      router.replace('/child-dashboard' as any);
+    } else if (account.type === 'parent') {
+      router.replace('/(tabs)/parent-dashboard' as any);
+    } else {
+      // Default fallback for therapist or other types
+      router.replace('/(tabs)/' as any);
+    }
   };
 
   const renderAccountCard = (account: Account) => {
