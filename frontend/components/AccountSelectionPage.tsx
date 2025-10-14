@@ -26,6 +26,18 @@ const accounts: Account[] = [
   //   type: 'child',
   //   isLocked: false,
   // },
+  {
+    id: '2',
+    name: 'Alice 2.0',
+    type: 'parent',
+    isLocked: false,
+  },
+  {
+    id: '2',
+    name: 'Dwight',
+    type: 'therapist',
+    isLocked: false,
+  },
 ];
 
 const AccountSelectionPage = () => {
@@ -38,7 +50,15 @@ const AccountSelectionPage = () => {
     
     // Navigate to main app with selected account
     console.log('Selected account:', account);
-    router.replace('/(tabs)/' as any);
+    if (account.type == "therapist") {
+      router.replace('/(therapist-tabs)/therapist-dashboard');
+    }
+    if (account.type == "parent") {
+      router.replace({
+        pathname: '/(parent-tabs)/parent-dashboard',
+        params: { variant: 'newParent' },
+      });
+    }
   };
 
   const renderAccountCard = (account: Account) => {
