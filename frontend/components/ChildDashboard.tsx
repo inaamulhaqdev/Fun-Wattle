@@ -178,8 +178,14 @@ const ChildDashboard = () => {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Today&apos;s tasks</Text>
-        <Text style={styles.taskCounter}>{completedTasks}/{totalTasks} COMPLETE</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Today&apos;s tasks</Text>
+          <Text style={styles.taskCounter}>{completedTasks}/{totalTasks} COMPLETE</Text>
+        </View>
+        <View style={styles.streakContainer}>
+          <FontAwesome6 name="fire" size={24} color="#FF4500" />
+          <Text style={styles.streakText}>12</Text>
+        </View>
       </View>
 
       {/* Main Content - Vertical ScrollView with Wave */}
@@ -341,6 +347,12 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingTop: 30,
     paddingBottom: 30,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 24,
@@ -352,6 +364,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 5,
     fontWeight: '600',
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  streakText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginLeft: 6,
   },
   verticalScroll: {
     flex: 1,
