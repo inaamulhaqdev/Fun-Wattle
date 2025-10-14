@@ -304,9 +304,15 @@ const ChildDashboard = () => {
           <Text style={styles.headerTitle}>Today&apos;s tasks</Text>
           <Text style={styles.taskCounter}>{completedTasks}/{totalTasks} COMPLETE</Text>
         </View>
-        <View style={styles.streakContainer}>
-          <FontAwesome6 name="fire" size={24} color="#FF4500" />
-          <Text style={styles.streakText}>12</Text>
+        <View style={styles.headerRight}>
+          <View style={styles.streakContainer}>
+            <FontAwesome6 name="fire" size={24} color="#FF4500" />
+            <Text style={styles.streakText}>12</Text>
+          </View>
+          <View style={styles.starContainer}>
+            <MaterialCommunityIcons name="star-circle" size={24} color="#0088ffff" />
+            <Text style={styles.starText}>120</Text>
+          </View>
         </View>
       </View>
 
@@ -500,6 +506,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   streakText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginLeft: 6,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  starContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  starText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
