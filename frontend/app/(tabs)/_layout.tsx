@@ -33,7 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="therapist-dashboard"
         options={{
-          title: 'Home',
+          title: 'Therapist Dashboard',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />

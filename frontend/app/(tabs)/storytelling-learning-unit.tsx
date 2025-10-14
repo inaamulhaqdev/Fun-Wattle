@@ -5,7 +5,7 @@ import { ActivityCards } from "@/components/ui/ActivityCards";
 import { UnitCard } from "@/components/ui/UnitCard";
 import { useLocalSearchParams} from "expo-router";
 
-const LearningUnitDetails = () => {
+const StorytellingLearningUnit = () => {
     const { id } = useLocalSearchParams();
 
     // TODO dummy data for learning unit, to be replaced with real data
@@ -71,4 +71,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default LearningUnitDetails; 
+export default StorytellingLearningUnit; 
