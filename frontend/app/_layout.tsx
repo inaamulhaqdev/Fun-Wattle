@@ -16,47 +16,49 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen
-          name="index"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="intro-video"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="welcome"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <RegistrationProvider>
-          <Stack.Screen name="register" options={{ headerShown: false }} />
-          <Stack.Screen name="terms" options={{ headerShown: false }} />
-          <Stack.Screen name="confirmation" options={{ headerShown: false }} />
-          <Stack.Screen name="membership" options={{ headerShown: false }} />
-        </RegistrationProvider>
-        <Stack.Screen name="profile-creation" options={{ headerShown: false }} />
-        <Stack.Screen name="profile-confirmation" options={{ headerShown: false }} />
-        <Stack.Screen name="account-selection" options={{ headerShown: false }} />
-        <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
-        <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-        <Stack.Screen name="learning-unit-details" options={{
-          title: 'Unit Details',
-          headerLeft: ({ tintColor}) => (
-            <IconButton
-              icon="arrow-left"
-              size={24}
-              onPress={() => {
-                router.back();
-              }}
-              iconColor={tintColor}
-            />
-          )
-          }} />
-      </Stack>
+      <RegistrationProvider>
+        <Stack>
+          <Stack.Screen
+            name="index"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="intro-video"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="welcome"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <RegistrationProvider>
+            <Stack.Screen name="register" options={{ headerShown: false }} />
+            <Stack.Screen name="terms" options={{ headerShown: false }} />
+            <Stack.Screen name="confirmation" options={{ headerShown: false }} />
+            <Stack.Screen name="membership" options={{ headerShown: false }} />
+          </RegistrationProvider>
+          <Stack.Screen name="profile-creation" options={{ headerShown: false }} />
+          <Stack.Screen name="profile-confirmation" options={{ headerShown: false }} />
+          <Stack.Screen name="account-selection" options={{ headerShown: false }} />
+          <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
+          <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          <Stack.Screen name="learning-unit-details" options={{
+            title: 'Unit Details',
+            headerLeft: ({ tintColor}) => (
+              <IconButton
+                icon="arrow-left"
+                size={24}
+                onPress={() => {
+                  router.back();
+                }}
+                iconColor={tintColor}
+              />
+            )
+            }} />
+        </Stack>
+      </RegistrationProvider>
     </ThemeProvider>
   );
 }
