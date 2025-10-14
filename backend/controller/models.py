@@ -15,7 +15,7 @@ class UserProfile(models.Model):
     name = models.CharField(max_length=100)
     profile_picture = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    pin_hash = models.CharField(max_length=256, optional=True)
     class Meta:
         abstract = True
 
@@ -55,7 +55,7 @@ class AssignedActivity(models.Model):
     id = models.AutoField(primary_key=True)
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='assigned_activities')
     child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name='assigned_activities')
-    assigned_by = models.ForeignKey(Therapist, on_delete=models.SET_NULL, null=True, related_name='assigned_activities')
+    assigned_by = models.ForeignKey(UserProfile.id, on_delete=models.SET_NULL, null=True, related_name='assigned_activities')
     assigned_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField(null=True, blank=True)
     completed = models.BooleanField(default=False)
