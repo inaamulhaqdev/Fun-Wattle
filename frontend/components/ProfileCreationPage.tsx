@@ -1,11 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { updateProfile, getAuth } from 'firebase/auth';
+import { firestore } from '../config/firebase';
+import { updateDoc, doc } from 'firebase/firestore';
+import bcrypt from 'react-native-bcrypt';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
   const [pin, setPin] = useState(['', '', '', '']);
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
+  const [loading, setLoading] = useState(false);
 
   const handlePinChange = (index: number, value: string) => {
     // Only allow single digits
@@ -28,10 +33,39 @@ const ProfileCreationPage = () => {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+    if (pin.join('').length !== 4) {
+      Alert.alert('Error', 'Please complete your 4-digit PIN');
+      return;
+    }
+
     // Save profile info (name and pin) to backend here
-    // Navigate to profile confirmation
-    router.push('/profile-confirmation' as any);
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user) {
+      const uid = user.uid;
+
+      setLoading(true);
+
+      try {
+
+        // TODO: Save name and pin to postgres db
+        const pinHash = bcrypt.hashSync(pin.join(''), 10); // Hash the PIN before storing
+
+        // Navigate to profile confirmation
+        router.replace('/profile-confirmation');
+
+      } catch (error) {
+        console.error('Profile Creation error:', error);
+        Alert.alert('Profile Creation Error', 'Profile Creation failed. Please try again and contact support if the issue persists.');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const isPinComplete = pin.every(digit => digit !== '');
@@ -41,7 +75,7 @@ const ProfileCreationPage = () => {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Complete your profile</Text>
-        
+
         {/* Name Input */}
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Name</Text>
@@ -58,7 +92,7 @@ const ProfileCreationPage = () => {
         {/* PIN Input */}
         <View style={styles.pinSection}>
           <Text style={styles.pinLabel}>Choose 4 digit PIN to secure your account</Text>
-          
+
           <View style={styles.pinContainer}>
             {pin.map((digit, index) => (
               <View key={index} style={styles.pinInputContainer}>

@@ -1,23 +1,44 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, firestore } from '../config/firebase';
+import { setDoc, doc } from 'firebase/firestore';
+import { useRegistration } from '../context/RegistrationContext';
 
 const TermsAndConditionsPage = () => {
-  const [agreed, setAgreed] = useState(false);
+  const { email, password, userType, signedPrivacyPolicy, setSignedPrivacyPolicy } = useRegistration();
+  const [ loading, setLoading ] = useState(false);
+
 
   const goBack = () => {
     router.back();
   };
 
-  const handleContinue = () => {
-    if (!agreed) {
+  const handleContinue = async() => {
+    if (!signedPrivacyPolicy) {
       alert('Please agree to the Terms & Conditions to continue');
       return;
     }
-    
-    // Navigate to main app after agreeing
-    router.replace('/confirmation' as any);
+
+    setLoading(true);
+
+    // Create new user account
+    try {
+      // Save user authentication to Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Navigate to confirmation page once registration complete (can't go back to terms)
+      router.replace('/confirmation');
+
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      Alert.alert('Registration Error', 'Registration failed. Please try again and contact support if the issue persists.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -120,12 +141,12 @@ const TermsAndConditionsPage = () => {
 
           {/* Agreement Section */}
           <View style={styles.agreementSection}>
-            <TouchableOpacity 
-              style={styles.checkboxContainer} 
-              onPress={() => setAgreed(!agreed)}
+            <TouchableOpacity
+              style={styles.checkboxContainer}
+              onPress={() => setSignedPrivacyPolicy(!signedPrivacyPolicy)}
             >
-              <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
-                {agreed && <Feather name="check" size={16} color="#fff" />}
+              <View style={[styles.checkbox, signedPrivacyPolicy && styles.checkboxChecked]}>
+                {signedPrivacyPolicy && <Feather name="check" size={16} color="#fff" />}
               </View>
               <Text style={styles.agreementText}>
                 I agree to the Terms & Conditions
@@ -143,13 +164,13 @@ const TermsAndConditionsPage = () => {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            agreed ? styles.continueButtonActive : styles.continueButtonDisabled
+            signedPrivacyPolicy ? styles.continueButtonActive : styles.continueButtonDisabled
           ]}
           onPress={handleContinue}
         >
           <Text style={[
             styles.continueButtonText,
-            agreed ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
+            signedPrivacyPolicy ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
           ]}>
             Continue
           </Text>

@@ -1,15 +1,31 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { getAuth } from 'firebase/auth';
+import { firestore } from '../config/firebase';
+import { updateDoc, doc } from 'firebase/firestore';
+import { useRegistration } from '../context/RegistrationContext';
 
 const MembershipPage = () => {
-  const handleStartFreeTrial = () => {
-    // Navigate to profile creation
-    router.push('/profile-creation' as any);
-  };
 
-  const handlePaidSubscription = () => {
-    // Navigate to profile creation
-    router.push('/profile-creation' as any);
+  const { userType } = useRegistration();
+
+  const handleSubscription = async (type: 'free_trial' | 'paid') => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user) {
+      if (type === 'free_trial') {
+        // TODO: Save membership type (free), start and end date to postgres db
+      } else if (type === 'paid') {
+        // TODO: Save membership type (paid) and start date to postgres db
+      }
+
+      router.push({
+        pathname: '/profile-creation',
+        params: { userType: userType } // Might do this differently with postgres....
+      });
+    } else {
+      Alert.alert('No user is currently logged in.');
+    }
   };
 
   return (
@@ -19,7 +35,7 @@ const MembershipPage = () => {
         <Text style={styles.welcomeText}>
           Thank you for signing up to FunWattle.
         </Text>
-        
+
         <Text style={styles.subtitleText}>
           You can now choose either a free trial or a paid subscription:
         </Text>
@@ -27,7 +43,7 @@ const MembershipPage = () => {
         {/* Free Trial Card */}
         <View style={styles.planCard}>
           <Text style={styles.planTitle}>Free 7-day trial</Text>
-          
+
           <View style={styles.featuresList}>
             <Text style={styles.featureItem}>
               • Get a sneak peek into our content with limited access to the library
@@ -49,7 +65,7 @@ const MembershipPage = () => {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.trialButton} onPress={handleStartFreeTrial}>
+          <TouchableOpacity style={styles.trialButton} onPress={() => handleSubscription('free_trial')}>
             <Text style={styles.trialButtonText}>Start free 7-day trial</Text>
           </TouchableOpacity>
         </View>
@@ -57,7 +73,7 @@ const MembershipPage = () => {
         {/* Paid Subscription Card */}
         <View style={styles.planCard}>
           <Text style={styles.planTitle}>Paid Subscription</Text>
-          
+
           <View style={styles.featuresList}>
             <Text style={styles.featureItem}>
               • Unlock 100+ learning units and guided adaptive paths
@@ -82,7 +98,7 @@ const MembershipPage = () => {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.paidButton} onPress={handlePaidSubscription}>
+          <TouchableOpacity style={styles.paidButton} onPress={() => handleSubscription('paid')}>
             <Text style={styles.paidButtonText}>Pay $30/month</Text>
           </TouchableOpacity>
         </View>
