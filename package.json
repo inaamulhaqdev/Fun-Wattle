@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "expo-av": "^16.0.7",
+    "react-native-video": "^6.17.0"
+  }
+}

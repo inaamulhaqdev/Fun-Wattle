@@ -2,13 +2,17 @@ import * as React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
 
-const AssignButton = () => (
+interface AssignButtonProps {
+  onPress?: () => void;
+}
+
+const AssignButton = ({ onPress }: AssignButtonProps) => (
   <View style={styles.container}>
     <Button
       textColor="black"
       buttonColor="#FDD652"
       mode="contained"
-      onPress={() => console.log('Pressed')}
+      onPress={onPress}
       contentStyle={{ paddingVertical: 10, paddingHorizontal: 20 }}
       labelStyle={{ fontSize: 16, fontWeight: 'bold' }}
     >

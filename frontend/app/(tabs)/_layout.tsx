@@ -17,13 +17,6 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
       }}>
       <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="parent-dashboard"
         options={{
           title: 'Parent Dashboard',
@@ -31,16 +24,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="therapist-dashboard"
+        name="learning-units"
         options={{
-          title: 'Therapist Dashboard',
+          title: 'Learning Units',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="learning-unit-details"
+        name="therapist-dashboard"
         options={{
-          title: 'Learning Unit',
+          title: 'Therapist Dashboard',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />

@@ -57,11 +57,4 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     paddingBottom: 120,
   },
-  buttonWrapper: {
-    position: "absolute",
-    marginTop: "125%",
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
 });
