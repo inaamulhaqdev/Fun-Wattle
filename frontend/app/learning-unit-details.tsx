@@ -1,6 +1,6 @@
 import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Text, Provider as PaperProvider } from "react-native-paper";
+import { Text, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
 import { ActivityCards } from "@/components/ui/ActivityCards";
 import { UnitCard } from "@/components/ui/UnitCard";
 import { useLocalSearchParams} from "expo-router";
@@ -25,7 +25,7 @@ const LearningUnitDetails = () => {
 
 
     return (
-        <PaperProvider>
+        <PaperProvider theme={DefaultTheme}>
             <View style={styles.container}>
                 <TouchableOpacity onPress={() => { console.log("Unit card clicked.") }}>
                 {selectedUnit ? (
