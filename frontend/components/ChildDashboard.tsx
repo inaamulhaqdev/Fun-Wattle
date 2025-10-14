@@ -253,7 +253,7 @@ const ChildDashboard = () => {
           console.log('Clearing blooming state');
           setBloomingTaskId(null);
         }, 1000);
-      }, 2000); // 2 second delay before blooming
+      }, 0);
       
       return () => clearTimeout(completionTimeout);
     }
