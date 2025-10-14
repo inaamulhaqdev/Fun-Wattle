@@ -31,12 +31,10 @@ export default function RootLayout() {
             options={{ headerShown: false }}
           />
           <Stack.Screen name="login" options={{ headerShown: false }} />
-          <RegistrationProvider>
-            <Stack.Screen name="register" options={{ headerShown: false }} />
-            <Stack.Screen name="terms" options={{ headerShown: false }} />
-            <Stack.Screen name="confirmation" options={{ headerShown: false }} />
-            <Stack.Screen name="membership" options={{ headerShown: false }} />
-          </RegistrationProvider>
+          <Stack.Screen name="register" options={{ headerShown: false }} />
+          <Stack.Screen name="terms" options={{ headerShown: false }} />
+          <Stack.Screen name="confirmation" options={{ headerShown: false }} />
+          <Stack.Screen name="membership" options={{ headerShown: false }} />
           <Stack.Screen name="profile-creation" options={{ headerShown: false }} />
           <Stack.Screen name="profile-confirmation" options={{ headerShown: false }} />
           <Stack.Screen name="account-selection" options={{ headerShown: false }} />
