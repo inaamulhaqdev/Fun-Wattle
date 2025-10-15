@@ -19,6 +19,12 @@ const accounts: Account[] = [
     type: 'parent',
     isLocked: true,
   },
+  {
+    id: '2',
+    name: 'Max',
+    type: 'child',
+    isLocked: false,
+  },
   // Add more accounts here as needed
   // {
   //   id: '2',
@@ -48,16 +54,17 @@ const AccountSelectionPage = () => {
       return;
     }
     
-    // Navigate to main app with selected account
-    console.log('Selected account:', account);
-    if (account.type == "therapist") {
-      router.replace('/(therapist-tabs)/therapist-dashboard');
-    }
-    if (account.type == "parent") {
+    // Navigate based on account type
+    if (account.type === 'child') {
+      router.replace('/child-dashboard' as any);
+    } else if (account.type == "parent") {
       router.replace({
-        pathname: '/(parent-tabs)/parent-dashboard',
+        pathname: './(parent-tabs)/parent-dashboard',
         params: { variant: 'newParent' },
       });
+    } else if (account.type == "therapist") {
+      // Default fallback for therapist or other types
+      router.replace('./(therapist-tabs)/therapist-dashboard');
     }
   };
 

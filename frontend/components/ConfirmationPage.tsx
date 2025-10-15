@@ -6,14 +6,14 @@ import Feather from '@expo/vector-icons/Feather';
 const ConfirmationPage = () => {
   const handleContinue = () => {
     // Navigate to membership selection
-    router.push('/membership' as any);
+    router.push('/membership');
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Your Account has been created</Text>
-        
+
         {/* Success checkmark icon */}
         <View style={styles.iconContainer}>
           <View style={styles.checkCircle}>
@@ -21,7 +21,7 @@ const ConfirmationPage = () => {
           </View>
         </View>
       </View>
-      
+
       {/* Continue Button */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>

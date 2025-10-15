@@ -6,7 +6,7 @@ import { IconButton, Card, Button, Text } from 'react-native-paper';
 export default function AddChildSummary() {
 
   const handleNext = () => {
-    router.push('/parent/child-added');
+    router.push('./parent/child-added');
   };
 
   const cardDetails = [

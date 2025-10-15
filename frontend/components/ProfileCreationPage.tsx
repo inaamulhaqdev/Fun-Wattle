@@ -52,15 +52,9 @@ const ProfileCreationPage = () => {
       setLoading(true);
 
       try {
-        // Update user display name in Firebase Auth - not sure if needed, might be useful
-        await updateProfile(user, { displayName: name });
 
-        // Save name and pin to Firestore database
+        // TODO: Save name and pin to postgres db
         const pinHash = bcrypt.hashSync(pin.join(''), 10); // Hash the PIN before storing
-        await updateDoc(doc(firestore, 'users', uid), {
-          name,
-          pinHash
-        });
 
         // Navigate to profile confirmation
         router.replace('/profile-confirmation');
