@@ -59,12 +59,12 @@ export default function RootLayout() {
             )
             }} />
           <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="parent/add-child-details" options={{ headerShown: false }} />
-        <Stack.Screen name="parent/child-goal" options={{ headerShown: false }} />
-        <Stack.Screen name="parent/child-needs" options={{ headerShown: false }} />
-        <Stack.Screen name="parent/child-summary" options={{ headerShown: false }} />
-        <Stack.Screen name="parent/child-added" options={{ headerShown: false }} />
-      </Stack>
+          <Stack.Screen name="parent/add-child-details" options={{ headerShown: false }} />
+          <Stack.Screen name="parent/child-goal" options={{ headerShown: false }} />
+          <Stack.Screen name="parent/child-needs" options={{ headerShown: false }} />
+          <Stack.Screen name="parent/child-summary" options={{ headerShown: false }} />
+          <Stack.Screen name="parent/child-added" options={{ headerShown: false }} />
+        </Stack>
       </ThemeProvider>
     </RegistrationProvider>
   );
