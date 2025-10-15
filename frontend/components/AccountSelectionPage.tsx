@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { getAuth } from 'firebase/auth';
 
 // Account data structure
 interface Account {
@@ -11,45 +12,63 @@ interface Account {
   isLocked?: boolean;
 }
 
-// Placeholder accounts
-const accounts: Account[] = [
-  {
-    id: '1',
-    name: 'Alice',
-    type: 'parent',
-    isLocked: true,
-  },
-  {
-    id: '2',
-    name: 'Max',
-    type: 'child',
-    isLocked: false,
-  },
-  // Add more accounts here as needed
-  // {
-  //   id: '2',
-  //   name: 'Child Profile',
-  //   type: 'child',
-  //   isLocked: false,
-  // },
-];
-
 const AccountSelectionPage = () => {
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (!user) {
+          Alert.alert('Not signed in', 'Please log in again.');
+          return;
+        }
+
+        const response = await fetch(`http://192.168.0.234:8000/api/profile/${user.uid}/`, {
+          method: 'GET',
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch profiles (${response.status})`);
+        }
+
+        const data = await response.json();
+
+        // Transform API data to match frontend Account type
+        const transformedData = data.map((profile: any) => ({
+          id: profile.id.toString(),
+          name: profile.name,
+          type: profile.profile_type,
+          isLocked: profile.pin_hash ? true : false,
+        }));
+
+        setAccounts(transformedData);
+      } catch (error) {
+        console.error('Error fetching profiles:', error);
+        Alert.alert('Error', 'Failed to load profiles. Please try again.');
+      }
+    };
+
+    fetchAccounts();
+  }, []);
+
   const handleAccountSelect = (account: Account) => {
     if (account.isLocked) {
       // Navigate to PIN entry screen for locked accounts
-      router.push('/pin-entry' as any);
+      router.push({ pathname: '/pin-entry', params: { id: account.id } });
       return;
     }
-    
+
     // Navigate based on account type
     if (account.type === 'child') {
-      router.replace('/child-dashboard' as any);
+      router.replace({ pathname: '/child-dashboard', params: { id: account.id } });
     } else if (account.type === 'parent') {
-      router.replace('/(tabs)/parent-dashboard' as any);
+      router.replace({ pathname: '/(tabs)/parent-dashboard', params: { id: account.id } });
     } else {
       // Default fallback for therapist or other types
-      router.replace('/(tabs)/' as any);
+      router.replace({ pathname: '/(tabs)/therapist-dashboard', params: { id: account.id } });
+      // router.replace('/(tabs)/' as any); KEPT JUST IN CASE
     }
   };
 
@@ -64,12 +83,12 @@ const AccountSelectionPage = () => {
         <View style={styles.profileIcon}>
           <Feather name="user" size={24} color="#fff" />
         </View>
-        
+
         {/* Account Info */}
         <Text style={styles.accountName}>
           {account.name} ({account.type === 'parent' ? 'Parent' : account.type === 'child' ? 'Child' : 'Therapist'})
         </Text>
-        
+
         {/* Lock Icon */}
         {account.isLocked && (
           <View style={styles.lockIcon}>
@@ -84,7 +103,7 @@ const AccountSelectionPage = () => {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Choose your profile</Text>
-        
+
         <ScrollView style={styles.accountsList} showsVerticalScrollIndicator={false}>
           {accounts.map(account => renderAccountCard(account))}
         </ScrollView>
