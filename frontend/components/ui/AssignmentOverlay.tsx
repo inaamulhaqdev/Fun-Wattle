@@ -77,6 +77,8 @@ const styles = StyleSheet.create({
   closeButton: {
     position: 'absolute',
     alignItems: "flex-start",
+    top: 10,
+    left: 10,
   },
   title: {
     fontSize: 18,
