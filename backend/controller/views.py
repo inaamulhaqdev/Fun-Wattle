@@ -142,7 +142,7 @@ def create_profile(request):
 
 
 @api_view(['GET'])
-def get_profiles(request):
+def get_profiles(request, firebase_auth_id):
 
 	# auth_header = request.headers.get('Authorization')
 	# if not auth_header or not auth_header.startswith('Bearer '):
@@ -161,9 +161,13 @@ def get_profiles(request):
 	# except User.DoesNotExist:
 	# 	return Response({'error': 'Profile owners not found'}, status=404)
 
-	profile_owner = User.objects.get(id=request.data.get('user_id'))
+	user = User.objects.get(firebase_auth_uid=firebase_auth_id)
 
-	serializer = ProfileSerializer(Profile.objects.filter(user=profile_owner), many=True)
+	main_profile = Profile.objects.filter(user=user)
+	child_profiles = Profile.objects.filter(linked_users__user=user) # Find all child profiles linked to this user
+	profiles = main_profile | child_profiles
+
+	serializer = ProfileSerializer(profiles, many=True)
 	return Response(serializer.data, status=200)
 
 
