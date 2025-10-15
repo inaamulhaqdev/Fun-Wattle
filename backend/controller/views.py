@@ -141,7 +141,7 @@ def create_profile(request):
 
 
 @api_view(['GET'])
-def get_profiles(request, user_id): 
+def get_profiles(request): 
 
 	auth_header = request.headers.get('Authorization')
 	if not auth_header or not auth_header.startswith('Bearer '):
@@ -150,7 +150,7 @@ def get_profiles(request, user_id):
 	id_token = auth_header.split('Bearer ')[1]
 
 	try:
-		decoded_token = firebase_auth.verify_id_token(id_token)
+		decoded_token = auth.verify_id_token(id_token)
 		uid = decoded_token['uid']
 	except Exception:
 		return Response({'error': 'Invalid Firebase token'}, status=401)
@@ -163,5 +163,30 @@ def get_profiles(request, user_id):
 	serializer = ProfileSerializer(Profile.objects.filter(user=profile_owner), many=True)
 	return Response(serializer.data, status=201)
 
-	
 
+@api_view(['GET'])
+def get_child_assigned_activities(request, child_id):
+    """
+    Get all assigned activities for a child profile.
+    Endpoint: GET /modules/{child_id}
+    """
+	auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return Response({'error': 'Missing or invalid Authorization header'}, status=401)
+
+    id_token = auth_header.split('Bearer ')[1]
+
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+    except Exception:
+        return Response({'error': 'Invalid Firebase token'}, status=401)
+
+    try:
+        child_profile = Profile.objects.get(id=child_id, profile_type='child')
+    except Profile.DoesNotExist:
+        return Response({'error': 'Child profile not found'}, status=404)
+
+    assigned_activities = AssignedActivity.objects.filter(child_assigned_to=child_profile)
+    serializer = AssignedActivitySerializer(assigned_activities, many=True)
+    return Response(serializer.data)
