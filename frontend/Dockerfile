@@ -12,5 +12,6 @@ RUN npm install
 COPY . .
 
 EXPOSE 8000
+EXPOSE 8888
 
 CMD ["npx", "expo", "start", "--web", "--host", "lan", "--port", "8000"]
