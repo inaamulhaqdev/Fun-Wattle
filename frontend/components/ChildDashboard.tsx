@@ -286,7 +286,7 @@ const ChildDashboard = () => {
   };
 
   const handleStats = () => {
-    router.push('/(tabs)/child-stats');
+    router.push('/child-stats');
   };
 
   const completedTasks = tasks.filter(task => task.completed).length;

@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, Menu, Button, Provider as PaperProvider } from "react-native-paper";
+import { Text, Menu, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
 import Filters from "../../components/parent/Filters";
 
 export default function TherapistDashboard() {
@@ -12,7 +12,7 @@ export default function TherapistDashboard() {
   const [menuVisible, setMenuVisible] = React.useState(false);
 
    return (
-    <PaperProvider>
+    <PaperProvider theme={DefaultTheme}>
       <SafeAreaView style={styles.container}>
         <Text variant='titleLarge' style={styles.title}>Good evening, {therapist_user}!</Text>
 
