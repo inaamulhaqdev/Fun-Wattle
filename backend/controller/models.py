@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 ######################### USER MODELS #########################
 
@@ -15,7 +17,7 @@ class UserProfile(models.Model):
     name = models.CharField(max_length=100)
     profile_picture = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    pin_hash = models.CharField(max_length=256, optional=True)
+    pin_hash = models.CharField(max_length=256, blank=True, null=True)  # Optional for Therapist, required for Parent (enforced in views)
     class Meta:
         abstract = True
 
@@ -55,7 +57,12 @@ class AssignedActivity(models.Model):
     id = models.AutoField(primary_key=True)
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='assigned_activities')
     child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name='assigned_activities')
-    assigned_by = models.ForeignKey(UserProfile.id, on_delete=models.SET_NULL, null=True, related_name='assigned_activities')
+
+    # Generic foreign key fields
+    assigned_by_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True) # Stores which model (Parent or Therapist) assigned the activity
+    assigned_by_id = models.PositiveIntegerField(null=True) # Stores the ID of the specific Parent or Therapist who assigned the activity
+    assigned_by = GenericForeignKey('assigned_by_type', 'assigned_by_id') # Generic relation to either Parent or Therapist
+
     assigned_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField(null=True, blank=True)
     completed = models.BooleanField(default=False)

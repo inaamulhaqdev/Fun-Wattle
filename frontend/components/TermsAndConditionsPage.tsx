@@ -30,6 +30,17 @@ const TermsAndConditionsPage = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Save user information to postgres via backend API
+      await fetch('http://192.168.0.234:8000/api/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firebase_auth_uid: user.uid,
+          email: user.email,
+          user_type: userType,
+        })
+      });
+
       // Navigate to confirmation page once registration complete (can't go back to terms)
       router.replace('/confirmation');
 
