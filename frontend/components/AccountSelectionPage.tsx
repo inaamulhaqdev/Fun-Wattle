@@ -44,7 +44,10 @@ const AccountSelectionPage = () => {
     
     // Navigate based on account type
     if (account.type === 'child') {
-      router.replace('/child-dashboard' as any);
+      router.replace({
+        pathname: '/child-dashboard',
+        params: { childId: account.id },
+      } as any);
     } else if (account.type === 'parent') {
       router.replace('/(tabs)/parent-dashboard' as any);
     } else {
