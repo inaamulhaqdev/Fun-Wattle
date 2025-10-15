@@ -1,10 +1,21 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
 const PinEntryPage = () => {
   const [pin, setPin] = useState(['', '', '', '']);
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const response = await fetch()
+      }
+    // Fetch profile data using the id if needed
+    // Example: fetchProfileData(id);
+  }, [id]);
 
   const handlePinChange = (index: number, value: string) => {
     // Only allow single digits
@@ -54,7 +65,7 @@ const PinEntryPage = () => {
 
       <View style={styles.content}>
         <Text style={styles.title}>Enter your passcode</Text>
-        
+
         {/* PIN Input */}
         <View style={styles.pinContainer}>
           {pin.map((digit, index) => (
