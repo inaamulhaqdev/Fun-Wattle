@@ -140,3 +140,28 @@ def create_profile(request):
 		return Response(serializer.data, status=201)
 
 
+@api_view(['GET'])
+def get_user_profiles(request, user_id): 
+
+	auth_header = request.headers.get('Authorization')
+	if not auth_header or not auth_header.startswith('Bearer '):
+		return Response({'error': 'Missing or invalid Authorization header'}, status=401)
+
+	id_token = auth_header.split('Bearer ')[1]
+
+	try:
+		decoded_token = firebase_auth.verify_id_token(id_token)
+		uid = decoded_token['uid']
+	except Exception:
+		return Response({'error': 'Invalid Firebase token'}, status=401)
+	
+	try:
+		profile_owner = User.objects.get(firebase_auth_uid=uid)
+	except User.DoesNotExist:
+		return Response({'error': 'Profile owners not found'}, status=404)
+	
+	serializer = ProfileSerializer(Profile.objects.filter(user=profile_owner), many=True)
+	return Response(serializer.data, status=201)
+
+	
+
