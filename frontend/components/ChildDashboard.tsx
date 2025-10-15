@@ -6,6 +6,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
 
+const { id } = useLocalSearchParams();
+
 // Task data structure
 interface Task {
   id: string;
@@ -268,12 +270,21 @@ const ChildDashboard = () => {
     });
   }, [tasks]);
 
-  const handleTaskPress = (task: Task) => {
-    if (!task.completed) {
+  const handleTaskPress = async (task: Task) => {
+    if (task.completed) return;
+    try {
+      const res = await fetch(`http://192.168.0.234:8000/api/modules/${id}/`);
+      if (!res.ok) throw new Error('Failed to fetch activities');
+
+      const assignedActivities = await res.json();
+      const currentTask = assignedActivities.find((a: any) => a.activity.id === task.id);
+
       router.push({
         pathname: '/activity',
-        params: { taskId: task.id, taskName: task.name }
+        params: { taskId: task.id, taskName: task.name, activityData: JSON.stringify(currentTask) }
       });
+    } catch (err) {
+      console.error(err);
     }
   };
 
