@@ -32,6 +32,18 @@ const accounts: Account[] = [
   //   type: 'child',
   //   isLocked: false,
   // },
+  {
+    id: '2',
+    name: 'Alice 2.0',
+    type: 'parent',
+    isLocked: false,
+  },
+  {
+    id: '2',
+    name: 'Dwight',
+    type: 'therapist',
+    isLocked: false,
+  },
 ];
 
 const AccountSelectionPage = () => {
@@ -45,11 +57,13 @@ const AccountSelectionPage = () => {
     // Navigate based on account type
     if (account.type === 'child') {
       router.replace('/child-dashboard' as any);
-    } else if (account.type === 'parent') {
-      router.replace('/(tabs)/parent-dashboard' as any);
-    } else {
-      // Default fallback for therapist or other types
-      router.replace('/(tabs)/' as any);
+    } else if (account.type == "parent") {
+      router.replace({
+        pathname: './(parent-tabs)/parent-dashboard',
+        params: { variant: 'newParent' },
+      });
+    } else if (account.type == "therapist") {
+      router.replace('./(therapist-tabs)/therapist-dashboard');
     }
   };
 

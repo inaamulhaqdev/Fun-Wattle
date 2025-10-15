@@ -54,7 +54,7 @@ const ParentIntroductionPage = () => {
       setCurrentSlide(currentSlide + 1);
     } else if (currentSlide === tutorialSlides.length - 1) {
       // Navigate to parent dashboard
-      router.replace('/(tabs)/parent-dashboard' as any);
+      router.replace('/(parent-tabs)/parent-dashboard' as any);
     }
   };
 
@@ -66,7 +66,7 @@ const ParentIntroductionPage = () => {
 
   const handleSkip = () => {
     // Navigate to parent dashboard
-    router.replace('/(tabs)/parent-dashboard' as any);
+    router.replace('/(parent-tabs)/parent-dashboard' as any);
   };
 
   const currentSlideData = tutorialSlides[currentSlide];
