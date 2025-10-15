@@ -63,7 +63,6 @@ const AccountSelectionPage = () => {
         params: { variant: 'newParent' },
       });
     } else if (account.type == "therapist") {
-      // Default fallback for therapist or other types
       router.replace('./(therapist-tabs)/therapist-dashboard');
     }
   };
