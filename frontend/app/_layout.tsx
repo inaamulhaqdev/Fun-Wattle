@@ -41,6 +41,7 @@ export default function RootLayout() {
           <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
           <Stack.Screen name="child-dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="activity" options={{ headerShown: false }} />
+          <Stack.Screen name="opposites_exercise" options={{ headerShown: false }} />
           <Stack.Screen name="mascot-customization" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

@@ -15,12 +15,16 @@ interface Task {
 
 // Sample tasks -
 const sampleTasks: Task[] = [
-  { id: '1', name: 'Spring Season', completed: true },
-  { id: '2', name: 'Builders and Explorers', completed: false },
-  { id: '3', name: 'Pronoun Practice', completed: false },
-  { id: '4', name: 'Animal Sounds', completed: false },
-  { id: '5', name: 'Colors and Shapes', completed: false },
+  { id: '1', name: 'activity1', completed: true },
+  { id: '2', name: 'opposites_exercise', completed: false },
+  { id: '3', name: 'activity3', completed: false },
+  { id: '4', name: 'activity4', completed: false },
+  { id: '5', name: 'activity5', completed: false },
 ];
+
+
+
+
 
 // Completed Task Image with shape-aware shadow and blooming animation
 const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
@@ -246,14 +250,14 @@ const ChildDashboard = () => {
             }
             return currentTasks;
           });
-        }, 1000); // Wait for bloom animation to finish
+        }, 2000); // Wait for bloom animation to finish
         
         // Clear the blooming state after animation completes
         setTimeout(() => {
           console.log('Clearing blooming state');
           setBloomingTaskId(null);
-        }, 1000);
-      }, 0);
+        }, 2000);
+      }, 1000);
       
       return () => clearTimeout(completionTimeout);
     }
@@ -271,7 +275,8 @@ const ChildDashboard = () => {
   const handleTaskPress = (task: Task) => {
     if (!task.completed) {
       router.push({
-        pathname: '/activity',
+        // Task name is used as the route name
+        pathname: `/${task.name}` as typeof router.push extends (args: { pathname: infer T, params?: any }) => any ? T : string,
         params: { taskId: task.id, taskName: task.name }
       });
     }
