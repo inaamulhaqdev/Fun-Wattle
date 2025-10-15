@@ -52,15 +52,16 @@ const ProfileCreationPage = () => {
     setLoading(true);
 
     try {
-      const idToken = await user.getIdToken();
+      //const idToken = await user.getIdToken();
 
-      await fetch('http://localhost:8000/api/create/', {
+      await fetch('http://192.168.0.234:8000/api/profile/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
+          // 'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
+          user_id: user.uid,
           name: name.trim(),
           profile_picture: '', // Placeholder for now - sprint 2 thing
           pin_hash: bcrypt.hashSync(pin.join(''), 10), // Hash the PIN before sending
