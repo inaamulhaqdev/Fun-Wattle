@@ -82,22 +82,6 @@ export default function SplashScreen() {
             useNativeDriver: true,
           }),
         ]),
-        // Fade out and slide down logo (100ms delay)
-        Animated.sequence([
-          Animated.delay(50),
-          Animated.parallel([
-            Animated.timing(logoOpacity, {
-              toValue: 0,
-              duration: 500,
-              useNativeDriver: true,
-            }),
-            Animated.timing(logoTranslateY, {
-              toValue: -30,
-              duration: 500,
-              useNativeDriver: true,
-            }),
-          ]),
-        ]),
         // Fade out and slide down subtitle (150ms delay)
         Animated.sequence([
           Animated.delay(100),
@@ -128,31 +112,21 @@ export default function SplashScreen() {
       <View style={styles.content}>
         <Animated.View
           style={[
-            styles.titleContainer,
+            styles.logoImage,
             {
               opacity: titleOpacity,
               transform: [{ translateY: titleTranslateY }],
-            },
+            }
           ]}
         >
-          <ThemedText style={styles.title}>FunWattle</ThemedText>
-        </Animated.View>
-        
-        <Animated.View
-          style={[
-            styles.logoContainer,
-            {
-              opacity: logoOpacity,
-              transform: [{ translateY: logoTranslateY }],
-            },
-          ]}
-        >
-          <Image
-            source={require('@/assets/images/partial-react-logo.png')}
-            style={styles.logo}
+          <Image 
+            source={require('@/assets/images/funwattle-logo.avif')} 
+            style={styles.logoImage}
+            contentFit="contain"
           />
         </Animated.View>
-        
+
+        {/* Subtitle 
         <Animated.View
           style={[
             styles.subtitleContainer,
@@ -163,11 +137,12 @@ export default function SplashScreen() {
           ]}
         >
           <ThemedText style={styles.subtitle}>
-            Helping your child&apos;s{'\n'}
-            speech grow with fun{'\n'}
-            and consistent practice
+            Helping your child&apos;s speech{'\n'}
+            grow with fun and{'\n'} 
+            consistent practice
           </ThemedText>
         </Animated.View>
+        */}
       </View>
     </Pressable>
   );
@@ -176,7 +151,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#fd902b',
   },
   content: {
     flex: 1,
@@ -184,33 +159,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 40,
   },
-  titleContainer: {
-    alignItems: 'center',
+  logoImage: {
+    width: 350,
+    height: 100,
+    top: -30,
+    filter: 'brightness(0) invert(1)',
   },
-  title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 40,
-  },
-  logoContainer: {
-    marginVertical: 40,
-  },
-  logo: {
-    width: 200,
-    height: 280,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
+  /*
   subtitleContainer: {
     alignItems: 'center',
   },
   subtitle: {
     fontSize: 18,
     textAlign: 'center',
-    color: '#666',
+    color: '#ffe9c6ff',
+    opacity: 0.7,
     lineHeight: 26,
     marginTop: 40,
   },
+  */
 });
