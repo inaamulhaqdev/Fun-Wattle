@@ -4,42 +4,52 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 
 ######################### USER MODELS #########################
 
-class UserLogin(models.Model):
-    firebase_auth_uid = models.CharField(unique=True)
+class User(models.Model):
+    id = models.AutoField(primary_key=True)
+    firebase_auth_uid = models.CharField(max_length=255, unique=True)
     email = models.EmailField(unique=True)
+    USER_TYPES = [
+        ('parent', 'Parent'),
+        ('therapist', 'Therapist'),
+    ]
+    user_type = models.CharField(max_length=10, choices=USER_TYPES)
 
-    class Meta:
-        abstract = True # This means the model is an abstract base class, so no database table will be created for it.
+    def __str__(self):
+        return f"{self.email} ({self.user_type})"
 
-
-class UserProfile(models.Model):
+class Profile(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     profile_picture = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     pin_hash = models.CharField(max_length=256, blank=True, null=True)  # Optional for Therapist, required for Parent (enforced in views)
-    class Meta:
-        abstract = True
-
-
-class Parent(UserLogin, UserProfile):
-    def __str__(self):
-        return f"name={self.name}, email={self.email}"
-
-
-class Therapist(UserLogin, UserProfile):
-    def __str__(self):
-        return f"name={self.name}, email={self.email}"
-
-
-class Child(UserProfile):
-    parent = models.ManyToManyField(Parent, related_name='children')
-    therapist = models.ManyToManyField(Therapist, related_name='clients')
+    PROFILE_TYPES = [
+        ('parent', 'Parent'),
+        ('therapist', 'Therapist'),
+        ('child', 'Child'),
+    ]
+    profile_type = models.CharField(max_length=10, choices=PROFILE_TYPES)
 
     def __str__(self):
-        parents = ", ".join(p.name for p in self.parent.all())
-        therapists = ", ".join(t.name for t in self.therapist.all())
-        return f"name={self.name}, parents=[{parents}], therapists=[{therapists}]"
+        return f"{self.name} ({self.profile_type})"
+
+
+class UserChildProfile(models.Model):
+    id = models.AutoField(primary_key=True)
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,  # Temporarily PROTECT for safety. Will CASCADE if we want links to auto-delete when a user is removed.
+        related_name="linked_children"
+    )
+    
+    child_profile = models.ForeignKey(
+        Profile,
+        on_delete=models.PROTECT,  # Temporarily PROTECT for safety.
+        related_name="linked_users"
+    )
+    def __str__(self):
+        return f"User {self.user.email}, Child {self.child_profile.name}"
 
 ######################### LEARNING ACTIVITY MODELS #########################
 
