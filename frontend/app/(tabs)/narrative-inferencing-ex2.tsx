@@ -176,7 +176,13 @@ export const NarrativeInferencingEx2 = () => {
     <PaperProvider>
         <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.container}>
-            <Text variant="headlineSmall" style={styles.questionText}>
+            <View style={styles.header}>
+                <Text style={styles.headerText}>
+                    Question {currIndex + 1} of {questions.length}
+                </Text>
+            </View>
+
+            <Text style={styles.questionText}>
             {currQuestion.question}
             </Text>
 
@@ -187,9 +193,9 @@ export const NarrativeInferencingEx2 = () => {
 
             <View style={styles.selectedContainer}>
             {selectedSeq.length > 0 ? (
-                <Text variant="titleMedium" style={styles.selectedText}> Your answer: {selectedSeq.join(" ")}</Text>
+                <Text style={styles.selectedText}> 🧩 Your answer: {selectedSeq.join(" ")}</Text>
             ) : (
-                <Text variant="titleMedium" style={styles.selectedTextOpaque}> Tap the options below to complete the sentence</Text>
+                <Text style={styles.selectedTextOpaque}> Tap the options below to complete the sentence</Text>
             )}
             </View>
 
@@ -220,33 +226,52 @@ const styles = StyleSheet.create({
   },
   questionText: {
     textAlign: "center",
-    fontWeight: "bold",
+    fontWeight: "700",
     marginBottom: 16,
+    fontSize: 20, 
+    color: "4A3C20",
   },
   questionImage: {
     width: "100%",
     height: 200,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 24,
   },
   selectedContainer: {
-    marginBottom: 16, 
+    marginBottom: 20, 
     alignItems: "center",
   },
   selectedText: {
     fontWeight: "600", 
-    color: "#4A4A4A"
+    color: "#3E5C2C", 
+    fontSize: 18,
   }, 
   selectedTextOpaque: {
-    color: "#8A8A8A"
+    color: "#7A7A7A", 
+    fontStyle: "italic",
   }, 
   optionsContainer: {
     flex: 1,
     gap: 12,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 60,
   },
+  header: {
+    alignItems: "center", 
+    backgroundColor: "#ffd966", 
+    borderRadius: 20, 
+    paddingVertical: 8, 
+    marginBottom: 20, 
+    shadowColor: "#000", 
+    shadowOpacity: 0.1, 
+    shadowRadius: 3,
+  }, 
+  headerText: {
+    fontSize: 18, 
+    fontWeight: "700", 
+    color: "#4A3C20",
+  }, 
 });
 
 export default NarrativeInferencingEx2;
