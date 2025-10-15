@@ -1,18 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { updateProfile, getAuth } from 'firebase/auth';
-import { firestore } from '../config/firebase';
-import { updateDoc, doc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import bcrypt from 'react-native-bcrypt';
-import { useRegistration } from '@/context/RegistrationContext';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
   const [pin, setPin] = useState(['', '', '', '']);
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
   const [loading, setLoading] = useState(false);
-  const { userType } = useRegistration();
 
   const handlePinChange = (index: number, value: string) => {
     // Only allow single digits
@@ -53,7 +49,6 @@ const ProfileCreationPage = () => {
       return;
     }
 
-    const uid = user.uid;
     setLoading(true);
 
     try {
@@ -66,7 +61,6 @@ const ProfileCreationPage = () => {
           'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          profile_type: userType, // This isn't the best way, but since child profiles set profile_type to None, this works (we will change later)
           name: name.trim(),
           profile_picture: '', // Placeholder for now - sprint 2 thing
           pin_hash: bcrypt.hashSync(pin.join(''), 10), // Hash the PIN before sending
