@@ -54,7 +54,7 @@ const ProfileCreationPage = () => {
     try {
       const idToken = await user.getIdToken();
 
-      await fetch('http://localhost:8000/api/create_profile/', {
+      await fetch('http://localhost:8000/api/create/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
