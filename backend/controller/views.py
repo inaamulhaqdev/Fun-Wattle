@@ -72,25 +72,26 @@ def register_user(request):
 def create_profile(request):
 
 	# Get firebase ID token from Authorization header to identify the profile creator (the signed in user)
-	auth_header = request.headers.get('Authorization')
-	if not auth_header or not auth_header.startswith('Bearer '):
-		return Response({'error': 'Missing or invalid Authorization header'}, status=401)
+	# auth_header = request.headers.get('Authorization')
+	# if not auth_header or not auth_header.startswith('Bearer '):
+	# 	return Response({'error': 'Missing or invalid Authorization header'}, status=401)
 
-	id_token = auth_header.split('Bearer ')[1]
+	# id_token = auth_header.split('Bearer ')[1]
 
-	try:
-		decoded_token = auth.verify_id_token(id_token)
-		uid = decoded_token['uid']
-	except Exception:
-		return Response({'error': 'Invalid Firebase token'}, status=401)
+	# try:
+	# 	decoded_token = auth.verify_id_token(id_token)
+	# 	uid = decoded_token['uid']
+	# except Exception:
+	# 	return Response({'error': 'Invalid Firebase token'}, status=401)
 
 	# Now find the user linked to that firebase UID
-	try:
-		profile_creator = User.objects.get(firebase_auth_uid=uid)
-	except User.DoesNotExist:
-		return Response({'error': 'Profile creator not found'}, status=404)
+	# try:
+	# 	profile_creator = User.objects.get(firebase_auth_uid=uid)
+	# except User.DoesNotExist:
+	# 	return Response({'error': 'Profile creator not found'}, status=404)
 
 	# Now we extract the profile creation data and continue with API logic
+	profile_creator = User.objects.get(firebase_auth_uid=request.data.get('user_id'))
 	profile_type = profile_creator.user_type
 	name = request.data.get('name')
 	profile_picture = request.data.get('profile_picture')
@@ -141,27 +142,29 @@ def create_profile(request):
 
 
 @api_view(['GET'])
-def get_profiles(request, user_id): 
+def get_profiles(request):
 
-	auth_header = request.headers.get('Authorization')
-	if not auth_header or not auth_header.startswith('Bearer '):
-		return Response({'error': 'Missing or invalid Authorization header'}, status=401)
+	# auth_header = request.headers.get('Authorization')
+	# if not auth_header or not auth_header.startswith('Bearer '):
+	# 	return Response({'error': 'Missing or invalid Authorization header'}, status=401)
 
-	id_token = auth_header.split('Bearer ')[1]
+	# id_token = auth_header.split('Bearer ')[1]
 
-	try:
-		decoded_token = firebase_auth.verify_id_token(id_token)
-		uid = decoded_token['uid']
-	except Exception:
-		return Response({'error': 'Invalid Firebase token'}, status=401)
-	
-	try:
-		profile_owner = User.objects.get(firebase_auth_uid=uid)
-	except User.DoesNotExist:
-		return Response({'error': 'Profile owners not found'}, status=404)
-	
+	# try:
+	# 	decoded_token = auth.verify_id_token(id_token)
+	# 	uid = decoded_token['uid']
+	# except Exception:
+	# 	return Response({'error': 'Invalid Firebase token'}, status=401)
+
+	# try:
+	# 	profile_owner = User.objects.get(firebase_auth_uid=uid)
+	# except User.DoesNotExist:
+	# 	return Response({'error': 'Profile owners not found'}, status=404)
+
+	profile_owner = User.objects.get(id=request.data.get('user_id'))
+
 	serializer = ProfileSerializer(Profile.objects.filter(user=profile_owner), many=True)
-	return Response(serializer.data, status=201)
+	return Response(serializer.data, status=200)
 
-	
+
 

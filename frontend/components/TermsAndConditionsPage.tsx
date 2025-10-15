@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth, firestore } from '../config/firebase';
-import { setDoc, doc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebase';
 import { useRegistration } from '../context/RegistrationContext';
 
 const TermsAndConditionsPage = () => {
