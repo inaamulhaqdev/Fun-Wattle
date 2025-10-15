@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import User, Profile, User_ChildProfile, Activity, AssignedActivity
 from .serializers import UserSerializer, ProfileSerializer, User_ChildProfileSerializer, ActivitySerializer, AssignedActivitySerializer
-from data.firebase_sdk import firebase_auth
+from firebase_admin import auth
 from rest_framework.exceptions import MethodNotAllowed
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -79,7 +79,7 @@ def create_profile(request):
 	id_token = auth_header.split('Bearer ')[1]
 
 	try:
-		decoded_token = firebase_auth.verify_id_token(id_token)
+		decoded_token = auth.verify_id_token(id_token)
 		uid = decoded_token['uid']
 	except Exception:
 		return Response({'error': 'Invalid Firebase token'}, status=401)
