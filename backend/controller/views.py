@@ -91,7 +91,7 @@ def create_profile(request):
 		return Response({'error': 'Profile creator not found'}, status=404)
 
 	# Now we extract the profile creation data and continue with API logic
-	profile_type = request.data.get('profile_type')
+	profile_type = profile_creator.user_type
 	name = request.data.get('name')
 	profile_picture = request.data.get('profile_picture')
 	pin_hash = request.data.get('pin_hash')
