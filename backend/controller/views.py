@@ -2,26 +2,30 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Parent, Therapist, Child, Activity, AssignedActivity
-from .serializers import ParentSerializer, TherapistSerializer, ChildSerializer, ActivitySerializer, AssignedActivitySerializer
+from .models import User, Profile, User_ChildProfile, Activity, AssignedActivity
+from .serializers import UserSerializer, ProfileSerializer, User_ChildProfileSerializer, ActivitySerializer, AssignedActivitySerializer
 from rest_framework.exceptions import MethodNotAllowed
 
-
-class ParentViewSet(viewsets.ModelViewSet):
-	queryset = Parent.objects.all()
-	serializer_class = ParentSerializer
+class UserViewSet(viewsets.ModelViewSet):
+	queryset = User.objects.all()
+	serializer_class = UserSerializer
 
 	def destroy(self, request, *args, **kwargs):
 		raise MethodNotAllowed('DELETE')
 
-class TherapistViewSet(viewsets.ModelViewSet):
-	queryset = Therapist.objects.all()
-	serializer_class = TherapistSerializer
+class ProfileViewSet(viewsets.ModelViewSet):
+	queryset = Profile.objects.all()
+	serializer_class = ProfileSerializer
 
-class ChildViewSet(viewsets.ModelViewSet):
-	queryset = Child.objects.all()
-	serializer_class = ChildSerializer
+	def destroy(self, request, *args, **kwargs):
+		raise MethodNotAllowed('DELETE')
 
+class User_ChildProfileViewSet(viewsets.ModelViewSet):
+	queryset = User_ChildProfile.objects.all()
+	serializer_class = User_ChildProfileSerializer
+
+	def destroy(self, request, *args, **kwargs):
+		raise MethodNotAllowed('DELETE')
 
 class ActivityViewSet(viewsets.ModelViewSet):
 	queryset = Activity.objects.all()
@@ -39,8 +43,8 @@ def register_user(request):
 	Expects JSON with 'user_type', 'firebase_auth_uid', and 'email'.
 	"""
 
-	user_type = request.data.get('user_type')
 	firebase_auth_uid = request.data.get('firebase_auth_uid')
+	user_type = request.data.get('user_type')
 	email = request.data.get('email')
 
 	if not all([user_type, firebase_auth_uid, email]):
@@ -49,70 +53,75 @@ def register_user(request):
 	if user_type not in ['parent', 'therapist']:
 		return Response({'error': 'Invalid user type'}, status=400)
 
-	model = Parent if user_type == 'parent' else Therapist
-
-	if model.objects.filter(firebase_auth_uid=firebase_auth_uid).exists():
+	if User.objects.filter(firebase_auth_uid=firebase_auth_uid).exists():
 		return Response({'error': 'User already exists'}, status=400)
 
-	user = model.objects.create(
+	user = User.objects.create(
 		firebase_auth_uid=firebase_auth_uid,
+		user_type=user_type,
 		email=email
 	)
 
-	# Must serialize model before returning it
-	serializer = ParentSerializer(user) if user_type == 'parent' else TherapistSerializer(user)
+	# Must serialize model before returning it (return the created User)
+	serializer = UserSerializer(user)
 	return Response(serializer.data, status=201)
 
 
 @api_view(['POST'])
 def create_profile(request):
-    user_type = request.data.get('user_type')
 
-    if user_type in ['parent', 'therapist']:
-        firebase_auth_uid = request.data.get('firebase_auth_uid')
-        name = request.data.get('name')
-        profile_picture = request.data.get('profile_picture')
-        pin_hash = request.data.get('pin_hash')
-        model = Parent if user_type == 'parent' else Therapist
+	# TODO: Figure out how to get user uid from Firebase token??
 
-        try:
-            user = model.objects.get(firebase_auth_uid=firebase_auth_uid)
-        except model.DoesNotExist:
-            return Response({'error': 'User not found, cannot create parent / therapist profile without user login'}, status=404)
+	profile_creator = User.objects.get(firebase_auth_uid=uid)
+	if not profile_creator:
+		return Response({'error': 'Profile creator not found'}, status=404)
 
-        # Update fields they provided
-        if name:
-            user.name = name
-        if profile_picture:
-            user.profile_picture = profile_picture
-        if pin_hash:
-            user.pin_hash = pin_hash
-        user.save()
+	profile_type = request.data.get('profile_type')
+	name = request.data.get('name')
+	profile_picture = request.data.get('profile_picture')
+	pin_hash = request.data.get('pin_hash')
 
-        serializer = ParentSerializer(user) if user_type == 'parent' else TherapistSerializer(user)
-        return Response(serializer.data, status=200)
+	if not name or not profile_type:
+		return Response({'error': 'Missing required fields: name, profile_type'}, status=400)
 
-    elif user_type == 'child':
-        name = request.data.get('name')
-        parent_ids = request.data.get('parent_ids', [])
-        therapist_ids = request.data.get('therapist_ids', [])
+	if profile_type not in ['parent', 'therapist', 'child']:
+		return Response({'error': 'Invalid profile_type'}, status=400)
 
-        # Im assuming only at least 1 parent can create a child profile, so therapist_ids are optional
-        if not name or not parent_ids:
-            return Response({'error': 'Missing required fields for child, name and at least 1 parent_id are required'}, status=400)
+	if profile_type in ['parent', 'therapist']:
 
-        child = Child.objects.create(name=name)
+		if profile_creator.user_type != profile_type:
+			return Response({'error': 'User type does not match requested profile_type'}, status=403)
 
-		# This handles association tables in db (controller_child_parent and controller_child_therapist)
-        if parent_ids:
-            child.parent.set(parent_ids)
-        if therapist_ids:
-            child.therapist.set(therapist_ids)
+		if profile_type == 'parent' and not pin_hash:
+			return Response({'error': 'pin_hash is required for parent profile'}, status=400)
 
-        serializer = ChildSerializer(child)
-        return Response(serializer.data, status=201)
+		if Profile.objects.filter(user=profile_creator).exists():
+			return Response({'error': 'Profile already exists for this user'}, status=400)
 
-    else:
-        return Response({'error': 'Invalid user type'}, status=400)
+		profile = Profile.objects.create(
+			user=profile_creator,
+			profile_type=profile_type,
+			name=name,
+			profile_picture=profile_picture,
+			pin_hash=pin_hash,
+		)
+
+		serializer = ProfileSerializer(profile)
+		return Response(serializer.data, status=201)
+
+	# Create a child profile and link it to the profile creator via User_ChildProfile
+	if profile_type == 'child':
+		child_profile = Profile.objects.create(
+			user=None,
+			profile_type='child',
+			name=name,
+			profile_picture=profile_picture,
+			pin_hash=None,
+		)
+
+		User_ChildProfile.objects.create(user=profile_creator, child=child_profile)
+
+		serializer = ProfileSerializer(child_profile)
+		return Response(serializer.data, status=201)
 
 

@@ -1,23 +1,20 @@
 from rest_framework import serializers
-from .models import Parent, Therapist, Child, Activity, AssignedActivity
+from .models import User, Profile, User_ChildProfile, Activity, AssignedActivity
 
-class ParentSerializer(serializers.ModelSerializer):
-	class Meta:
-		model = Parent
-		fields = '__all__'
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
 
-class TherapistSerializer(serializers.ModelSerializer):
-	class Meta:
-		model = Therapist
-		fields = '__all__'
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = '__all__'
 
-class ChildSerializer(serializers.ModelSerializer):
-	parent = ParentSerializer(many=True, read_only=True)
-	therapist = TherapistSerializer(many=True, read_only=True)
-
-	class Meta:
-		model = Child
-		fields = '__all__'
+class User_ChildProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User_ChildProfile
+        fields = '__all__'
 
 class ActivitySerializer(serializers.ModelSerializer):
 	class Meta:
@@ -25,10 +22,6 @@ class ActivitySerializer(serializers.ModelSerializer):
 		fields = '__all__'
 
 class AssignedActivitySerializer(serializers.ModelSerializer):
-	activity = ActivitySerializer(read_only=True)
-	child = ChildSerializer(read_only=True)
-	assigned_by = TherapistSerializer(read_only=True)
-
 	class Meta:
 		model = AssignedActivity
 		fields = '__all__'
