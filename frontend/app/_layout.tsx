@@ -40,6 +40,7 @@ export default function RootLayout() {
           <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
           <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
           <Stack.Screen name="child-dashboard" options={{ headerShown: false }} />
+          <Stack.Screen name="child-stats" options={{ headerShown: false }} />
           <Stack.Screen name="activity" options={{ headerShown: false }} />
           <Stack.Screen name="mascot-customization" options={{ headerShown: false }} />
           <Stack.Screen name="(therapist-tabs)" options={{ headerShown: false }} />

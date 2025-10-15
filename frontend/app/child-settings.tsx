@@ -8,11 +8,11 @@ const SettingsPage = () => {
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   
   const handleHome = () => {
-    router.push('/(tabs)');
+    router.push('/child-dashboard');
   };
 
   const handleStats = () => {
-    router.push('/(tabs)/child-stats');
+    router.push('/child-stats');
   };
 
   const handleMascotCustomization = () => {
