@@ -141,7 +141,7 @@ def create_profile(request):
 
 
 @api_view(['GET'])
-def get_user_profiles(request, user_id): 
+def get_profiles(request, user_id): 
 
 	auth_header = request.headers.get('Authorization')
 	if not auth_header or not auth_header.startswith('Bearer '):
