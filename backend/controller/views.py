@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import User, Profile, User_ChildProfile, Activity, AssignedActivity
 from .serializers import UserSerializer, ProfileSerializer, User_ChildProfileSerializer, ActivitySerializer, AssignedActivitySerializer
+from data.firebase_sdk import firebase_auth
 from rest_framework.exceptions import MethodNotAllowed
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -70,12 +71,26 @@ def register_user(request):
 @api_view(['POST'])
 def create_profile(request):
 
-	# TODO: Figure out how to get user uid from Firebase token??
+	# Get firebase ID token from Authorization header to identify the profile creator (the signed in user)
+	auth_header = request.headers.get('Authorization')
+	if not auth_header or not auth_header.startswith('Bearer '):
+		return Response({'error': 'Missing or invalid Authorization header'}, status=401)
 
-	profile_creator = User.objects.get(firebase_auth_uid=uid)
-	if not profile_creator:
+	id_token = auth_header.split('Bearer ')[1]
+
+	try:
+		decoded_token = firebase_auth.verify_id_token(id_token)
+		uid = decoded_token['uid']
+	except Exception:
+		return Response({'error': 'Invalid Firebase token'}, status=401)
+
+	# Now find the user linked to that firebase UID
+	try:
+		profile_creator = User.objects.get(firebase_auth_uid=uid)
+	except User.DoesNotExist:
 		return Response({'error': 'Profile creator not found'}, status=404)
 
+	# Now we extract the profile creation data and continue with API logic
 	profile_type = request.data.get('profile_type')
 	name = request.data.get('name')
 	profile_picture = request.data.get('profile_picture')

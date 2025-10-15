@@ -5,12 +5,14 @@ import { updateProfile, getAuth } from 'firebase/auth';
 import { firestore } from '../config/firebase';
 import { updateDoc, doc } from 'firebase/firestore';
 import bcrypt from 'react-native-bcrypt';
+import { useRegistration } from '@/context/RegistrationContext';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
   const [pin, setPin] = useState(['', '', '', '']);
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
   const [loading, setLoading] = useState(false);
+  const { userType } = useRegistration();
 
   const handlePinChange = (index: number, value: string) => {
     // Only allow single digits
@@ -43,28 +45,41 @@ const ProfileCreationPage = () => {
       return;
     }
 
-    // Save profile info (name and pin) to backend here
     const auth = getAuth();
     const user = auth.currentUser;
-    if (user) {
-      const uid = user.uid;
 
-      setLoading(true);
+    if (!user) {
+      Alert.alert('Not signed in', 'Please log in again.');
+      return;
+    }
 
-      try {
+    const uid = user.uid;
+    setLoading(true);
 
-        // TODO: Save name and pin to postgres db
-        const pinHash = bcrypt.hashSync(pin.join(''), 10); // Hash the PIN before storing
+    try {
+      const idToken = await user.getIdToken();
 
-        // Navigate to profile confirmation
-        router.replace('/profile-confirmation');
+      await fetch('http://localhost:8000/api/create_profile/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          profile_type: userType, // This isn't the best way, but since child profiles set profile_type to None, this works (we will change later)
+          name: name.trim(),
+          profile_picture: '', // Placeholder for now - sprint 2 thing
+          pin_hash: bcrypt.hashSync(pin.join(''), 10), // Hash the PIN before sending
+        }),
+      });
 
-      } catch (error) {
-        console.error('Profile Creation error:', error);
-        Alert.alert('Profile Creation Error', 'Profile Creation failed. Please try again and contact support if the issue persists.');
-      } finally {
-        setLoading(false);
-      }
+      // Navigate to profile confirmation
+      router.replace('/profile-confirmation');
+    } catch (error) {
+      console.error('Profile Creation error:', error);
+      Alert.alert('Profile Creation Error', 'Profile Creation failed. Please try again and contact support if the issue persists.');
+    } finally {
+      setLoading(false);
     }
   };
 
