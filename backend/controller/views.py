@@ -170,6 +170,16 @@ def get_profiles(request, firebase_auth_id):
 	serializer = ProfileSerializer(profiles, many=True)
 	return Response(serializer.data, status=200)
 
+@api_view(['GET'])
+def get_activities(request):
+    """
+    Get all activities
+    Endpoint: GET /modules/
+    """
+
+    activities = Activity.objects.all()
+    serializer = ActivitySerializer(activities, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 def get_child_assigned_activities(request, child_id):
