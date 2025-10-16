@@ -7,4 +7,5 @@ urlpatterns = [
     path('profile/<str:firebase_auth_id>/', get_profiles, name='get_profiles'),
     path('modules/<int:child_id>/', get_child_assigned_activities, name='get_child_activities'),
     path('modules/', get_activities, name='get_activities'),
+    path('modules/<int:id>/', assign_activity_to_child, name='assign_activity_to_child'),
 ]

@@ -179,7 +179,7 @@ def get_activities(request):
 
     activities = Activity.objects.all()
     serializer = ActivitySerializer(activities, many=True)
-    return Response(serializer.data)
+    return Response(serializer.data, status=200)
 
 @api_view(['GET'])
 def get_child_assigned_activities(request, child_id):
@@ -196,3 +196,40 @@ def get_child_assigned_activities(request, child_id):
     assigned_activities = AssignedActivity.objects.filter(child_assigned_to=child_profile)
     serializer = AssignedActivitySerializer(assigned_activities, many=True)
     return Response(serializer.data)
+
+@api_view(['POST'])
+def assign_activity_to_child(request, id):
+    """
+    Assign an activity (by id) to a child profile.
+    Endpoint: POST /modules/{id}/
+    """
+
+    try:
+        activity = Activity.objects.get(id=id)
+    except Activity.DoesNotExist:
+        return Response({"error": "Activity not found"}, status=400)
+
+    child_id = request.data.get('child_id')
+    user_id = request.data.get('user_id')
+
+    if not child_id or not user_id:
+        return Response({"error": "child_id and user_id are required"}, status=400)
+
+	# Get child and user
+    try:
+        child = Profile.objects.get(id=child_id, profile_type='child')
+        user = User.objects.get(id=user_id)
+    except Profile.DoesNotExist:
+        return Response({"error": "Child profile not found"}, status=404)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+	# Set activity, child, and user
+    assigned_activity = AssignedActivity.objects.create(
+        activity=activity,
+        child_assigned_to=child,
+        user_assigned_by=user
+    )
+
+    serializer = AssignedActivitySerializer(assigned_activity)
+    return Response(serializer.data, status=201)
