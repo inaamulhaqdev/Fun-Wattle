@@ -10,7 +10,7 @@ class User(models.Model):
     email = models.EmailField(unique=True)
     user_type = models.CharField(max_length=10, choices=(('parent', 'Parent'), ('therapist', 'Therapist')))
     subscription_type = models.CharField(max_length=10, choices=(('free_trial', 'Free Trial'), ('paid', 'Paid')))
-    subscription_start = models.DateTimeField(null=True, blank=True)
+    subscription_start = models.DateTimeField(auto_now_add=True)
     subscription_end = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -32,6 +32,7 @@ const TermsAndConditionsPage = () => {
 
       if (error || !data.user) {
         Alert.alert('Registration Error', error?.message || 'Failed to create account');
+        setLoading(false);
         return;
       }
 
@@ -47,6 +48,9 @@ const TermsAndConditionsPage = () => {
           user_type: userType,
         })
       });
+
+      // Wait a bit for the session to be fully persisted
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Navigate to confirmation page once registration complete (can't go back to terms)
       router.replace('/confirmation');

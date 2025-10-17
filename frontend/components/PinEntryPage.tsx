@@ -8,14 +8,14 @@ const PinEntryPage = () => {
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const response = await fetch()
-      }
-    // Fetch profile data using the id if needed
-    // Example: fetchProfileData(id);
-  }, [id]);
+  // useEffect(() => {
+  //   const fetchProfileData = async () => {
+  //     try {
+  //       const response = await fetch()
+  //     }
+  //   // Fetch profile data using the id if needed
+  //   // Example: fetchProfileData(id);
+  // }, [id]);
 
   const handlePinChange = (index: number, value: string) => {
     // Only allow single digits

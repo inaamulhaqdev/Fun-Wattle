@@ -41,16 +41,17 @@ const ProfileCreationPage = () => {
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      Alert.alert('Not signed in', 'Please log in again.');
+    const { data: { session }} = await supabase.auth.getSession();
+    if (!session) {
+      Alert.alert('No active session', 'Please log in again.');
       return;
     }
+
+    const user = session.user;
 
     setLoading(true);
 
     try {
-
       await fetch('http://192.168.0.234:8000/api/profile/', {
         method: 'POST',
         headers: {

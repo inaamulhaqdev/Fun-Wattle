@@ -40,24 +40,24 @@ class User_ProfileViewSet(viewsets.ModelViewSet):
 def register_user(request):
 	"""
 	Register a new user (Parent or Therapist).
-	Expects JSON with 'user_type', 'firebase_auth_uid', and 'email'.
+	Expects JSON with 'user_type', 'id', and 'email'.
 	"""
 
-	firebase_auth_uid = request.data.get('firebase_auth_uid')
+	id = request.data.get('id')
 	user_type = request.data.get('user_type')
 	email = request.data.get('email')
 
-	if not all([user_type, firebase_auth_uid, email]):
+	if not all([user_type, id, email]):
 		return Response({'error': 'Missing required fields'}, status=400)
 
 	if user_type not in ['parent', 'therapist']:
 		return Response({'error': 'Invalid user type'}, status=400)
 
-	if User.objects.filter(firebase_auth_uid=firebase_auth_uid).exists():
+	if User.objects.filter(id=id).exists():
 		return Response({'error': 'User already exists'}, status=400)
 
 	user = User.objects.create(
-		firebase_auth_uid=firebase_auth_uid,
+		id=id,
 		user_type=user_type,
 		email=email
 	)
@@ -68,8 +68,37 @@ def register_user(request):
 
 
 @api_view(['POST'])
+def subscribe_user(request):
+	id = request.data.get('id')
+	subscription_type = request.data.get('subscription_type')
+	subscription_end = request.data.get('subscription_end')
+
+	if not id or not subscription_type:
+		return Response({'error': 'Missing required fields: id, subscription_type'}, status=400)
+
+	if subscription_type == 'free_trial' and not subscription_end:
+		return Response({'error': 'subscription_end is required for free_trial'}, status=400)
+
+	try:
+		user = User.objects.get(id=id)
+	except User.DoesNotExist:
+		return Response({'error': 'User not found'}, status=404)
+
+	user.subscription_type = subscription_type
+	user.subscription_end = subscription_end
+
+	user.save()
+
+	serializer = UserSerializer(user)
+	return Response(serializer.data, status=200)
+
+
+@api_view(['POST'])
 def create_profile(request):
-	profile_creator = User.objects.get(firebase_auth_uid=request.data.get('user_id'))
+	profile_creator = User.objects.get(id=request.data.get('id'))
+	if not profile_creator:
+		return Response({'error': 'User not found'}, status=404)
+
 	profile_type = profile_creator.user_type
 	name = request.data.get('name')
 	profile_picture = request.data.get('profile_picture')
@@ -92,36 +121,25 @@ def create_profile(request):
 		if Profile.objects.filter(user=profile_creator).exists():
 			return Response({'error': 'Profile already exists for this user'}, status=400)
 
-		profile = Profile.objects.create(
-			user=profile_creator,
-			profile_type=profile_type,
-			name=name,
-			profile_picture=profile_picture,
-			pin_hash=pin_hash,
-		)
+	# Create the profile
+	profile = Profile.objects.create(
+		profile_type=profile_type,
+		name=name,
+		profile_picture=profile_picture,
+		pin_hash=pin_hash,
+	)
 
-		serializer = ProfileSerializer(profile)
-		return Response(serializer.data, status=201)
-
-	# Create a child profile and link it to the profile creator via User_ChildProfile
+ 	# ONLY if child profile, link it to the profile creator via User_Profile
 	if profile_type == 'child':
-		child_profile = Profile.objects.create(
-			user=None,
-			profile_type='child',
-			name=name,
-			profile_picture=profile_picture,
-			pin_hash=None,
-		)
+		User_Profile.objects.create(user=profile_creator, child=profile)
 
-		User_ChildProfile.objects.create(user=profile_creator, child=child_profile)
-
-		serializer = ProfileSerializer(child_profile)
-		return Response(serializer.data, status=201)
+	serializer = ProfileSerializer(profile)
+	return Response(serializer.data, status=201)
 
 
 @api_view(['GET'])
-def get_profiles(request, firebase_auth_id):
-	user = User.objects.get(firebase_auth_uid=firebase_auth_id)
+def get_profiles(request, id):
+	user = User.objects.get(id=id)
 
 	main_profile = Profile.objects.filter(user=user)
 	child_profiles = Profile.objects.filter(linked_users__user=user) # Find all child profiles linked to this user
