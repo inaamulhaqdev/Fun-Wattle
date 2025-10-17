@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { getAuth } from 'firebase/auth';
+import { supabase } from '../config/supabase';
 import bcrypt from 'react-native-bcrypt';
 
 const ProfileCreationPage = () => {
@@ -41,9 +41,7 @@ const ProfileCreationPage = () => {
       return;
     }
 
-    const auth = getAuth();
-    const user = auth.currentUser;
-
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       Alert.alert('Not signed in', 'Please log in again.');
       return;
@@ -52,16 +50,14 @@ const ProfileCreationPage = () => {
     setLoading(true);
 
     try {
-      //const idToken = await user.getIdToken();
 
       await fetch('http://192.168.0.234:8000/api/profile/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          user_id: user.uid,
+          user_id: user.id,
           name: name.trim(),
           profile_picture: '', // Placeholder for now - sprint 2 thing
           pin_hash: bcrypt.hashSync(pin.join(''), 10), // Hash the PIN before sending

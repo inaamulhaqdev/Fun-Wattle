@@ -2,9 +2,8 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import User, Profile, User_ChildProfile, Activity, AssignedActivity
-from .serializers import UserSerializer, ProfileSerializer, User_ChildProfileSerializer, ActivitySerializer, AssignedActivitySerializer
-from firebase_admin import auth
+from .models import User, Profile, User_Profile #, Activity, AssignedActivity
+from .serializers import UserSerializer, ProfileSerializer, User_ProfileSerializer #, ActivitySerializer, AssignedActivitySerializer
 from rest_framework.exceptions import MethodNotAllowed
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -21,20 +20,20 @@ class ProfileViewSet(viewsets.ModelViewSet):
 	def destroy(self, request, *args, **kwargs):
 		raise MethodNotAllowed('DELETE')
 
-class User_ChildProfileViewSet(viewsets.ModelViewSet):
-	queryset = User_ChildProfile.objects.all()
-	serializer_class = User_ChildProfileSerializer
+class User_ProfileViewSet(viewsets.ModelViewSet):
+	queryset = User_Profile.objects.all()
+	serializer_class = User_ProfileSerializer
 
 	def destroy(self, request, *args, **kwargs):
 		raise MethodNotAllowed('DELETE')
 
-class ActivityViewSet(viewsets.ModelViewSet):
-	queryset = Activity.objects.all()
-	serializer_class = ActivitySerializer
+# class ActivityViewSet(viewsets.ModelViewSet):
+# 	queryset = Activity.objects.all()
+# 	serializer_class = ActivitySerializer
 
-class AssignedActivityViewSet(viewsets.ModelViewSet):
-	queryset = AssignedActivity.objects.all()
-	serializer_class = AssignedActivitySerializer
+# class AssignedActivityViewSet(viewsets.ModelViewSet):
+# 	queryset = AssignedActivity.objects.all()
+# 	serializer_class = AssignedActivitySerializer
 
 
 @api_view(['POST'])
@@ -70,27 +69,6 @@ def register_user(request):
 
 @api_view(['POST'])
 def create_profile(request):
-
-	# Get firebase ID token from Authorization header to identify the profile creator (the signed in user)
-	# auth_header = request.headers.get('Authorization')
-	# if not auth_header or not auth_header.startswith('Bearer '):
-	# 	return Response({'error': 'Missing or invalid Authorization header'}, status=401)
-
-	# id_token = auth_header.split('Bearer ')[1]
-
-	# try:
-	# 	decoded_token = auth.verify_id_token(id_token)
-	# 	uid = decoded_token['uid']
-	# except Exception:
-	# 	return Response({'error': 'Invalid Firebase token'}, status=401)
-
-	# Now find the user linked to that firebase UID
-	# try:
-	# 	profile_creator = User.objects.get(firebase_auth_uid=uid)
-	# except User.DoesNotExist:
-	# 	return Response({'error': 'Profile creator not found'}, status=404)
-
-	# Now we extract the profile creation data and continue with API logic
 	profile_creator = User.objects.get(firebase_auth_uid=request.data.get('user_id'))
 	profile_type = profile_creator.user_type
 	name = request.data.get('name')
@@ -143,24 +121,6 @@ def create_profile(request):
 
 @api_view(['GET'])
 def get_profiles(request, firebase_auth_id):
-
-	# auth_header = request.headers.get('Authorization')
-	# if not auth_header or not auth_header.startswith('Bearer '):
-	# 	return Response({'error': 'Missing or invalid Authorization header'}, status=401)
-
-	# id_token = auth_header.split('Bearer ')[1]
-
-	# try:
-	# 	decoded_token = auth.verify_id_token(id_token)
-	# 	uid = decoded_token['uid']
-	# except Exception:
-	# 	return Response({'error': 'Invalid Firebase token'}, status=401)
-
-	# try:
-	# 	profile_owner = User.objects.get(firebase_auth_uid=uid)
-	# except User.DoesNotExist:
-	# 	return Response({'error': 'Profile owners not found'}, status=404)
-
 	user = User.objects.get(firebase_auth_uid=firebase_auth_id)
 
 	main_profile = Profile.objects.filter(user=user)
@@ -170,66 +130,66 @@ def get_profiles(request, firebase_auth_id):
 	serializer = ProfileSerializer(profiles, many=True)
 	return Response(serializer.data, status=200)
 
-@api_view(['GET'])
-def get_activities(request):
-    """
-    Get all activities
-    Endpoint: GET /modules/
-    """
+# @api_view(['GET'])
+# def get_activities(request):
+#     """
+#     Get all activities
+#     Endpoint: GET /modules/
+#     """
 
-    activities = Activity.objects.all()
-    serializer = ActivitySerializer(activities, many=True)
-    return Response(serializer.data, status=200)
+#     activities = Activity.objects.all()
+#     serializer = ActivitySerializer(activities, many=True)
+#     return Response(serializer.data, status=200)
 
-@api_view(['GET'])
-def get_child_assigned_activities(request, child_id):
-    """
-    Get all assigned activities for a child profile.
-    Endpoint: GET /modules/{child_id}
-    """
+# @api_view(['GET'])
+# def get_child_assigned_activities(request, child_id):
+#     """
+#     Get all assigned activities for a child profile.
+#     Endpoint: GET /modules/{child_id}
+#     """
 
-    try:
-        child_profile = Profile.objects.get(id=child_id, profile_type='child')
-    except Profile.DoesNotExist:
-        return Response({'error': 'Child profile not found'}, status=404)
+#     try:
+#         child_profile = Profile.objects.get(id=child_id, profile_type='child')
+#     except Profile.DoesNotExist:
+#         return Response({'error': 'Child profile not found'}, status=404)
 
-    assigned_activities = AssignedActivity.objects.filter(child_assigned_to=child_profile)
-    serializer = AssignedActivitySerializer(assigned_activities, many=True)
-    return Response(serializer.data)
+#     assigned_activities = AssignedActivity.objects.filter(child_assigned_to=child_profile)
+#     serializer = AssignedActivitySerializer(assigned_activities, many=True)
+#     return Response(serializer.data)
 
-@api_view(['POST'])
-def assign_activity_to_child(request, id):
-    """
-    Assign an activity (by id) to a child profile.
-    Endpoint: POST /modules/{id}/
-    """
+# @api_view(['POST'])
+# def assign_activity_to_child(request, id):
+#     """
+#     Assign an activity (by id) to a child profile.
+#     Endpoint: POST /modules/{id}/
+#     """
 
-    try:
-        activity = Activity.objects.get(id=id)
-    except Activity.DoesNotExist:
-        return Response({"error": "Activity not found"}, status=400)
+#     try:
+#         activity = Activity.objects.get(id=id)
+#     except Activity.DoesNotExist:
+#         return Response({"error": "Activity not found"}, status=400)
 
-    child_id = request.data.get('child_id')
-    user_id = request.data.get('user_id')
+#     child_id = request.data.get('child_id')
+#     user_id = request.data.get('user_id')
 
-    if not child_id or not user_id:
-        return Response({"error": "child_id and user_id are required"}, status=400)
+#     if not child_id or not user_id:
+#         return Response({"error": "child_id and user_id are required"}, status=400)
 
-	# Get child and user
-    try:
-        child = Profile.objects.get(id=child_id, profile_type='child')
-        user = User.objects.get(id=user_id)
-    except Profile.DoesNotExist:
-        return Response({"error": "Child profile not found"}, status=404)
-    except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=404)
+# 	# Get child and user
+#     try:
+#         child = Profile.objects.get(id=child_id, profile_type='child')
+#         user = User.objects.get(id=user_id)
+#     except Profile.DoesNotExist:
+#         return Response({"error": "Child profile not found"}, status=404)
+#     except User.DoesNotExist:
+#         return Response({"error": "User not found"}, status=404)
 
-	# Set activity, child, and user
-    assigned_activity = AssignedActivity.objects.create(
-        activity=activity,
-        child_assigned_to=child,
-        user_assigned_by=user
-    )
+# 	# Set activity, child, and user
+#     assigned_activity = AssignedActivity.objects.create(
+#         activity=activity,
+#         child_assigned_to=child,
+#         user_assigned_by=user
+#     )
 
-    serializer = AssignedActivitySerializer(assigned_activity)
-    return Response(serializer.data, status=201)
+#     serializer = AssignedActivitySerializer(assigned_activity)
+#     return Response(serializer.data, status=201)

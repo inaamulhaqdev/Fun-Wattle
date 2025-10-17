@@ -1,8 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { getAuth } from 'firebase/auth';
-import { firestore } from '../config/firebase';
-import { updateDoc, doc } from 'firebase/firestore';
+import { supabase } from '../config/supabase';
 import { useRegistration } from '../context/RegistrationContext';
 
 const MembershipPage = () => {
@@ -10,13 +8,17 @@ const MembershipPage = () => {
   const { userType } = useRegistration();
 
   const handleSubscription = async (type: 'free_trial' | 'paid') => {
-    const auth = getAuth();
-    const user = auth.currentUser;
+    const { user, error } = await supabase.auth.getUser();
+    if (error) {
+      Alert.alert('Error', 'Failed to retrieve user information');
+      return;
+    }
+
     if (user) {
       if (type === 'free_trial') {
-        // TODO: Save membership type (free), start and end date to postgres db
+        // TODO: Save membership type (free), start (now) and end date (7 days from now)
       } else if (type === 'paid') {
-        // TODO: Save membership type (paid) and start date to postgres db
+        // TODO: Save membership type (paid) and start date (now)
       }
 
       router.push({

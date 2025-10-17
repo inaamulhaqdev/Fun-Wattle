@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { getAuth } from 'firebase/auth';
+import { supabase } from '../config/supabase';
 
 // Account data structure
 interface Account {
@@ -18,15 +18,15 @@ const AccountSelectionPage = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const auth = getAuth();
-        const user = auth.currentUser;
+
+        const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
           Alert.alert('Not signed in', 'Please log in again.');
           return;
         }
 
-        const response = await fetch(`http://192.168.0.234:8000/api/profile/${user.uid}/`, {
+        const response = await fetch(`http://192.168.0.234:8000/api/profile/${user.id}/`, {
           method: 'GET',
         });
         if (!response.ok) {

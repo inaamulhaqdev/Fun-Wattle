@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { supabase } from '../config/supabase';
 import { useRegistration } from '../context/RegistrationContext';
 
 const TermsAndConditionsPage = () => {
@@ -25,16 +24,25 @@ const TermsAndConditionsPage = () => {
 
     // Create new user account
     try {
-      // Save user authentication to Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // Save user authentication to Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error || !data.user) {
+        Alert.alert('Registration Error', error?.message || 'Failed to create account');
+        return;
+      }
+
+      const user = data.user;
 
       // Save user information to postgres via backend API
       await fetch('http://192.168.0.234:8000/api/create/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          firebase_auth_uid: user.uid,
+          id: user.id,
           email: user.email,
           user_type: userType,
         })
