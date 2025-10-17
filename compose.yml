@@ -13,8 +13,11 @@ services:
    volumes:
      - ./backend:/app
    working_dir: /app
-   dns:
-     - 8.8.8.8
-     - 1.1.1.1
-   environment:
-      - GODEBUG=ipv6=off
+
+# IPv6 is REQUIRED for Supabase DB connection (their DB host is IPv6-only)
+# Please check that:
+# 1.) Docker is running with IPv6 enabled in network settings
+# 2.) Windows Network Adapter → Properties → "Internet Protocol Version 6 (TCP/IPv6)" is checked
+networks:
+  default:
+    enable_ipv6: true
