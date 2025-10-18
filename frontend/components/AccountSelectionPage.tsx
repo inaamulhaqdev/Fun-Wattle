@@ -60,7 +60,7 @@ const AccountSelectionPage = () => {
       router.push({ pathname: '/pin-entry', params: { profile_id: account.id } });
       return;
     } else if (account.type === 'therapist') {
-      router.replace({ pathname: '/(tabs)/therapist-dashboard', params: { profile_id: account.id } });
+      router.replace({ pathname: '/therapist-dashboard', params: { profile_id: account.id } });
       return;
     } else if (account.type === 'parent') {
       // Parent accounts must have PINs

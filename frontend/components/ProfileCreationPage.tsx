@@ -53,7 +53,7 @@ const ProfileCreationPage = () => {
     setLoading(true);
 
     try {
-      await fetch('http://192.168.0.234:8000/api/profile/', {
+      const response = await fetch('http://192.168.0.234:8000/api/profile/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,6 +66,10 @@ const ProfileCreationPage = () => {
           pin_hash: createdPin, // TODO: Before production, hash this on the backend
         }),
       });
+
+      if (!response.ok) {
+        Alert.alert('Profile Creation Error. Please try again and contact support if the issue persists.');
+      }
 
       // Navigate to profile confirmation
       router.replace('/profile-confirmation');
