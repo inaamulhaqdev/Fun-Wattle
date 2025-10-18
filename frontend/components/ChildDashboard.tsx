@@ -17,21 +17,25 @@ interface Task {
 
 // Sample tasks -
 const sampleTasks: Task[] = [
-  { id: '1', name: 'Spring Season', completed: true },
-  { id: '2', name: 'Builders and Explorers', completed: false },
-  { id: '3', name: 'Pronoun Practice', completed: false },
-  { id: '4', name: 'Animal Sounds', completed: false },
-  { id: '5', name: 'Colors and Shapes', completed: false },
+  { id: '1', name: 'activity1', completed: true },
+  { id: '2', name: 'opposites_exercise', completed: false },
+  { id: '3', name: 'activity3', completed: false },
+  { id: '4', name: 'activity4', completed: false },
+  { id: '5', name: 'activity5', completed: false },
 ];
+
+
+
+
 
 // Completed Task Image with shape-aware shadow and blooming animation
 const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
   // Use fixed container size for consistent positioning
   const containerSize = 200;
-  
+
   // Blooming animation for newly completed tasks
   const scaleAnim = React.useRef(new Animated.Value(isNewlyCompleted ? 0 : 1)).current;
-  
+
   React.useEffect(() => {
     if (isNewlyCompleted) {
       // Start blooming animation from scale 0 to 1 with bounce effect
@@ -50,16 +54,16 @@ const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
       ]).start();
     }
   }, [isNewlyCompleted, scaleAnim]);
-  
+
   return (
-    <View style={{ 
-      width: containerSize, 
-      height: containerSize, 
-      alignItems: 'center', 
+    <View style={{
+      width: containerSize,
+      height: containerSize,
+      alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden', // Prevent animation from affecting layout
     }}>
-      <Animated.View style={{ 
+      <Animated.View style={{
         transform: [{ scale: scaleAnim }],
         position: 'absolute', // Absolutely position the animated content
         alignItems: 'center',
@@ -70,8 +74,8 @@ const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
         {/* Shadow layer - black silhouette offset behind */}
         <Image
           source={require('@/assets/images/completed_task.png')}
-          style={{ 
-            width: size * 1.3, 
+          style={{
+            width: size * 1.3,
             height: size * 1.3,
             position: 'absolute',
             top: -26,  // Shadow offset down
@@ -86,8 +90,8 @@ const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
         {/* Main flower on top */}
         <Image
           source={require('@/assets/images/completed_task.png')}
-          style={{ 
-            width: size * 1.3, 
+          style={{
+            width: size * 1.3,
             height: size * 1.3,
             position: 'absolute',
             top: -30,
@@ -105,32 +109,32 @@ const IncompleteTaskSVG = ({ size = 200, isAfterNext = false }) => {
   const containerSize = 200;
   const circleSize = size * 1.8;
   const seedSize = size * 2;
-  
+
   return (
     <View style={{ width: containerSize, height: containerSize, alignItems: 'center', justifyContent: 'center' }}>
       {/* Green Circle underneath */}
       <View style={[
         styles.incompleteTaskCircle,
-        { 
-          width: circleSize, 
-          height: circleSize, 
+        {
+          width: circleSize,
+          height: circleSize,
           borderRadius: circleSize / 2,
         }
       ]}>
         <View style={[
           styles.incompleteTaskInnerCircle,
-          { 
+          {
             borderRadius: circleSize / 2,
             backgroundColor: isAfterNext ? '#B0B0B0' : 'rgba(113, 224, 49, 1.0)'
           }
         ]} />
       </View>
-      
+
       {/* Seed image on top */}
       <Image
         source={require('@/assets/images/seed.png')}
-        style={{ 
-          width: seedSize, 
+        style={{
+          width: seedSize,
           height: seedSize,
           position: 'absolute',
         }}
@@ -186,38 +190,38 @@ const ChildDashboard = () => {
     console.log('=== COMPLETION EFFECT TRIGGERED ===');
     console.log('completedTaskId received:', completedTaskId);
     console.log('Current tasks state:', tasks);
-    
+
     if (completedTaskId && typeof completedTaskId === 'string') {
       console.log('Processing completion for task ID:', completedTaskId);
-      
+
       // Check if task is already completed to avoid duplicate processing
       const currentTask = tasks.find(task => task.id === completedTaskId);
       if (currentTask?.completed) {
         console.log('Task already completed, skipping...');
         return;
       }
-      
+
       // Find the completed task index for scrolling
       const completedTaskIndex = tasks.findIndex(task => task.id === completedTaskId);
       console.log('Task index found:', completedTaskIndex);
-      
+
       // Scroll to center the blooming flower
       if (scrollViewRef.current && completedTaskIndex !== -1) {
         const taskPosition = completedTaskIndex * 200;
         const centerOffset = taskPosition - (screenHeight / 2) + 100;
         console.log('Scrolling to position:', centerOffset);
-        scrollViewRef.current.scrollTo({ 
-          y: Math.max(0, centerOffset), 
-          animated: true 
+        scrollViewRef.current.scrollTo({
+          y: Math.max(0, centerOffset),
+          animated: true
         });
       }
       setBloomingTaskId(completedTaskId);
-      
+
       // Update the task to completed and trigger blooming animation
       const completionTimeout = setTimeout(() => {
         console.log('=== EXECUTING TASK COMPLETION ===');
         console.log('Updating tasks, marking task', completedTaskId, 'as completed');
-        
+
         setTasks(prevTasks => {
           console.log('Previous tasks:', prevTasks);
           const updatedTasks = prevTasks.map(task => {
@@ -230,33 +234,33 @@ const ChildDashboard = () => {
           console.log('Updated tasks after completion:', updatedTasks);
           return updatedTasks;
         });
-        
+
         // After blooming animation, scroll to next incomplete task
         setTimeout(() => {
           setTasks(currentTasks => {
             const nextIncompleteIndex = currentTasks.findIndex(t => !t.completed);
             console.log('Next incomplete task index:', nextIncompleteIndex);
-            
+
             if (scrollViewRef.current && nextIncompleteIndex !== -1) {
               const nextTaskPosition = nextIncompleteIndex * 200;
               const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
               console.log('Scrolling to next task at position:', nextCenterOffset);
-              scrollViewRef.current.scrollTo({ 
-                y: Math.max(0, nextCenterOffset), 
-                animated: true 
+              scrollViewRef.current.scrollTo({
+                y: Math.max(0, nextCenterOffset),
+                animated: true
               });
             }
             return currentTasks;
           });
-        }, 1000); // Wait for bloom animation to finish
-        
+        }, 2000); // Wait for bloom animation to finish
+
         // Clear the blooming state after animation completes
         setTimeout(() => {
           console.log('Clearing blooming state');
           setBloomingTaskId(null);
-        }, 1000);
-      }, 0);
-      
+        }, 2000);
+      }, 1000);
+
       return () => clearTimeout(completionTimeout);
     }
   }, [completedTaskId, tasks, screenHeight]);
@@ -280,8 +284,9 @@ const ChildDashboard = () => {
       const currentTask = assignedActivities.find((a: any) => a.activity.id === task.id);
 
       router.push({
-        pathname: '/activity',
-        params: { taskId: task.id, taskName: task.name, activityData: JSON.stringify(currentTask) }
+        // Task name is used as the route name
+        pathname: `/${task.name}` as typeof router.push extends (args: { pathname: infer T, params?: any }) => any ? T : string,
+        params: { taskId: task.id, taskName: task.name }
       });
     } catch (err) {
       console.error(err);
@@ -297,7 +302,7 @@ const ChildDashboard = () => {
   };
 
   const handleStats = () => {
-    router.push('/(tabs)/child-stats');
+    router.push('/child-stats');
   };
 
   const completedTasks = tasks.filter(task => task.completed).length;
@@ -307,12 +312,12 @@ const ChildDashboard = () => {
   return (
     <View style={styles.container}>
       {/* Background Image */}
-      <Image 
-        source={require('@/assets/images/child-dashboard-background.jpg')} 
+      <Image
+        source={require('@/assets/images/child-dashboard-background.jpg')}
         style={styles.backgroundImage}
         resizeMode="cover"
       />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -332,14 +337,14 @@ const ChildDashboard = () => {
       </View>
 
       {/* Main Content - Vertical ScrollView with Wave */}
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         style={styles.verticalScroll}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Green Wave Path */}
-        <Svg 
+        <Svg
           style={styles.sineWavePath}
           width={screenWidth}
           height={tasks.length * 200 + 200}
@@ -349,22 +354,22 @@ const ChildDashboard = () => {
               const amplitude = screenWidth * 0.25;
               const frequency = 1.5;
               const centerX = screenWidth * 0.5;
-              
+
               let pathData = '';
               const steps = tasks.length * 10;
-              
+
               for (let i = 0; i <= steps; i++) {
                 const taskIndex = i / 10;
                 const y = taskIndex * 200 + 100;
                 const x = centerX + Math.sin(taskIndex * frequency) * amplitude;
-                
+
                 if (i === 0) {
                   pathData += `M ${x} ${y}`;
                 } else {
                   pathData += ` L ${x} ${y}`;
                 }
               }
-              
+
               return pathData;
             })()}
             stroke="#4CAF50"
@@ -374,31 +379,31 @@ const ChildDashboard = () => {
             strokeLinejoin="round"
           />
         </Svg>
-        
+
 {tasks.map((task, index) => {
           // Calculate position of tasks on sine wave
           const amplitude = screenWidth * 0.25;
           const frequency = 1.5;
           const centerX = screenWidth * 0.5;
           const sineX = centerX + Math.sin(index * frequency) * amplitude;
-          
+
           // Find the next incomplete task
           const nextIncompleteIndex = tasks.findIndex(t => !t.completed);
           const isNextTask = index === nextIncompleteIndex;
           const isAfterNextTask = !task.completed && index > nextIncompleteIndex;
-          
+
           // Debug logging for task progression
           if (index === 0) {
             console.log('Next incomplete task index:', nextIncompleteIndex);
             console.log('Next incomplete task:', tasks[nextIncompleteIndex]);
           }
-          
+
           return (
-            <View 
-              key={task.id} 
+            <View
+              key={task.id}
               style={[
-                styles.taskContainer, 
-                { 
+                styles.taskContainer,
+                {
                   left: sineX - 100, // Offset by half the container width (200/2 = 100) to center it
                   top: index * 200, // Vertical spacing between tasks
                 }
@@ -419,13 +424,13 @@ const ChildDashboard = () => {
 
               {/* Task flower/circle */}
               <View style={styles.taskFlowerContainer}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => handleTaskPress(task)}
                   disabled={task.completed || isAfterNextTask}
                 >
                   {task.completed ? (
-                    <CompletedFlowerSVG 
-                      size={180} 
+                    <CompletedFlowerSVG
+                      size={180}
                       isNewlyCompleted={bloomingTaskId === task.id}
                     />
                   ) : (
@@ -435,14 +440,14 @@ const ChildDashboard = () => {
               </View>
             </View>
           );
-        })}        
+        })}
         <View style={{ height: 200 }} />
       </ScrollView>
 
       {/* Koala Character */}
       <View style={styles.koalaContainer} pointerEvents="none">
-          <Image 
-            source={require('@/assets/images/mascot.png')} 
+          <Image
+            source={require('@/assets/images/mascot.png')}
             style={styles.mascotImage}
             resizeMode="contain"
           />
@@ -453,15 +458,15 @@ const ChildDashboard = () => {
         <AnimatedNavButton style={styles.navButton}>
           <FontAwesome6 name="house-chimney-window" size={40} color="#FFD700" />
         </AnimatedNavButton>
-        
+
         <AnimatedNavButton style={styles.navButton} onPress={handleStats}>
           <FontAwesome5 name="trophy" size={40} color="white" />
         </AnimatedNavButton>
-        
+
         <AnimatedNavButton style={styles.navButton} onPress={handleMascotCustomization}>
           <MaterialCommunityIcons name="koala" size={60} color="white" />
         </AnimatedNavButton>
-        
+
         <AnimatedNavButton style={styles.navButton} onPress={handleSettings}>
           <FontAwesome5 name="cog" size={40} color="white" />
         </AnimatedNavButton>
@@ -487,7 +492,7 @@ const styles = StyleSheet.create({
     opacity: 0.3,
     filter: 'brightness(1.3)',
   },
-  
+
   header: {
     backgroundColor: '#FF6B35',
     paddingHorizontal: 20,

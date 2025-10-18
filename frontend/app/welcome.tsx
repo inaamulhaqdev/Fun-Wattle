@@ -16,14 +16,25 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.welcomeContainer}>
-        <ThemedText style={styles.welcomeText}>Welcome{'\n'}to{'\n'}FunWattle</ThemedText>
+        <ThemedText style={styles.welcomeText}>Welcome{'\n'}to</ThemedText>
+        <Image 
+          source={require('@/assets/images/funwattle-logo.avif')} 
+          style={styles.titleLogo}
+          contentFit="contain"
+        />
       </View>
 
       <View style={styles.logoContainer}>
         <Image
-          source={require('@/assets/images/partial-react-logo.png')}
+          source={require('@/assets/images/koala.png')}
           style={styles.logo}
         />
+        {/*  
+        <Image
+          source={require('@/assets/images/child-dashboard-background.jpg')}
+          style={styles.backgroundImage}
+        />
+        */}
       </View>
 
       <View style={styles.buttonContainer}>
@@ -68,81 +79,90 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FD902B',
     paddingHorizontal: 20,
     paddingVertical: 40,
   },
   welcomeContainer: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 60,
   },
   welcomeText: {
     fontSize: 42,
     fontWeight: '300',
     textAlign: 'center',
-    color: '#333',
+    color: '#ffffff',
     lineHeight: 50,
   },
-  logoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 20,
-    paddingHorizontal: 20,
+  titleLogo: {
+    width: 280,
+    height: 150,
+    top: -40,
+    filter: 'brightness(0) invert(1)',
   },
-  logo: {
+  logoContainer: {
     width: 220,
     height: 280,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+    //backgroundColor: '#ffc18fff',
+    top: -50,
+    borderRadius: 10,
+    objectFit: 'contain',
+  },
+  logo: {
+    width: 180,
+    height: 230,
+    zIndex: 2,
+  },
+  backgroundImage: {
+    width: 220,
+    height: 280,
+    opacity: 0.7,
+    borderRadius: 10,
+    filter: 'brightness(1.2)',
+    position: 'absolute',
   },
   buttonContainer: {
     alignItems: 'center',
     gap: 15,
-    marginTop: 30,
+    top: -50,
     paddingHorizontal: 20,
   },
   signUpButton: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#ffbe6eff',
     padding: 18,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     width: '85%',
-    borderWidth: 1,
-    borderColor: '#000000',
   },
   signUpButtonText: {
-    color: '#000000',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '500',
   },
   loginButton: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#e7cb57ff',
     padding: 18,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     width: '85%',
-    borderWidth: 1,
-    borderColor: '#000000',
   },
   loginButtonText: {
-    color: '#000000',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '500',
   },
   signUpButtonHover: {
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#000000',
+    backgroundColor: '#cf5716ff',
   },
   signUpButtonTextHover: {
     color: '#ffffff',
   },
   loginButtonHover: {
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#000000',
+    backgroundColor: '#ad680dff',
   },
   loginButtonTextHover: {
     color: '#ffffff',

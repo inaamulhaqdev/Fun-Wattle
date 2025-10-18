@@ -40,9 +40,11 @@ export default function RootLayout() {
           <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
           <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
           <Stack.Screen name="child-dashboard" options={{ headerShown: false }} />
+          <Stack.Screen name="child-stats" options={{ headerShown: false }} />
           <Stack.Screen name="activity" options={{ headerShown: false }} />
+          <Stack.Screen name="opposites_exercise" options={{ headerShown: false }} />
           <Stack.Screen name="mascot-customization" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(therapist-tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           <Stack.Screen name="learning-unit-details" options={{
             title: 'Unit Details',
@@ -57,7 +59,13 @@ export default function RootLayout() {
               />
             )
             }} />
-        </Stack>
+          <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="parent/add-child-details" options={{ headerShown: false }} />
+        <Stack.Screen name="parent/child-goal" options={{ headerShown: false }} />
+        <Stack.Screen name="parent/child-needs" options={{ headerShown: false }} />
+        <Stack.Screen name="parent/child-summary" options={{ headerShown: false }} />
+        <Stack.Screen name="parent/child-added" options={{ headerShown: false }} />
+      </Stack>
       </ThemeProvider>
     </RegistrationProvider>
   );

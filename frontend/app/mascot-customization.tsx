@@ -31,7 +31,7 @@ const MascotCustomization = () => {
   };
 
   const handleStats = () => {
-    router.push('/(tabs)/child-stats');
+    router.push('/child-stats');
   };
 
   const handleSettings = () => {
