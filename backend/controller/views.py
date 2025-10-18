@@ -95,31 +95,26 @@ def subscribe_user(request):
 
 @api_view(['POST'])
 def create_profile(request):
-	profile_creator = User.objects.get(id=request.data.get('id'))
-	if not profile_creator:
-		return Response({'error': 'User not found'}, status=404)
-
-	profile_type = profile_creator.user_type
+	id = request.data.get('id')
 	name = request.data.get('name')
+	creating_child_profile = request.data.get('creating_child_profile')
 	profile_picture = request.data.get('profile_picture')
 	pin_hash = request.data.get('pin_hash')
 
-	if not name or not profile_type:
-		return Response({'error': 'Missing required fields: name, profile_type'}, status=400)
+	if not name or not id or creating_child_profile is None:
+		return Response({'error': 'Missing required fields: name, id, creating_child_profile'}, status=400)
 
-	if profile_type not in ['parent', 'therapist', 'child']:
-		return Response({'error': 'Invalid profile_type'}, status=400)
+	user = User.objects.get(id=id)
+	if not user:
+		return Response({'error': 'User not found'}, status=404)
 
-	if profile_type in ['parent', 'therapist']:
+	if creating_child_profile:
+		profile_type = 'child'
+	else:
+		profile_type = user.user_type
 
-		if profile_creator.user_type != profile_type:
-			return Response({'error': 'User type does not match requested profile_type'}, status=403)
-
-		if profile_type == 'parent' and not pin_hash:
-			return Response({'error': 'pin_hash is required for parent profile'}, status=400)
-
-		if Profile.objects.filter(user=profile_creator).exists():
-			return Response({'error': 'Profile already exists for this user'}, status=400)
+	if profile_type == 'parent' and not pin_hash:
+		return Response({'error': 'pin_hash is required for parent profile'}, status=400)
 
 	# Create the profile
 	profile = Profile.objects.create(
@@ -129,24 +124,38 @@ def create_profile(request):
 		pin_hash=pin_hash,
 	)
 
- 	# ONLY if child profile, link it to the profile creator via User_Profile
-	if profile_type == 'child':
-		User_Profile.objects.create(user=profile_creator, child=profile)
+	# Link profile to user
+	user_profile = User_Profile.objects.create(user=user, profile=profile)
 
-	serializer = ProfileSerializer(profile)
-	return Response(serializer.data, status=201)
+	profile_serializer = ProfileSerializer(profile)
+	user_profile_serializer = User_ProfileSerializer(user_profile)
+
+	return Response({
+		'profile': profile_serializer.data,
+		'user_profile': user_profile_serializer.data
+	}, status=201)
 
 
 @api_view(['GET'])
-def get_profiles(request, id):
-	user = User.objects.get(id=id)
+def get_user_profiles(request, user_id):
+	user = User.objects.get(id=user_id)
 
-	main_profile = Profile.objects.filter(user=user)
-	child_profiles = Profile.objects.filter(linked_users__user=user) # Find all child profiles linked to this user
-	profiles = main_profile | child_profiles
+	profile_ids = User_Profile.objects.filter(user=user).values_list('profile', flat=True)
+	profiles = Profile.objects.filter(id__in=profile_ids)
 
 	serializer = ProfileSerializer(profiles, many=True)
 	return Response(serializer.data, status=200)
+
+
+@api_view(['GET'])
+def get_profile(request, profile_id):
+    try:
+        profile = Profile.objects.get(id=profile_id)
+    except Profile.DoesNotExist:
+        return Response({'error': 'Profile not found'}, status=404)
+
+    serializer = ProfileSerializer(profile)
+    return Response(serializer.data, status=200)
 
 # @api_view(['GET'])
 # def get_activities(request):

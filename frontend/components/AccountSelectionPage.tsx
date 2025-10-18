@@ -19,14 +19,15 @@ const AccountSelectionPage = () => {
     const fetchAccounts = async () => {
       try {
 
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) {
-          Alert.alert('Not signed in', 'Please log in again.');
+        const { data: { session }} = await supabase.auth.getSession();
+        if (!session) {
+          Alert.alert('No active session', 'Please log in again.');
           return;
         }
 
-        const response = await fetch(`http://192.168.0.234:8000/api/profile/${user.id}/`, {
+        const user = session.user;
+
+        const response = await fetch(`http://192.168.0.234:8000/api/profiles/${user.id}/`, {
           method: 'GET',
         });
         if (!response.ok) {
@@ -56,19 +57,19 @@ const AccountSelectionPage = () => {
   const handleAccountSelect = (account: Account) => {
     if (account.isLocked) {
       // Navigate to PIN entry screen for locked accounts
-      router.push({ pathname: '/pin-entry', params: { id: account.id } });
+      router.push({ pathname: '/pin-entry', params: { profile_id: account.id } });
       return;
-    }
-
-    // Navigate based on account type
-    if (account.type === 'child') {
-      router.replace({ pathname: '/child-dashboard', params: { id: account.id } });
+    } else if (account.type === 'therapist') {
+      router.replace({ pathname: '/(tabs)/therapist-dashboard', params: { profile_id: account.id } });
+      return;
     } else if (account.type === 'parent') {
-      router.replace({ pathname: '/(tabs)/parent-dashboard', params: { id: account.id } });
+      // Parent accounts must have PINs
+      Alert.alert('Error', 'Parent accounts must have a PIN set. Please contact support.');
+      return;
     } else {
-      // Default fallback for therapist or other types
-      router.replace({ pathname: '/(tabs)/therapist-dashboard', params: { id: account.id } });
-      // router.replace('/(tabs)/' as any); KEPT JUST IN CASE
+      // Child accounts don't have PINs
+      router.replace({ pathname: '/child-dashboard', params: { profile_id: account.id } });
+      return;
     }
   };
 

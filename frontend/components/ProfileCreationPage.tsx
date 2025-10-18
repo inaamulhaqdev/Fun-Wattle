@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../config/supabase';
-import bcrypt from 'react-native-bcrypt';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
@@ -36,7 +35,9 @@ const ProfileCreationPage = () => {
       Alert.alert('Error', 'Please enter your name');
       return;
     }
-    if (pin.join('').length !== 4) {
+
+    const createdPin = pin.join('');
+    if (createdPin.length !== 4) {
       Alert.alert('Error', 'Please complete your 4-digit PIN');
       return;
     }
@@ -59,9 +60,10 @@ const ProfileCreationPage = () => {
         },
         body: JSON.stringify({
           user_id: user.id,
+          creating_child_profile: false,
           name: name.trim(),
           profile_picture: '', // Placeholder for now - sprint 2 thing
-          pin_hash: bcrypt.hashSync(pin.join(''), 10), // Hash the PIN before sending
+          pin_hash: createdPin, // TODO: Before production, hash this on the backend
         }),
       });
 
