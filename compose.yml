@@ -1,26 +1,23 @@
 services:
- db:
-   container_name: db
-   image: postgres:17
-   ports:
-     - "5432:5432"
-   volumes:
-     - postgres_data:/var/lib/postgresql/data
-   env_file:
-     - .env
-   environment:
-    POSTGRES_DB: ${DATABASE_NAME}
-    POSTGRES_USER: ${DATABASE_USERNAME}
-    POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-
  backend:
    build: ./backend
    container_name: backend
    ports:
      - "8000:8000"
-   depends_on:
-     - db
    env_file:
      - .env
-volumes:
-   postgres_data:
+   # This is a volume mapping - maps the local "backend" directory to "/app" in the container
+   # This means:
+   #   - Code changes made locally are immediately reflected inside the container.
+   #   - Files created in the container (like Django migrations) are saved locally.
+   volumes:
+     - ./backend:/app
+   working_dir: /app
+
+# IPv6 is REQUIRED for Supabase DB connection (their DB host is IPv6-only)
+# Please check that:
+# 1.) Docker is running with IPv6 enabled in network settings
+# 2.) Windows Network Adapter → Properties → "Internet Protocol Version 6 (TCP/IPv6)" is checked
+networks:
+  default:
+    enable_ipv6: true
