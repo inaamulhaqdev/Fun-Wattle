@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet, ScrollView } from 'react-native';
 import { Card, IconButton, Divider, Text, Searchbar, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
+
+interface Exercise {
+  id: string;
+  title: string;
+  component: React.ComponentType<any>;
+}
 
 interface LearningUnit {
   id: string;
   title: string;
   category: string;
   status: string;
-  repetitions?: number;
+  exercises?: Exercise[];
 }
 
 interface LibraryProps {
@@ -18,9 +24,9 @@ interface LibraryProps {
 
 export default function LearningLibrary({ data }: LibraryProps) {
   const [selectedItem, setSelectedItem] = useState<LearningUnit | null>(null);
+  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showOverlay, setShowOverlay] = useState(false);
-
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
@@ -28,16 +34,17 @@ export default function LearningLibrary({ data }: LibraryProps) {
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // View Details
+  // Detail view
   if (selectedItem) {
     return (
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         <View style={styles.backButton}>
           <IconButton
             icon="arrow-left"
             size={30}
             onPress={() => {
               setSelectedItem(null);
+              setCurrentExercise(null);
               setSnackbarVisible(false);
             }}
           />
@@ -45,34 +52,37 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
         <Text variant="headlineMedium" style={styles.title}>{selectedItem.title}</Text>
         <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
-        
-        <Text variant="bodyMedium" style={styles.description}>
-          Lorem Ipsum...
-        </Text>
 
         <Text variant="titleMedium" style={styles.heading}>Activities</Text>
         <Divider style={styles.divider} />
-        <Text variant="bodyLarge" style={styles.activity_heading}>Exercise 1</Text>
-        <Divider style={styles.divider} />
+
+        {selectedItem.exercises?.map(ex => (
+          <Card
+            key={ex.id}
+            style={styles.exerciseCard}
+            onPress={() => setCurrentExercise(ex)}
+          >
+            <Card.Content>
+              <Text>{ex.title}</Text>
+            </Card.Content>
+          </Card>
+        ))}
+
+        {currentExercise && <currentExercise.component />}
 
         <View style={styles.buttonWrapper}>
           <AssignButton onPress={() => setShowOverlay(true)} />
           <AssignmentStatus
             visible={showOverlay}
             status={selectedItem.status}
-            onClose={() => {
-              setShowOverlay(false)
-
-              if (selectedItem.status === 'Assigned as Required' || selectedItem.status === 'Assigned as Recommended'
-              ) {
-                setSnackbarMessage(`"${selectedItem.title}" ${selectedItem.status.toLowerCase()}`);
-                setSnackbarVisible(true);
-              }
-            }}
+            onClose={() => setShowOverlay(false)}
             onSelect={(newStatus) => {
               setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
+              setSnackbarMessage(`"${selectedItem.title}" ${newStatus.toLowerCase()}`);
+              setSnackbarVisible(true);
             }}
           />
+        </View>
 
         <Snackbar
           visible={snackbarVisible}
@@ -85,12 +95,11 @@ export default function LearningLibrary({ data }: LibraryProps) {
         >
           {snackbarMessage}
         </Snackbar>
-        </View>
-      </View>
+      </ScrollView>
     );
   }
 
-  // View Library
+  // Library view
   return (
     <View style={styles.container}>
       <Searchbar
@@ -148,33 +157,23 @@ const styles = StyleSheet.create({
     fontSize: 20,
     padding: 10,
     color: '#000',
-    paddingBottom: 30,
+    paddingBottom: 10,
   },
-  description: {
-    fontSize: 15,
-    padding: 10,
-    color: '#000',
-    paddingBottom: 50,
+  divider: {
+    height: 1,
+    backgroundColor: 'black',
+    marginVertical: 2,
   },
-  activity_heading: {
-    fontSize: 18,
-    padding: 10,
-    color: '#000',
+  exerciseCard: {
+    marginVertical: 8,
+    backgroundColor: '#f0e5c9',
   },
   backButton: {
     marginTop: 40,
     alignSelf: 'flex-start',
   },
   buttonWrapper: {
-    position: 'absolute',
-    marginTop: '160%',
-    left: 0,
-    right: 0,
+    marginTop: 20,
     alignItems: 'center',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'black',
-    marginVertical: 2,
   },
 });
