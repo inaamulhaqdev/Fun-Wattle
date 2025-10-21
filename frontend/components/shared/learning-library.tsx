@@ -3,25 +3,7 @@ import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity } from 'react-
 import { Card, IconButton, Divider, Text, Searchbar, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
-
-interface LearningUnit {
-  id: string;
-  title: string;
-  category: string;
-  status: string;
-  description: string;
-  exercises: Exercise[];
-  repetitions?: number;
-}
-
-interface Exercise {
-  name?: string;
-  description: string;
-}
-
-interface LibraryProps {
-  data: LearningUnit[];
-}
+import { LearningUnit, Exercise, LibraryProps } from '../../types/learningUnitTypes';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
 

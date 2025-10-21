@@ -1,5 +1,6 @@
 import React from 'react';
 import LearningLibrary from '../../components/shared/learning-library';
+import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
 
 const data = [
   { id: "1", 
