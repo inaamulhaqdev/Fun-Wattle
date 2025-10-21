@@ -1,9 +1,12 @@
 # PostgreSQL Settings
+DATABASE_URL=postgresql://postgres:vC7V3gJXNd7TE@-eQ_GUkuzxrYYbMCG6j-U4b9nFng.dgh3Ywv@db.cvchwjconynpzhktnuxn.supabase.co:5432/postgres
+
+# Conventional Django DB settings (used by backend/backend/settings.py)
 DATABASE_NAME=postgres
 DATABASE_USERNAME=postgres
 DATABASE_PASSWORD=vC7V3gJXNd7TE@-eQ_GUkuzxrYYbMCG6j-U4b9nFng.dgh3Ywv
-DATABASE_HOST=cvchwjconynpzhktnuxn.supabase.co
-DATABASE_PORT=6543
+DATABASE_HOST=db.cvchwjconynpzhktnuxn.supabase.co
+DATABASE_PORT=5432
 
 # Django Settings
 DJANGO_SECRET_KEY=1hxcq1xNFGucQ3MuNJjYnE8nqRanPfXaV1IkHJB6VeE0qrCXefpx_EO4yd9UOUqIEas
