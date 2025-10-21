@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'rea
 import { router } from 'expo-router';
 import { supabase } from '../config/supabase';
 import { useRegistration } from '../context/RegistrationContext';
+import { API_URL } from '../config/api';
 
 const MembershipPage = () => {
 
@@ -19,7 +20,7 @@ const MembershipPage = () => {
 
       if (type === 'free_trial') {
         // Save membership type (free), start (now) and end date (7 days from now)
-        const response = await fetch('http://192.168.0.234:8000/api/subscribe/', {
+        const response = await fetch(`${API_URL}/api/subscribe/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -37,7 +38,7 @@ const MembershipPage = () => {
         }
       } else if (type === 'paid') {
         // Save membership type (paid) and start date (now)
-        const response = await fetch('http://192.168.0.234:8000/api/subscribe/', {
+        const response = await fetch(`${API_URL}/api/subscribe/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

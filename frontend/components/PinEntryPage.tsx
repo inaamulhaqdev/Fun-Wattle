@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
+import { API_URL } from '../config/api';
 
 const PinEntryPage = () => {
   const [pin, setPin] = useState(['', '', '', '']);
@@ -44,7 +45,7 @@ const PinEntryPage = () => {
       if (pin.every(digit => digit !== '')) {
         const enteredPin = pin.join('');
         // TODO: Validate PIN with backend
-        const response = await fetch(`http://192.168.0.234:8000/api/profile/${profile_id}/`, {
+        const response = await fetch(`${API_URL}/api/profile/${profile_id}/`, {
             method: 'GET',
           });
           if (!response.ok) {
@@ -60,7 +61,7 @@ const PinEntryPage = () => {
             if (data.profile_type === 'parent') {
               router.replace('/parent-introduction');
             } else { // Therapist
-              router.replace('/(tabs)/therapist-dashboard');
+              router.replace('/therapist-dashboard');
             }
           } else {
             Alert.alert('Error', 'Incorrect PIN. Please try again.');

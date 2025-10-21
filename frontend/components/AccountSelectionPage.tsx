@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'rea
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { supabase } from '../config/supabase';
+import { API_URL } from '../config/api';
 
 // Account data structure
 interface Account {
@@ -27,7 +28,7 @@ const AccountSelectionPage = () => {
 
         const user = session.user;
 
-        const response = await fetch(`http://192.168.0.234:8000/api/profiles/${user.id}/`, {
+        const response = await fetch(`${API_URL}/api/profiles/${user.id}/`, {
           method: 'GET',
         });
         if (!response.ok) {
