@@ -15,8 +15,16 @@ interface LearningUnit {
   title: string;
   category: string;
   status: string;
-  exercises?: Exercise[];
+  description: string;
+  exercises: Exercise[];
+  repetitions?: number;
 }
+
+interface Exercise {
+  name?: string;
+  description: string;
+}
+
 
 interface LibraryProps {
   data: LearningUnit[];
@@ -52,49 +60,57 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
         <Text variant="headlineMedium" style={styles.title}>{selectedItem.title}</Text>
         <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
+        
+        <Text variant="bodyMedium" style={styles.description}>
+          {selectedItem.description}
+        </Text>
 
         <Text variant="titleMedium" style={styles.heading}>Activities</Text>
         <Divider style={styles.divider} />
 
-        {selectedItem.exercises?.map(ex => (
-          <Card
-            key={ex.id}
-            style={styles.exerciseCard}
-            onPress={() => setCurrentExercise(ex)}
-          >
-            <Card.Content>
-              <Text>{ex.title}</Text>
-            </Card.Content>
-          </Card>
-        ))}
+        <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
+          {selectedItem.exercises?.map((exercise, index) => (
+            <View key={index} style={{ marginBottom: 16 }}>
+              <Text variant="bodyLarge" style={styles.exercise_heading}>
+                Exercise {index + 1}{exercise.name ? `: ${exercise.name}` : ''}
+              </Text>
+              <Divider style={styles.divider} />
+              <Text variant="bodyMedium" style={styles.description}>
+                {exercise.description}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+          <View style={styles.buttonWrapper}>
+            <AssignButton onPress={() => setShowOverlay(true)} />
+            <AssignmentStatus
+              visible={showOverlay}
+              status={selectedItem.status}
+              onClose={() => {
+                setShowOverlay(false);
 
-        {currentExercise && <currentExercise.component />}
+                if (selectedItem.status === 'Assigned as Required' || selectedItem.status === 'Assigned as Recommended') {
+                  setSnackbarMessage(`"${selectedItem.title}" ${selectedItem.status.toLowerCase()}`);
+                  setSnackbarVisible(true);
+                }
+              }}
+              onSelect={(newStatus) => {
+                setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
+              }}
+            />
 
-        <View style={styles.buttonWrapper}>
-          <AssignButton onPress={() => setShowOverlay(true)} />
-          <AssignmentStatus
-            visible={showOverlay}
-            status={selectedItem.status}
-            onClose={() => setShowOverlay(false)}
-            onSelect={(newStatus) => {
-              setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
-              setSnackbarMessage(`"${selectedItem.title}" ${newStatus.toLowerCase()}`);
-              setSnackbarVisible(true);
-            }}
-          />
-        </View>
-
-        <Snackbar
-          visible={snackbarVisible}
-          onDismiss={() => setSnackbarVisible(false)}
-          duration={3000}
-          action={{
-            label: '✓',
-            onPress: () => setSnackbarVisible(false),
-          }}
-        >
-          {snackbarMessage}
-        </Snackbar>
+            <Snackbar
+              visible={snackbarVisible}
+              onDismiss={() => setSnackbarVisible(false)}
+              duration={3000}
+              action={{
+                label: '✓',
+                onPress: () => setSnackbarVisible(false),
+              }}
+            >
+              {snackbarMessage}
+            </Snackbar>
+          </View>
       </ScrollView>
     );
   }
@@ -157,16 +173,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     padding: 10,
     color: '#000',
-    paddingBottom: 10,
+    paddingBottom: 20,
   },
-  divider: {
-    height: 1,
-    backgroundColor: 'black',
-    marginVertical: 2,
+  description: {
+    fontSize: 15,
+    padding: 10,
+    color: '#000',
+    paddingBottom: 15,
   },
-  exerciseCard: {
-    marginVertical: 8,
-    backgroundColor: '#f0e5c9',
+  exercise_heading: {
+    fontSize: 18,
+    padding: 10,
+    color: '#000',
   },
   backButton: {
     marginTop: 40,
@@ -175,5 +193,16 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     marginTop: 20,
     alignItems: 'center',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'black',
+    marginVertical: 2,
+  },
+  scrollArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 150,
   },
 });

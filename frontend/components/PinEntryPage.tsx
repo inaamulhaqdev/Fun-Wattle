@@ -1,10 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
 const PinEntryPage = () => {
   const [pin, setPin] = useState(['', '', '', '']);
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
+  const { profile_id } = useLocalSearchParams<{ profile_id: string }>();
 
   const handlePinChange = (index: number, value: string) => {
     // Only allow single digits
@@ -33,16 +35,42 @@ const PinEntryPage = () => {
 
   const handleForgotPin = () => {
     // TODO: Implement forgot PIN functionality
+    // Do this after we have PINs properly hashed and stored
   };
 
   // Auto-submit when PIN is complete
   React.useEffect(() => {
-    if (pin.every(digit => digit !== '')) {
-      const enteredPin = pin.join('');
-      // TODO: Validate PIN with backend
-      // Navigate to parent introduction page (only on first login)
-      router.replace('/parent-introduction' as any);
-    }
+    const submitPin = async () => {
+      if (pin.every(digit => digit !== '')) {
+        const enteredPin = pin.join('');
+        // TODO: Validate PIN with backend
+        const response = await fetch(`http://192.168.0.234:8000/api/profile/${profile_id}/`, {
+            method: 'GET',
+          });
+          if (!response.ok) {
+            throw new Error(`Failed to fetch profiles (${response.status})`);
+          }
+
+          const data = await response.json();
+          const correctPinHash = data.pin_hash;
+
+          // TODO: When we store hashed PINs, compare hashes here
+          if (enteredPin === correctPinHash) {
+            // Navigate to appropriate dashboard
+            if (data.profile_type === 'parent') {
+              router.replace('/parent-introduction');
+            } else { // Therapist
+              router.replace('/(tabs)/therapist-dashboard');
+            }
+          } else {
+            Alert.alert('Error', 'Incorrect PIN. Please try again.');
+            setPin(['', '', '', '']);
+            pinInputRefs.current[0]?.focus();
+          }
+      }
+    };
+
+    submitPin();
   }, [pin]);
 
   return (
@@ -54,7 +82,7 @@ const PinEntryPage = () => {
 
       <View style={styles.content}>
         <Text style={styles.title}>Enter your passcode</Text>
-        
+
         {/* PIN Input */}
         <View style={styles.pinContainer}>
           {pin.map((digit, index) => (

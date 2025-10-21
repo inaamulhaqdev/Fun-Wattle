@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
-import { sendPasswordResetEmail } from 'firebase/auth';
+import { supabase } from '../config/supabase';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -13,7 +11,13 @@ const LoginPage = () => {
 
   const handleLogin = async () => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        throw error;
+      }
       // Navigate to account selection
       router.push('/account-selection');
 
@@ -36,12 +40,11 @@ const LoginPage = () => {
       return;
     }
 
-    try {
-      await sendPasswordResetEmail(auth, email);
-      Alert.alert('Success', 'Password reset email sent');
-
-    } catch (error) {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) {
       Alert.alert('Error', 'Failed to send password reset email');
+    } else {
+      Alert.alert('Success', 'Password reset email sent');
     }
   };
 
