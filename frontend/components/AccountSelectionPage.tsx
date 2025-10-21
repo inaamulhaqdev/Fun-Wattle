@@ -35,6 +35,7 @@ const AccountSelectionPage = () => {
           throw new Error(`Failed to fetch profiles (${response.status})`);
         }
 
+        console.log('URL used: ', `${API_URL}/api/profiles/${user.id}/`);
         const data = await response.json();
 
         // Transform API data to match frontend Account type

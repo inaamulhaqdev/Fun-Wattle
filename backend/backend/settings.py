@@ -40,11 +40,13 @@ INSTALLED_APPS = [
     # 'django.contrib.messages',
     # 'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'controller'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     # 'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -121,3 +123,11 @@ REST_FRAMEWORK = {
     'UNAUTHENTICATED_USER': None,
     'UNAUTHENTICATED_TOKEN': None,
 }
+
+# CORS configuration
+# For development, allow all origins. For production, we will restrict to specific domains.
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOWED_ORIGINS = [
+#     this is where we will list allowed origins in production
+# ]
