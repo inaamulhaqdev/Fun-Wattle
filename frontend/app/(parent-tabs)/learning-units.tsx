@@ -22,7 +22,11 @@ const data = [
     status: "Unassigned" },
 ];
 
-/* // Module definition (backend)
+/* import React, { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
+import LearningLibrary, { LearningUnit } from '../../components/shared/learning-library';
+
+// Module Structure (Backend)
 interface Module {
   moduleId: string;
   name: string;
@@ -39,10 +43,18 @@ export default function LearningUnits() {
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const res = await axios.get<Module[]>('http://localhost:8000/api/modules');
+        const response = await fetch('http://localhost:8000/api/modules', {
+          method: 'GET',
+        });
 
-        // Map response format to LearningUnit format
-        const learningUnits: LearningUnit[] = res.data.map((mod) => ({
+        if (!response.ok) {
+          throw new Error(`Failed to fetch modules (${response.status})`);
+        }
+
+        const modules: Module[] = await response.json();
+
+        // Transform backend data to LearningUnit
+        const learningUnits: LearningUnit[] = modules.map((mod) => ({
           id: mod.moduleId,
           title: mod.name,
           category: '',
@@ -54,6 +66,7 @@ export default function LearningUnits() {
         setData(learningUnits);
       } catch (err) {
         console.error('Error fetching modules:', err);
+        Alert.alert('Error', 'Failed to load learning units. Please try again.');
       }
     };
 
