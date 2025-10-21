@@ -14,6 +14,9 @@ class User(models.Model):
     subscription_end = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = 'User'
+
 
 class Profile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -22,6 +25,9 @@ class Profile(models.Model):
     profile_picture = models.URLField(blank=True, null=True)
     pin_hash = models.CharField(max_length=256, blank=True, null=True)  # Null for children, Optional for Therapist, required for Parent (enforced in views)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Profile'
 
     def __str__(self):
         return f"name={self.name}, profile_type={self.profile_type}"
@@ -33,6 +39,9 @@ class User_Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_profiles')
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='linked_users')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'User_Profile'
 
     def __str__(self):
         return f"user={self.user.email}, profile={self.profile.name}"
