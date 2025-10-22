@@ -49,29 +49,72 @@ class User_Profile(models.Model):
 
 ######################### LEARNING ACTIVITY MODELS #########################
 
-# Haven't migrated these yet, we change / add a lot more detail to them (there's more layers than anticipated)
+class Learning_Unit(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=20, choices=(('articulation', 'Articulation'), ('language_building', 'Language Building'), ('comprehension', 'Comprehension')))
+    image = models.URLField(blank=True, null=True)
+    num_tasks = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-# class Activity(models.Model):
-#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-#     title = models.CharField(max_length=200)
-#     description = models.TextField(blank=True)
-#     category = models.CharField(max_length=100, blank=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'Learning_Unit'
 
-#     def __str__(self):
-#         return self.title
+    def __str__(self):
+        return f"learning_unit={self.title}, category={self.category}"
 
-# class AssignedActivity(models.Model):
-#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-#     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='assignments')
-#     child_assigned_to = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='received_activities')
-#     user_assigned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_activities')
-#     assigned_at = models.DateTimeField(auto_now_add=True)
-#     due_date = models.DateTimeField(null=True, blank=True)
-#     completed_at = models.DateTimeField(null=True, blank=True)
 
-#     def __str__(self):
-#         return f"Activity '{self.activity.title}' assigned to {self.child_assigned_to.name}"
+class Task(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    learning_unit = models.ForeignKey(Learning_Unit, on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    order = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = 'Task'
+
+    def __str__(self):
+        return f"learning_unit={self.learning_unit.title}, task={self.title}"
+
+
+class Assignment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    learning_unit = models.ForeignKey(Learning_Unit, on_delete=models.CASCADE, related_name='assignments')
+    participation_type = models.CharField(max_length=15, choices=(('required', 'Required'), ('recommended', 'Recommended')))
+    assigned_to = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='assignments')
+    assigned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_assignments')
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateTimeField(null=True, blank=True)
+    num_tasks_completed = models.IntegerField(default=0)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'Assignment'
+
+    def __str__(self):
+        return f"learning_unit={self.learning_unit.title}, assigned_to={self.assigned_to.name}"
+
+
+class Task_Progress(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='task_progresses')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_progresses')
+    session_start_time = models.DateTimeField(auto_now_add=True)
+    session_end_time = models.DateTimeField(null=True, blank=True)
+    total_time_spent = models.IntegerField(default=0)  # this will be in seconds
+    attempts_made = models.IntegerField(default=0)
+    got_correct = models.BooleanField(default=False)
+    accuracy = models.FloatField(default=0.0) # this will be a percentage
+    answer_data = models.JSONField(null=True, blank=True)  # to store detailed answer info (for all attempts)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'Task_Progress'
+
+    def __str__(self):
+        return f"learning_unit={self.assignment.learning_unit.title}, task={self.task.title}, child={self.assignment.assigned_to.name}"
 
 

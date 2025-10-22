@@ -16,7 +16,8 @@ const LoginPage = () => {
         password,
       });
       if (error) {
-        throw error;
+        Alert.alert('Login Error', error.message);
+        return;
       }
       // Navigate to account selection
       router.push('/account-selection');

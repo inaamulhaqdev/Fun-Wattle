@@ -10,3 +10,4 @@ markdown
 django-filter
 PyYAML
 django-guardian
+django-cors-headers

@@ -5,6 +5,7 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
+import { API_URL } from '../config/api';
 
 const { id } = useLocalSearchParams();
 
@@ -277,7 +278,7 @@ const ChildDashboard = () => {
   const handleTaskPress = async (task: Task) => {
     if (task.completed) return;
     try {
-      const res = await fetch(`http://192.168.0.234:8000/api/modules/${id}/`);
+      const res = await fetch(`${API_URL}/api/modules/${id}/`);
       if (!res.ok) throw new Error('Failed to fetch activities');
 
       const assignedActivities = await res.json();

@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { supabase } from '../config/supabase';
 import { useRegistration } from '../context/RegistrationContext';
+import { API_URL } from '../config/api';
 
 const TermsAndConditionsPage = () => {
   const { email, password, userType, signedPrivacyPolicy, setSignedPrivacyPolicy } = useRegistration();
@@ -39,7 +40,7 @@ const TermsAndConditionsPage = () => {
       const user = data.user;
 
       // Save user information to postgres via backend API
-      await fetch('http://192.168.0.234:8000/api/create/', {
+      await fetch(`${API_URL}/api/create/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
