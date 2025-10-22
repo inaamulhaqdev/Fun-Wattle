@@ -1,19 +1,29 @@
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { IconButton, Text } from 'react-native-paper';
+import { useLocalSearchParams, router } from 'expo-router';
+import NarrativeInferencingEx1 from '@/app/(therapist-tabs)/narrative-inferencing-ex1';
+import NarrativeInferencingEx2 from '@/app/(therapist-tabs)/narrative-inferencing-ex2';
 
-export default function ExerciseScreen({ route, navigation }: { route: any; navigation: any }) {
-  const { exercise } = route.params;
+export default function ExerciseScreen() {
+  const { title, component } = useLocalSearchParams();
+
+  const exerciseComponents: Record<string, React.ComponentType<any>> = {
+    'Exercise1': NarrativeInferencingEx1,
+    'Exercise2': NarrativeInferencingEx2,
+  }
+
+  const Component = component ? exerciseComponents[component as string] : null;
 
   return (
     <ScrollView style={styles.container}>
       <IconButton
         icon="arrow-left"
         size={30}
-        onPress={() => navigation.goBack()}
+        onPress={() => router.back()}
       />
-      <Text variant="headlineMedium">{exercise.title}</Text>
-      <exercise.component />
+      <Text variant="headlineMedium">{title}</Text>
+      {Component && <Component/>}
     </ScrollView>
   );
 }

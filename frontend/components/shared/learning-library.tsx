@@ -3,11 +3,15 @@ import { View, FlatList, StyleSheet, ScrollView } from 'react-native';
 import { Card, IconButton, Divider, Text, Searchbar, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
+import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
 
 interface Exercise {
-  id: string;
-  title: string;
-  component: React.ComponentType<any>;
+  id?: string;
+  name?: string;
+  title?: string;
+  description: string;
+  component?: React.ComponentType<any>;
 }
 
 interface LearningUnit {
@@ -42,6 +46,8 @@ export default function LearningLibrary({ data }: LibraryProps) {
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const navigation = useNavigation();
+
   // Detail view
   if (selectedItem) {
     return (
@@ -70,15 +76,22 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
           {selectedItem.exercises?.map((exercise, index) => (
-            <View key={index} style={{ marginBottom: 16 }}>
-              <Text variant="bodyLarge" style={styles.exercise_heading}>
-                Exercise {index + 1}{exercise.name ? `: ${exercise.name}` : ''}
-              </Text>
-              <Divider style={styles.divider} />
+            <Card 
+            key={index} 
+            onPress={() => 
+              router.push({
+                pathname: '/exercise-screen',
+                params: { title: exercise.name, component: exercise.name?.replace(" ", "")},
+              })
+            }
+            >
+            <Card.Title title={exercise.name}/>
+            <Card.Content>
               <Text variant="bodyMedium" style={styles.description}>
                 {exercise.description}
               </Text>
-            </View>
+            </Card.Content>
+            </Card>
           ))}
         </ScrollView>
           <View style={styles.buttonWrapper}>
