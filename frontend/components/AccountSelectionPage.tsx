@@ -1,7 +1,9 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { supabase } from '../config/supabase';
+import { API_URL } from '../config/api';
 
 // Account data structure
 interface Account {
@@ -11,59 +13,65 @@ interface Account {
   isLocked?: boolean;
 }
 
-// Placeholder accounts
-const accounts: Account[] = [
-  {
-    id: '1',
-    name: 'Alice',
-    type: 'parent',
-    isLocked: true,
-  },
-  {
-    id: '2',
-    name: 'Max',
-    type: 'child',
-    isLocked: false,
-  },
-  // Add more accounts here as needed
-  // {
-  //   id: '2',
-  //   name: 'Child Profile',
-  //   type: 'child',
-  //   isLocked: false,
-  // },
-  {
-    id: '2',
-    name: 'Alice 2.0',
-    type: 'parent',
-    isLocked: false,
-  },
-  {
-    id: '2',
-    name: 'Dwight',
-    type: 'therapist',
-    isLocked: false,
-  },
-];
-
 const AccountSelectionPage = () => {
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+
+        const { data: { session }} = await supabase.auth.getSession();
+        if (!session) {
+          Alert.alert('No active session', 'Please log in again.');
+          return;
+        }
+
+        const user = session.user;
+
+        const response = await fetch(`${API_URL}/api/profiles/${user.id}/`, {
+          method: 'GET',
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch profiles (${response.status})`);
+        }
+
+        console.log('URL used: ', `${API_URL}/api/profiles/${user.id}/`);
+        const data = await response.json();
+
+        // Transform API data to match frontend Account type
+        const transformedData = data.map((profile: any) => ({
+          id: profile.id.toString(),
+          name: profile.name,
+          type: profile.profile_type,
+          isLocked: profile.pin_hash ? true : false,
+        }));
+
+        setAccounts(transformedData);
+      } catch (error) {
+        console.error('Error fetching profiles:', error);
+        Alert.alert('Error', 'Failed to load profiles. Please try again.');
+      }
+    };
+
+    fetchAccounts();
+  }, []);
+
   const handleAccountSelect = (account: Account) => {
     if (account.isLocked) {
       // Navigate to PIN entry screen for locked accounts
-      router.push('/pin-entry' as any);
+      router.push({ pathname: '/pin-entry', params: { profile_id: account.id } });
       return;
-    }
-    
-    // Navigate based on account type
-    if (account.type === 'child') {
-      router.replace('/child-dashboard' as any);
-    } else if (account.type == "parent") {
-      router.replace({
-        pathname: './(parent-tabs)/parent-dashboard',
-        params: { variant: 'newParent' },
-      });
-    } else if (account.type == "therapist") {
-      router.replace('./(therapist-tabs)/therapist-dashboard');
+    } else if (account.type === 'therapist') {
+      router.replace({ pathname: '/therapist-dashboard', params: { profile_id: account.id } });
+      return;
+    } else if (account.type === 'parent') {
+      // Parent accounts must have PINs
+      Alert.alert('Error', 'Parent accounts must have a PIN set. Please contact support.');
+      return;
+    } else {
+      // Child accounts don't have PINs
+      router.replace({ pathname: '/child-dashboard', params: { profile_id: account.id } });
+      return;
     }
   };
 
@@ -78,12 +86,12 @@ const AccountSelectionPage = () => {
         <View style={styles.profileIcon}>
           <Feather name="user" size={24} color="#fff" />
         </View>
-        
+
         {/* Account Info */}
         <Text style={styles.accountName}>
           {account.name} ({account.type === 'parent' ? 'Parent' : account.type === 'child' ? 'Child' : 'Therapist'})
         </Text>
-        
+
         {/* Lock Icon */}
         {account.isLocked && (
           <View style={styles.lockIcon}>
@@ -98,7 +106,7 @@ const AccountSelectionPage = () => {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Choose your profile</Text>
-        
+
         <ScrollView style={styles.accountsList} showsVerticalScrollIndicator={false}>
           {accounts.map(account => renderAccountCard(account))}
         </ScrollView>

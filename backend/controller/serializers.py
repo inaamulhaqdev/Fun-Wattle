@@ -1,13 +1,28 @@
 from rest_framework import serializers
-from .models import *
+from .models import User, Profile, User_Profile #, Activity, AssignedActivity
 
-"""  Serializers to show to JSONify the models
-class LoginRequestSerialiser(serializers.ModelSerializer):
-    class Meta:
-        model = LoginRequest
-        fields = ['email', 'password']
-
-class UserSerialiser(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'name', 'id', 'accountType'] """
+        fields = '__all__'
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = '__all__'
+
+class User_ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User_Profile
+        fields = '__all__'
+
+# class ActivitySerializer(serializers.ModelSerializer):
+# 	class Meta:
+# 		model = Activity
+# 		fields = '__all__'
+
+# class AssignedActivitySerializer(serializers.ModelSerializer):
+# 	class Meta:
+# 		model = AssignedActivity
+# 		fields = '__all__'
+

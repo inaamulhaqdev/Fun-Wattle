@@ -1,30 +1,67 @@
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { getAuth } from 'firebase/auth';
-import { firestore } from '../config/firebase';
-import { updateDoc, doc } from 'firebase/firestore';
+import { supabase } from '../config/supabase';
 import { useRegistration } from '../context/RegistrationContext';
+import { API_URL } from '../config/api';
 
 const MembershipPage = () => {
 
   const { userType } = useRegistration();
 
   const handleSubscription = async (type: 'free_trial' | 'paid') => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (user) {
+    try {
+      const { data: { session }} = await supabase.auth.getSession();
+      if (!session) {
+        Alert.alert('No active session', 'Please log in again.');
+        return;
+      }
+
+      const user = session.user;
+
       if (type === 'free_trial') {
-        // TODO: Save membership type (free), start and end date to postgres db
+        // Save membership type (free), start (now) and end date (7 days from now)
+        const response = await fetch(`${API_URL}/api/subscribe/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: user.id,
+            subscription_type: 'free_trial',
+            subscription_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days later
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('Subscription error:', error);
+          Alert.alert('Error', 'Failed to set up free trial. Please try again.');
+          return;
+        }
       } else if (type === 'paid') {
-        // TODO: Save membership type (paid) and start date to postgres db
+        // Save membership type (paid) and start date (now)
+        const response = await fetch(`${API_URL}/api/subscribe/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: user.id,
+            subscription_type: 'paid',
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('Subscription error:', error);
+          Alert.alert('Error', 'Failed to set up subscription. Please try again.');
+          return;
+        }
       }
 
       router.push({
         pathname: '/profile-creation',
         params: { userType: userType } // Might do this differently with postgres....
       });
-    } else {
-      Alert.alert('No user is currently logged in.');
+    } catch (error) {
+      console.error('Subscription error:', error);
+      Alert.alert('Error', 'An error occurred. Please try again.');
     }
   };
 

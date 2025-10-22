@@ -1,10 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { updateProfile, getAuth } from 'firebase/auth';
-import { firestore } from '../config/firebase';
-import { updateDoc, doc } from 'firebase/firestore';
-import bcrypt from 'react-native-bcrypt';
+import { supabase } from '../config/supabase';
+import { API_URL } from '../config/api';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
@@ -38,33 +36,49 @@ const ProfileCreationPage = () => {
       Alert.alert('Error', 'Please enter your name');
       return;
     }
-    if (pin.join('').length !== 4) {
+
+    const createdPin = pin.join('');
+    if (createdPin.length !== 4) {
       Alert.alert('Error', 'Please complete your 4-digit PIN');
       return;
     }
 
-    // Save profile info (name and pin) to backend here
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (user) {
-      const uid = user.uid;
+    const { data: { session }} = await supabase.auth.getSession();
+    if (!session) {
+      Alert.alert('No active session', 'Please log in again.');
+      return;
+    }
 
-      setLoading(true);
+    const user = session.user;
 
-      try {
+    setLoading(true);
 
-        // TODO: Save name and pin to postgres db
-        const pinHash = bcrypt.hashSync(pin.join(''), 10); // Hash the PIN before storing
+    try {
+      const response = await fetch(`${API_URL}/api/profile/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          creating_child_profile: false,
+          name: name.trim(),
+          profile_picture: '', // Placeholder for now - sprint 2 thing
+          pin_hash: createdPin, // TODO: Before production, hash this on the backend
+        }),
+      });
 
-        // Navigate to profile confirmation
-        router.replace('/profile-confirmation');
-
-      } catch (error) {
-        console.error('Profile Creation error:', error);
-        Alert.alert('Profile Creation Error', 'Profile Creation failed. Please try again and contact support if the issue persists.');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        Alert.alert('Profile Creation Error. Please try again and contact support if the issue persists.');
       }
+
+      // Navigate to profile confirmation
+      router.replace('/profile-confirmation');
+    } catch (error) {
+      console.error('Profile Creation error:', error);
+      Alert.alert('Profile Creation Error', 'Profile Creation failed. Please try again and contact support if the issue persists.');
+    } finally {
+      setLoading(false);
     }
   };
 
