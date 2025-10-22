@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../config/supabase';
+import { API_URL } from '../config/api';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
@@ -53,7 +54,7 @@ const ProfileCreationPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://192.168.0.234:8000/api/profile/', {
+      const response = await fetch(`${API_URL}/api/profile/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
