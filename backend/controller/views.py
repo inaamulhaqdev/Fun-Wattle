@@ -138,7 +138,10 @@ def create_profile(request):
 
 @api_view(['GET'])
 def get_user_profiles(request, user_id):
-	user = User.objects.get(id=user_id)
+	try:
+		user = User.objects.get(id=user_id)
+	except User.DoesNotExist:
+		return Response({'error': 'User not found. Please complete registration first.'}, status=404)
 
 	profile_ids = User_Profile.objects.filter(user=user).values_list('profile', flat=True)
 	profiles = Profile.objects.filter(id__in=profile_ids)
