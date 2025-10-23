@@ -1,5 +1,7 @@
 import React from 'react';
 import LearningLibrary from '../../components/shared/learning-library';
+// Import for future reference
+import { LearningUnit, Exercise, LibraryProps } from '../../types/learningUnitTypes';
 import NarrativeInferencingEx1 from '../narrative-inferencing-ex1';
 import NarrativeInferencingEx2 from '../narrative-inferencing-ex2';
 

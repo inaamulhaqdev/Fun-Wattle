@@ -65,6 +65,7 @@ export default function RootLayout() {
           <Stack.Screen name="parent/child-needs" options={{ headerShown: false }} />
           <Stack.Screen name="parent/child-summary" options={{ headerShown: false }} />
           <Stack.Screen name="parent/child-added" options={{ headerShown: false }} />
+          <Stack.Screen name="exercise-screen" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </RegistrationProvider>
