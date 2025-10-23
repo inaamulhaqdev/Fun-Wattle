@@ -1,5 +1,7 @@
 import React from 'react';
 import LearningLibrary from '../../components/shared/learning-library';
+import NarrativeInferencingEx1 from '../narrative-inferencing-ex1';
+import NarrativeInferencingEx2 from '../narrative-inferencing-ex2';
 
 const data = [
   { id: "1", 
@@ -7,8 +9,12 @@ const data = [
     category: "Comprehension", 
     description: "Learn how to use words to describe pictures!", 
     exercises: [
-      { description: "In this exercise, you will learn to give a reason for the happening of a particular situation ultimately helping you to provide reasoning for different situation."},
-      { description: "In this exercise, you will fill in the blanks to make inferences about the pictures given. Allow yourself to share your thoughts and inferences. Encourage yourself to explain your reasoning and connect different elements of the picture."}
+      { name: "Exercise 1",
+        description: "In this exercise, you will learn to give a reason for the happening of a particular situation ultimately helping you to provide reasoning for different situation.", 
+        component: NarrativeInferencingEx1},
+      { name: "Exercise 2", 
+        description: "In this exercise, you will fill in the blanks to make inferences about the pictures given. Allow yourself to share your thoughts and inferences. Encourage yourself to explain your reasoning and connect different elements of the picture.",
+        component: NarrativeInferencingEx2}
     ], 
     status: "Unassigned" },
   { id: "2", title: "Opposites Course", 

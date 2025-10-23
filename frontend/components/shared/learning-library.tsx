@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, ScrollView } from 'react-native';
-import { Card, IconButton, Divider, Text, Searchbar } from 'react-native-paper';
+import { Card, IconButton, Divider, Text, Searchbar, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
-import { Snackbar } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
+
+interface Exercise {
+  id?: string;
+  name?: string;
+  title?: string;
+  description: string;
+  component?: React.ComponentType<any>;
+}
 
 interface LearningUnit {
   id: string;
@@ -27,9 +36,9 @@ interface LibraryProps {
 
 export default function LearningLibrary({ data }: LibraryProps) {
   const [selectedItem, setSelectedItem] = useState<LearningUnit | null>(null);
+  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showOverlay, setShowOverlay] = useState(false);
-
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
@@ -37,16 +46,19 @@ export default function LearningLibrary({ data }: LibraryProps) {
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // View Details
+  const navigation = useNavigation();
+
+  // Detail view
   if (selectedItem) {
     return (
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         <View style={styles.backButton}>
           <IconButton
             icon="arrow-left"
             size={30}
             onPress={() => {
               setSelectedItem(null);
+              setCurrentExercise(null);
               setSnackbarVisible(false);
             }}
           />
@@ -64,15 +76,22 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
           {selectedItem.exercises?.map((exercise, index) => (
-            <View key={index} style={{ marginBottom: 16 }}>
-              <Text variant="bodyLarge" style={styles.exercise_heading}>
-                Exercise {index + 1}{exercise.name ? `: ${exercise.name}` : ''}
-              </Text>
-              <Divider style={styles.divider} />
+            <Card 
+            key={index} 
+            onPress={() => 
+              router.push({
+                pathname: '/exercise-screen',
+                params: { title: exercise.name, component: exercise.name?.replace(" ", "")},
+              })
+            }
+            >
+            <Card.Title title={exercise.name}/>
+            <Card.Content>
               <Text variant="bodyMedium" style={styles.description}>
                 {exercise.description}
               </Text>
-            </View>
+            </Card.Content>
+            </Card>
           ))}
         </ScrollView>
           <View style={styles.buttonWrapper}>
@@ -105,11 +124,11 @@ export default function LearningLibrary({ data }: LibraryProps) {
               {snackbarMessage}
             </Snackbar>
           </View>
-      </View>
+      </ScrollView>
     );
   }
 
-  // View Library
+  // Library view
   return (
     <View style={styles.container}>
       <Searchbar
@@ -185,10 +204,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   buttonWrapper: {
-    position: 'absolute',
-    marginTop: '160%',
-    left: 0,
-    right: 0,
+    marginTop: 20,
     alignItems: 'center',
   },
   divider: {
