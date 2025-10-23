@@ -1,32 +1,33 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Image } from "react-native";
+import { View, StyleSheet, Image, Alert } from "react-native";
 import { Text, Provider as PaperProvider } from "react-native-paper";
-import { OptionCard } from "../../components/ui/OptionCard";
-import { FeedbackIndicator } from "../../components/ui/ExerciseFeedback";
+import { OptionCard } from "@/components/ui/OptionCard";
+import { FeedbackIndicator } from "@/components/ui/ExerciseFeedback";
+import { router, useRouter } from "expo-router";
 
 export const NarrativeInferencingEx1 = () => {
   const questions = [
     {
       id: 1,
       question: "Why is the boy happy?",
-      image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1.png"),
+      image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1.png"),
       options: [
         {
           id: "A",
           text: "He likes stories",
-          image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1a.png"),
+          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1a.png"),
           correct: false,
         },
         {
           id: "B",
           text: "He likes ice cream",
-          image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1b.png"),
+          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1b.png"),
           correct: true,
         },
         {
           id: "C",
           text: "It is Monday",
-          image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1c.png"),
+          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1c.png"),
           correct: false,
         },
       ],
@@ -34,24 +35,24 @@ export const NarrativeInferencingEx1 = () => {
     {
       id: 2,
       question: "Why is she using an umbrella?",
-      image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2.jpg"),
+      image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2.jpg"),
       options: [
         {
           id: "A",
           text: "It is cold",
-          image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2a.png"),
+          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2a.png"),
           correct: false,
         },
         {
           id: "B",
           text: "It is raining",
-          image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2b.png"),
+          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2b.png"),
           correct: true,
         },
         {
           id: "C",
           text: "It is sunny",
-          image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2c.png"),
+          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2c.png"),
           correct: false,
         },
       ],
@@ -59,24 +60,24 @@ export const NarrativeInferencingEx1 = () => {
     {
       id: 3,
       question: "Why is the girl scared?",
-      image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3.png"),
+      image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3.png"),
       options: [
         {
           id: "A",
           text: "She is scared of storms",
-          image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3a.png"),
+          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3a.png"),
           correct: false,
         },
         {
           id: "B",
           text: "She is getting an injection",
-          image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3b.png"),
+          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3b.png"),
           correct: true,
         },
         {
           id: "C",
           text: "She is scared of spiders",
-          image: require("../../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3c.png"),
+          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3c.png"),
           correct: false,
         },
       ],
@@ -85,19 +86,44 @@ export const NarrativeInferencingEx1 = () => {
 
   const [currIndex, setCurrIndex] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
+  const [retryCount, setRetryCount] = useState(0); // adding in "a child can try a question up to two times" functionality 
   const currentQuestion = questions[currIndex];
 
+  const goToNextQuestion = () => {
+    setRetryCount(0); 
+    if (currIndex < questions.length - 1) {
+      setCurrIndex((prev) => prev + 1);
+    } else {
+      // finish exercise if on last question 
+      Alert.alert("Great job!", "You have finished all the questions!"); 
+      // navigate to exercise 2
+      router.push('/narrative-inferencing-ex2');
+    }
+  }
+
   const handleAnswer = (isCorrect: boolean) => {
-    setFeedback(isCorrect ? "correct" : "incorrect");
-    setTimeout(() => {
+    if (isCorrect) {
+      setFeedback("correct");
+      setTimeout(() => {
       setFeedback(null);
-      if (currIndex < questions.length - 1) {
-        setCurrIndex((prev) => prev + 1);
+      goToNextQuestion();
+      }, 1200); 
+    } else {
+      if (retryCount < 1) {
+        // first wrong attempt, retry
+        setFeedback("incorrect"); 
+        setRetryCount(retryCount + 1); 
+        setTimeout(() => setFeedback(null), 1200);
       } else {
-        alert("Well done!");
-      }
-    }, 1200);
-  };
+        // second wring attempt, move onto next question (finish if last)
+        setFeedback("incorrect"); 
+        setTimeout(() => {
+        setFeedback(null);
+        goToNextQuestion();
+      }, 1200); 
+    }
+  }
+ };
 
   return (
     <PaperProvider>

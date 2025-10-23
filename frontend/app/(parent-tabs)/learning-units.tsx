@@ -1,7 +1,7 @@
 import React from 'react';
 import LearningLibrary from '../../components/shared/learning-library';
-import { NarrativeInferencingEx1 } from '../(therapist-tabs)/narrative-inferencing-ex1';
-import { NarrativeInferencingEx2 } from '../(therapist-tabs)/narrative-inferencing-ex2';
+import { NarrativeInferencingEx1 } from '../narrative-inferencing-ex1';
+import { NarrativeInferencingEx2 } from '../narrative-inferencing-ex2';
 
 const data = [
   { id: "1", 

@@ -1,14 +1,17 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Image, ScrollView } from "react-native";
+import { View, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { Text, Provider as PaperProvider } from "react-native-paper";
-import { OptionCard } from "../../components/ui/OptionCard";
-import { FeedbackIndicator } from "../../components/ui/ExerciseFeedback";
+import { OptionCard } from "../components/ui/OptionCard";
+import { FeedbackIndicator } from "../components/ui/ExerciseFeedback";
+import { useRoute } from "@react-navigation/native";
+import { router } from "expo-router";
 
 export const NarrativeInferencingEx2 = () => {
+
   const questions = [
     {
       id: 1,
-      image: require("../../assets/images/narrative-inferencing/ex2/narrative-inferencing-ex2a.png"),
+      image: require("../assets/images/narrative-inferencing/ex2/narrative-inferencing-ex2a.png"),
       question: "Boy is on the _______. Weather is _______. I can see that Boy is wearing a _______. Boy will collect the _______ and boy will make a _______.",
       correctSeq: ["beach", "hot", "hat", "sand", "sandcastle"],
       options: [
@@ -36,7 +39,7 @@ export const NarrativeInferencingEx2 = () => {
     }, 
     {
       id: 2,
-      image: require("../../assets/images/narrative-inferencing/ex2/narrative-inferencing-ex2b.png"),
+      image: require("../assets/images/narrative-inferencing/ex2/narrative-inferencing-ex2b.png"),
       question: "There are _______ kids. Children are making _______. It is a _______ day. Children are wearing _______ clothes. Children are feeling _______.",
       correctSeq: ["two", "snowman", "snowy", "warm", "happy"],
       options: [
@@ -64,7 +67,7 @@ export const NarrativeInferencingEx2 = () => {
     },
      {
       id: 3,
-      image: require("../../assets/images/narrative-inferencing/ex2/narrative-inferencing-ex2c.png"),
+      image: require("../assets/images/narrative-inferencing/ex2/narrative-inferencing-ex2c.png"),
       question: "This is a _______. There is a _______. Giraffe has _______ neck. There are _______ children in the picture. Children are giving _______ to giraffe. Giraffe is _______ food. All of them are feeling _______.",
       correctSeq: ["zoo", "giraffe", "long", "four", "food", "enjoying", "happy"],
       options: [
@@ -100,7 +103,7 @@ export const NarrativeInferencingEx2 = () => {
     },
     {
       id: 4,
-      image: require("../../assets/images/narrative-inferencing/ex2/narrative-inferencing-ex2d.png"),
+      image: require("../assets/images/narrative-inferencing/ex2/narrative-inferencing-ex2d.png"),
       question: "This is a _______. There are _______ people in the picture. People are here to eat _______. _______ is the one who serves the food and he is serving food to _______. It seems like they all are _______ their food.",
       correctSeq: ["restaurant", "five", "food", "Waiter", "people", "enjoying"],
       options: [
@@ -135,8 +138,27 @@ export const NarrativeInferencingEx2 = () => {
   const [currIndex, setCurrIndex] = useState(0);
   const [selectedSeq, setSelectedSeq] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
+  const [retryCount, setRetryCount] = useState(0); // adding in "a child can try a question up to two times" functionality 
   
   const currQuestion = questions[currIndex];
+
+
+  const goToNextQuestion = () => {
+      setRetryCount(0); 
+      setSelectedSeq([]);
+      if (currIndex < questions.length - 1) {
+        setCurrIndex((prev) => prev + 1);
+        // Add in more exercises
+      } else {
+        router.push("/child-dashboard");
+      }
+      
+      //else { 
+        // navigate to exercise 2
+        //router.push('/narrative-inferencing-ex2');
+      //}
+    }
+  
 
   const handleSelect = (text: string) => {
     if (feedback) return;
@@ -144,30 +166,36 @@ export const NarrativeInferencingEx2 = () => {
     const newSeq = [...selectedSeq, text];
     setSelectedSeq(newSeq);
 
+    // checking correctness so far
     const correctPrefix = currQuestion.correctSeq.slice(0, newSeq.length);
     const isStillCorrect = newSeq.every((t, i) => t === correctPrefix[i]);
 
     if (!isStillCorrect) {
         // incorrect
-      setFeedback("incorrect");
-      setTimeout(() => {
-        setFeedback(null);
-        setSelectedSeq([]);
-      }, 1200);
-      return;
+        if (retryCount < 1) {
+          setFeedback("incorrect");
+          setRetryCount(retryCount + 1);
+          setSelectedSeq([]);
+          setTimeout(() => setFeedback(null), 1200);
+        } else {
+          // second wrong attempt, move on to next question
+          setFeedback("incorrect"); 
+          setRetryCount(0);
+          setTimeout(() => {
+          setFeedback(null);
+          goToNextQuestion();
+          }, 1200);
+        }
+          return; 
       }
 
     // if all correct 
     if (newSeq.length === currQuestion.correctSeq.length) {     
         setFeedback("correct");
+        setRetryCount(0);
         setTimeout(() => {
             setFeedback(null);
-            if (currIndex < questions.length - 1) {
-                setCurrIndex((prev) => prev + 1);
-                setSelectedSeq([]);
-            } else {
-                alert("Well done!");
-            }
+            goToNextQuestion();
         }, 1200);
     }
 };
