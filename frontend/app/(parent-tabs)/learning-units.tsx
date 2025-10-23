@@ -1,6 +1,7 @@
 import React from 'react';
 import LearningLibrary from '../../components/shared/learning-library';
 import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
+// import { API_URL } from '../config/api';
 
 const data = [
   { id: "1", 
@@ -43,7 +44,7 @@ export default function LearningUnits() {
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/modules', {
+        const response = await fetch(`${API_URL}/api/modules`, {
           method: 'GET',
         });
 
