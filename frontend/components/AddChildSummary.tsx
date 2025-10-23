@@ -1,18 +1,22 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
-import { IconButton, Card, Button, Text } from 'react-native-paper';
+import { Card, Button, Text } from 'react-native-paper';
+
+import { useChild } from '@/context/ChildContext';
 
 export default function AddChildSummary() {
 
+  const { childName } = useChild();
+
   const handleNext = () => {
-    router.push('/parent/child-added');
+    router.push('/parent/child-use-of-therapist');
   };
 
   const cardDetails = [
-    { label: 'Child Details', description: 'Alex \nAugust, 2021' },
-    { label: "Alex's Top Goal", description: 'Increase Vocabulary' },
-    { label: 'Starting point for Alex', description: 'Articulation (Sound Production)' },
+    { label: 'Child Details', description: `${childName} \nAugust, 2021` },
+    { label: `Top Goal ${childName}`, description: 'Increase Vocabulary' },
+    { label: `Starting point for ${childName}`, description: 'Articulation (Sound Production)' },
   ];
 
   return (

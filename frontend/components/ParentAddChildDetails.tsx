@@ -3,13 +3,14 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { Provider as PaperProvider, Text, TextInput, Button, IconButton, Menu, DefaultTheme } from 'react-native-paper';
 import { router } from 'expo-router';
 
+import { useChild } from '@/context/ChildContext';
+
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June', 
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
 const AddChildDetails = () => {
-  const [firstName, setFirstName] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
   const [year, setYear] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
@@ -22,6 +23,8 @@ const AddChildDetails = () => {
     router.push('/parent/child-goal');
   };
 
+  const { childName, setChildName } = useChild();
+
   return (
     <PaperProvider theme={DefaultTheme}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -33,15 +36,13 @@ const AddChildDetails = () => {
           style={styles.backButton}
         />
 
-        <Text variant="titleLarge" style={styles.title}>
-          Child's Details
-        </Text>
+        <Text variant="titleLarge" style={styles.title}>Child's Details</Text>
 
         {/* First Name Input */}
         <TextInput
           label="First Name / Nickname"
-          value={firstName}
-          onChangeText={setFirstName}
+          value={childName}
+          onChangeText={setChildName}
           mode="outlined"
           style={styles.input}
         />
@@ -94,6 +95,9 @@ const AddChildDetails = () => {
           onPress={handleNext}
           contentStyle={{ paddingVertical: 8 }}
           textColor="black"
+          disabled={
+            !childName.trim() || !selectedMonth || !year.trim()
+          }
         >
           Next
         </Button>
