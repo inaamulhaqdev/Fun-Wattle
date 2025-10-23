@@ -20,5 +20,4 @@ EXPOSE 19001
 EXPOSE 19002
 
 # Start Expo with proper host binding
-ENV HOSTNAME="0.0.0.0"
-CMD ["npx", "expo", "start", "--web", "--host", "lan", "--port", "8000"]
+CMD ["npx", "expo", "start", "--web", "--host", "tunnel", "--port", "8000"]
