@@ -16,9 +16,9 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.welcomeContainer}>
-        <ThemedText style={styles.welcomeText}>Welcome{'\n'}to</ThemedText>
-        <Image 
-          source={require('@/assets/images/funwattle-logo.avif')} 
+        <ThemedText style={styles.welcomeText}>Welcome to</ThemedText>
+        <Image
+          source={require('@/assets/images/funwattle-logo.avif')}
           style={styles.titleLogo}
           contentFit="contain"
         />
@@ -29,7 +29,7 @@ export default function WelcomeScreen() {
           source={require('@/assets/images/koala.png')}
           style={styles.logo}
         />
-        {/*  
+        {/*
         <Image
           source={require('@/assets/images/child-dashboard-background.jpg')}
           style={styles.backgroundImage}
@@ -38,34 +38,34 @@ export default function WelcomeScreen() {
       </View>
 
       <View style={styles.buttonContainer}>
-        <Pressable 
-          style={({ hovered }) => [
+        <Pressable
+          style={({ hovered, pressed }) => [
             styles.signUpButton,
-            hovered && styles.signUpButtonHover
+            (hovered || pressed) && styles.signUpButtonHover
           ]}
           onPress={navigateToRegister}
         >
-          {({ hovered }) => (
+          {({ hovered, pressed }) => (
             <ThemedText style={[
               styles.signUpButtonText,
-              hovered && styles.signUpButtonTextHover
+              (hovered || pressed) && styles.signUpButtonTextHover
             ]}>
               Sign Up
             </ThemedText>
           )}
         </Pressable>
-        
-        <Pressable 
-          style={({ hovered }) => [
+
+        <Pressable
+          style={({ hovered, pressed }) => [
             styles.loginButton,
-            hovered && styles.loginButtonHover
+            (hovered || pressed) && styles.loginButtonHover
           ]}
           onPress={navigateToLogin}
         >
-          {({ hovered }) => (
+          {({ hovered, pressed }) => (
             <ThemedText style={[
               styles.loginButtonText,
-              hovered && styles.loginButtonTextHover
+              (hovered || pressed) && styles.loginButtonTextHover
             ]}>
               Log in
             </ThemedText>
@@ -93,12 +93,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#ffffff',
     lineHeight: 50,
+    letterSpacing: 1.5,
+    marginBottom: 30,
   },
   titleLogo: {
     width: 280,
     height: 150,
     top: -40,
-    filter: 'brightness(0) invert(1)',
+    tintColor: '#ffffff',
+    marginBottom: 30,
   },
   logoContainer: {
     width: 220,
@@ -111,6 +114,7 @@ const styles = StyleSheet.create({
     top: -50,
     borderRadius: 10,
     objectFit: 'contain',
+    marginBottom: 20,
   },
   logo: {
     width: 180,

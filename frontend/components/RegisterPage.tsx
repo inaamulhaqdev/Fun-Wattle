@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -9,6 +9,13 @@ import { useRegistration } from '../context/RegistrationContext';
 const RegisterPage = () => {
   const { email, setEmail, password, setPassword, userType, setUserType } = useRegistration();
   const [showPassword, setShowPassword] = useState(false);
+
+  // Clear form when component mounts
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+    setUserType(null);
+  }, []);
 
   const handleRegister = async () => {
     if (!email || !password || !userType) {

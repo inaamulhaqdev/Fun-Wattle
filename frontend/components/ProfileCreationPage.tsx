@@ -137,16 +137,16 @@ const ProfileCreationPage = () => {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            isFormValid ? styles.continueButtonActive : styles.continueButtonDisabled
+            isFormValid || loading ? styles.continueButtonActive : styles.continueButtonDisabled
           ]}
           onPress={handleContinue}
-          disabled={!isFormValid}
+          disabled={!isFormValid || loading}
         >
           <Text style={[
             styles.continueButtonText,
-            isFormValid ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
+            isFormValid || loading ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
           ]}>
-            Continue
+            {loading ? 'Loading...' : 'Continue'}
           </Text>
         </TouchableOpacity>
       </View>
