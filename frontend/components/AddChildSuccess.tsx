@@ -3,7 +3,11 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Text } from 'react-native-paper';
 
+import { useChild } from '@/context/ChildContext';
+
 export default function AddChildSuccess() {
+
+  const { childName } = useChild();
 
   const handleNext = () => {
     router.push('/account-selection');
@@ -11,7 +15,7 @@ export default function AddChildSuccess() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Alex is now ready to have fun with FunWattle</Text>
+      <Text style={styles.title}>{childName} is now ready to have fun with FunWattle</Text>
 
       <Button
           mode="contained"

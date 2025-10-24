@@ -1,37 +1,30 @@
 import React, { useState } from 'react';
-import { View, FlatList, StyleSheet, ScrollView } from 'react-native';
+import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Card, IconButton, Divider, Text, Searchbar, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
+import { LearningUnit, Exercise, LibraryProps } from '../../types/learningUnitTypes';
 
-interface Exercise {
-  id?: string;
-  name?: string;
-  title?: string;
-  description: string;
-  component?: React.ComponentType<any>;
-}
+const categories = ['Articulation', 'Language Building', 'Comprehension'];
 
-interface LearningUnit {
-  id: string;
-  title: string;
-  category: string;
-  status: string;
-  description: string;
-  exercises: Exercise[];
-  repetitions?: number;
-}
+function matchesFilters(
+  item: LearningUnit,
+  searchQuery: string,
+  statusFilter: 'All Units' | 'Assigned' | 'Completed',
+  categoryFilter: string | null
+) {
+  const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+  const matchesCategory = !categoryFilter || item.category === categoryFilter;
 
-interface Exercise {
-  name?: string;
-  description: string;
-}
+  if (statusFilter === 'All Units') return matchesSearch && matchesCategory;
+  if (statusFilter === 'Assigned')
+    return matchesSearch && matchesCategory && /^assigned/i.test(item.status);
+  if (statusFilter === 'Completed')
+    return matchesSearch && matchesCategory && item.status.toLowerCase().includes('completed');
 
-
-interface LibraryProps {
-  data: LearningUnit[];
+  return false;
 }
 
 export default function LearningLibrary({ data }: LibraryProps) {
@@ -42,9 +35,21 @@ export default function LearningLibrary({ data }: LibraryProps) {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
+  const [statusFilter, setStatusFilter] = useState<'All Units' | 'Assigned' | 'Completed'>('All Units');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+
   const filteredData = data.filter(item =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    matchesFilters(item, searchQuery, statusFilter, categoryFilter)
   );
+
+  const toggleCategory = (category: string) => {
+    setCategoryFilter(currentCategory => {
+      if (currentCategory === category) {
+        return null;
+      }
+      return category;
+    });
+  };
 
   const navigation = useNavigation();
 
@@ -94,23 +99,23 @@ export default function LearningLibrary({ data }: LibraryProps) {
             </Card>
           ))}
         </ScrollView>
-          <View style={styles.buttonWrapper}>
-            <AssignButton onPress={() => setShowOverlay(true)} />
-            <AssignmentStatus
-              visible={showOverlay}
-              status={selectedItem.status}
-              onClose={() => {
-                setShowOverlay(false);
 
-                if (selectedItem.status === 'Assigned as Required' || selectedItem.status === 'Assigned as Recommended') {
-                  setSnackbarMessage(`"${selectedItem.title}" ${selectedItem.status.toLowerCase()}`);
-                  setSnackbarVisible(true);
-                }
-              }}
-              onSelect={(newStatus) => {
-                setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
-              }}
-            />
+        <View style={styles.buttonWrapper}>
+          <AssignButton onPress={() => setShowOverlay(true)} />
+          <AssignmentStatus
+            visible={showOverlay}
+            status={selectedItem.status}
+            onClose={() => {
+              setShowOverlay(false);
+              if (selectedItem.status === 'Assigned as Required' || selectedItem.status === 'Assigned as Recommended') {
+                setSnackbarMessage(`"${selectedItem.title}" ${selectedItem.status.toLowerCase()}`);
+                setSnackbarVisible(true);
+              }
+            }}
+            onSelect={(newStatus) => {
+              setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
+            }}
+          />
 
             <Snackbar
               visible={snackbarVisible}
@@ -138,6 +143,46 @@ export default function LearningLibrary({ data }: LibraryProps) {
         style={styles.searchbar}
       />
 
+      {/* Filter by Status */}
+      <View style={styles.statusRow}>
+        {['All Units', 'Assigned', 'Completed'].map(label => (
+          <TouchableOpacity key={label} onPress={() => setStatusFilter(label as any)}>
+            <Text style={[styles.statusText, statusFilter === label && styles.statusActive]}>
+              {label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Filter by Learning Skill (Category) */}
+      <View style={{ height: 40, marginBottom: 10 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 8, alignItems: 'center' }}
+        >
+          {categories.map(category => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryButton,
+                categoryFilter === category && styles.categoryButtonActive
+              ]}
+              onPress={() => toggleCategory(category)}
+            >
+              <Text
+                style={[
+                  styles.categoryUnselected,
+                  categoryFilter === category && styles.categorySelected
+                ]}
+              >
+                {category}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       <FlatList
         data={filteredData}
         keyExtractor={item => item.id}
@@ -162,10 +207,45 @@ const styles = StyleSheet.create({
   },
   searchbar: {
     marginTop: 40,
-    marginBottom: 20,
+    marginBottom: 10,
     backgroundColor: 'white',
     borderColor: 'black',
     borderWidth: 1,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 10,
+    paddingVertical: 5,
+  },
+  statusText: {
+    fontSize: 16,
+    color: '#444',
+  },
+  statusActive: {
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  categoryButton: {
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    backgroundColor: '#fff',
+    marginRight: 10,
+    alignSelf: 'flex-start',
+  },
+  categoryButtonActive: {
+    backgroundColor: '#000',
+  },
+  categoryUnselected: {
+    color: '#000',
+    fontSize: 14,
+  },
+  categorySelected: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   card: {
     marginBottom: 16,

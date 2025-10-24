@@ -1,0 +1,140 @@
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, View, Alert } from 'react-native';
+import { router } from 'expo-router';
+import { Checkbox, IconButton, Button, Text } from 'react-native-paper';
+import { supabase } from '../config/supabase';
+import { API_URL } from '../config/api';
+
+import { useChild } from '@/context/ChildContext';
+
+export default function AddChildExtraQs() {
+
+  const { childName } = useChild();
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  const [loading, setLoading] = useState(false);
+
+  const [consentChecked, setConsentChecked] = useState(false);
+
+  const handleNext = async () => {
+
+    const { data: { session }} = await supabase.auth.getSession();
+    if (!session) {
+      Alert.alert('No active session', 'Please log in again.');
+      return;
+    }
+
+    const user = session.user;
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/profile/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          creating_child_profile: true,
+          name: childName,
+          profile_picture: '', // Placeholder for now - sprint 2 thing
+        }),
+      });
+
+      if (!response.ok) {
+        Alert.alert('Profile Creation Error. Please try again and contact support if the issue persists.');
+      }
+
+      // Navigate to child added confirmation
+      router.replace('/parent/child-added');
+    } catch (error) {
+      console.error('Child Profile Creation error:', error);
+      Alert.alert('Child Profile Creation Error', 'Child Profile Creation failed. Please try again and contact support if the issue persists.');
+    } finally {
+      setLoading(false);
+    }
+  };
+    
+  return (
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        <View style={styles.headerRow}>
+          <IconButton
+            icon="arrow-left"
+            size={28}
+            onPress={handleBack}
+          />
+          <Text style={styles.title}>Consent Confirmation</Text>
+        </View>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.middleContainer}>
+          <Text variant="bodyLarge" style={styles.centeredText}>{'\u2022 '}I give Alex permission to use FunWattle on this device and on other linked devices.</Text>
+        </View>
+
+        <View style={styles.checkboxRow}>
+          <Checkbox
+            status={consentChecked ? 'checked' : 'unchecked'}
+            onPress={() => setConsentChecked(!consentChecked)}
+          />
+          <Text style={styles.checkboxLabel}>I consent to the statement above</Text>
+        </View>
+
+        <Button
+            mode="contained"
+            style={styles.nextButton}
+            onPress={handleNext}
+            contentStyle={{ paddingVertical: 8 }}
+            textColor="black"
+            disabled={!consentChecked}
+          >
+            Agree & Continue
+          </Button>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingTop: 25
+  },
+  title: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingLeft: 10
+  },
+  middleContainer: {
+    paddingVertical: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centeredText: {
+    textAlign: 'center',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  checkboxLabel: {
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  nextButton: {
+    marginTop: 200,
+    borderRadius: 8,
+    backgroundColor: "#FDD652",
+  },
+});
