@@ -100,6 +100,7 @@ def create_profile(request):
 	creating_child_profile = request.data.get('creating_child_profile')
 	profile_picture = request.data.get('profile_picture')
 	pin_hash = request.data.get('pin_hash')
+	child_details = request.data.get('child_details', None)
 
 	if not name or not user_id or creating_child_profile is None:
 		return Response({'error': 'Missing required fields: name, user_id, creating_child_profile'}, status=400)
@@ -122,6 +123,7 @@ def create_profile(request):
 		name=name,
 		profile_picture=profile_picture,
 		pin_hash=pin_hash,
+		child_details=child_details
 	)
 
 	# Link profile to user

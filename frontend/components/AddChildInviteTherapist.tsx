@@ -6,7 +6,8 @@ import { router } from 'expo-router';
 export default function AddChildInviteTherapist () {
 
   const handleBack = () => router.back();
-  
+
+  // TODO: Ask how this should work? Do we send an email to the therapist to sign up? 
   const handleNext = () => router.push('/parent/consent');
 
   const [therapistName, setTherapistName] = useState('');
