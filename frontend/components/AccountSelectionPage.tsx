@@ -6,7 +6,7 @@ import { supabase } from '../config/supabase';
 import { API_URL } from '../config/api';
 
 // Account data structure
-interface Account {
+export interface Account {
   id: string;
   name: string;
   type: 'parent' | 'child' | 'therapist';
