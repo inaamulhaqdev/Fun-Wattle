@@ -71,7 +71,7 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
         <Text variant="headlineMedium" style={styles.title}>{selectedItem.title}</Text>
         <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
-        
+
         <Text variant="bodyMedium" style={styles.description}>
           {selectedItem.description}
         </Text>
@@ -81,16 +81,16 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
           {selectedItem.exercises?.map((exercise, index) => (
-            <Card 
-            key={index} 
-            onPress={() => 
+            <Card
+            key={index}
+            onPress={() =>
               router.push({
                 pathname: '/exercise-screen',
-                params: { title: exercise.name, component: exercise.name?.replace(" ", "")},
+                params: { title: exercise.title, component: exercise.title?.replace(" ", "")},
               })
             }
             >
-            <Card.Title title={exercise.name}/>
+            <Card.Title title={exercise.title}/>
             <Card.Content>
               <Text variant="bodyMedium" style={styles.description}>
                 {exercise.description}

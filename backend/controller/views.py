@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import User, Profile, User_Profile #, Activity, AssignedActivity
-from .serializers import UserSerializer, ProfileSerializer, User_ProfileSerializer #, ActivitySerializer, AssignedActivitySerializer
+from .models import Learning_Unit, User, Profile, User_Profile
+from .serializers import UserSerializer, ProfileSerializer, User_ProfileSerializer, LearningUnitSerializer
 from rest_framework.exceptions import MethodNotAllowed
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -161,6 +161,17 @@ def get_profile(request, profile_id):
 
     serializer = ProfileSerializer(profile)
     return Response(serializer.data, status=200)
+
+
+@api_view(['GET'])
+def get_all_learning_units(request):
+	learning_units = Learning_Unit.objects.all()
+	serializer = LearningUnitSerializer(learning_units, many=True)
+	return Response(serializer.data, status=200)
+
+
+
+
 
 # @api_view(['GET'])
 # def get_activities(request):
