@@ -6,9 +6,16 @@ import { useChild } from '@/context/ChildContext';
 
 export default function AddChildTherapistQ() {
 
-  const { childName } = useChild();
+  const { childName, setChildAttendedTherapist } = useChild();
 
   const handleNext = () => {
+    if (!value) {
+      Alert.alert('Missing Information', 'Please select an option.');
+      return;
+    }
+
+    setChildAttendedTherapist(value);
+
     router.push('/parent/invite-therapist');
  };
 
@@ -69,7 +76,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   question: {
-    fontSize: 20, 
+    fontSize: 20,
     paddingBottom: 10,
     paddingTop: 15,
   },

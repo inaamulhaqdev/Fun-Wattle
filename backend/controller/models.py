@@ -71,6 +71,9 @@ class Task(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     order = models.IntegerField()
+    speaking = models.BooleanField(default=False)
+    task_type = models.CharField(default=None, max_length=20, choices=(('match', 'Match'), ('question', 'Question'), ('true_false', 'True False')))
+    question_data = models.JSONField(default=None)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
