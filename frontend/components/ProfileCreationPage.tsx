@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Keyboard, Platform, TouchableWithoutFeedback, Scr
 import { router } from 'expo-router';
 import { supabase } from '../config/supabase';
 import { API_URL } from '../config/api';
+import { hashPin } from '../utils/pinUtils';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
@@ -64,7 +65,7 @@ const ProfileCreationPage = () => {
           creating_child_profile: false,
           name: name.trim(),
           profile_picture: '', // Placeholder for now - sprint 2 thing
-          pin_hash: createdPin, // TODO: Before production, hash this on the backend
+          pin_hash: hashPin(createdPin), // PIN is now properly hashed
         }),
       });
 
@@ -114,7 +115,7 @@ const ProfileCreationPage = () => {
             {/* PIN Input */}
             <View style={styles.pinSection}>
               <Text style={styles.pinLabel}>Choose 4 digit PIN to secure your account</Text>
-              
+
               <View style={styles.pinContainer}>
                 {pin.map((digit, index) => (
                   <View key={index} style={styles.pinInputContainer}>
@@ -145,16 +146,16 @@ const ProfileCreationPage = () => {
             <TouchableOpacity
               style={[
                 styles.continueButton,
-                isFormValid ? styles.continueButtonActive : styles.continueButtonDisabled
+                isFormValid || loading ? styles.continueButtonActive : styles.continueButtonDisabled
               ]}
               onPress={handleContinue}
-              disabled={!isFormValid}
+              disabled={!isFormValid || loading}
             >
               <Text style={[
                 styles.continueButtonText,
-                isFormValid ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
+                isFormValid || loading ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
               ]}>
-                Continue
+                {loading ? 'Loading...' : 'Continue'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   scrollContent: {
-    padding: 20, 
+    padding: 20,
     paddingBottom: 120
   },
   title: {
@@ -245,12 +246,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#000',
   },
-  footer: { 
-    position: 'absolute', 
-    bottom: 0, 
-    left: 0, 
-    right: 0, 
-    padding: 20 
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20
   },
   continueButton: {
     height: 55,

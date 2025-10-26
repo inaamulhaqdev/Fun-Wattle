@@ -119,14 +119,14 @@ export default function SplashScreen() {
             }
           ]}
         >
-          <Image 
-            source={require('@/assets/images/funwattle-logo.avif')} 
+          <Image
+            source={require('@/assets/images/funwattle-logo.avif')}
             style={styles.logoImage}
             contentFit="contain"
           />
         </Animated.View>
 
-        {/* Subtitle 
+        {/* Subtitle
         <Animated.View
           style={[
             styles.subtitleContainer,
@@ -138,7 +138,7 @@ export default function SplashScreen() {
         >
           <ThemedText style={styles.subtitle}>
             Helping your child&apos;s speech{'\n'}
-            grow with fun and{'\n'} 
+            grow with fun and{'\n'}
             consistent practice
           </ThemedText>
         </Animated.View>
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     width: 350,
     height: 100,
     top: -30,
-    filter: 'brightness(0) invert(1)',
+    tintColor: '#ffffff',
   },
   /*
   subtitleContainer: {

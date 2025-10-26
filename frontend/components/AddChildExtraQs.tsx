@@ -2,7 +2,6 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { IconButton, Button, Text } from 'react-native-paper';
-
 import { useChild } from '@/context/ChildContext';
 
 export default function AddChildExtraQs() {

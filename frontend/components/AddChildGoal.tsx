@@ -1,19 +1,34 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { IconButton, RadioButton, Button, Text } from 'react-native-paper';
-
 import { useChild } from '@/context/ChildContext';
 
 export default function AddChildGoal() {
 
-  const { childName } = useChild();
+  const { childName, setChildTopGoal } = useChild();
 
   const handleBack = () => {
     router.back();
   };
 
   const handleNext = () => {
+    if (!value) {
+      Alert.alert('Missing Information', 'Please select a goal.');
+      return;
+    }
+
+    const selectedId = parseInt(value);
+    if (selectedId === 1) {
+      setChildTopGoal('Articulation Skills');
+    } else if (selectedId === 2) {
+      setChildTopGoal('Expressive Language Skills');
+    } else if (selectedId === 3) {
+      setChildTopGoal('Comprehension Skills');
+    } else {
+      setChildTopGoal("I don't know");
+    }
+
     router.push('/parent/child-extra');
   };
 
@@ -49,7 +64,7 @@ export default function AddChildGoal() {
           <RadioButton.Item
             key={option.id}
             label={option.label}
-            value={option.label}
+            value={option.id.toString()}
             color="#FD902B"
             position="leading"
             labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
@@ -89,7 +104,7 @@ const styles = StyleSheet.create({
     paddingLeft: 50,
   },
   question: {
-    fontSize: 20, 
+    fontSize: 20,
     paddingBottom: 10,
     paddingTop: 15,
   },

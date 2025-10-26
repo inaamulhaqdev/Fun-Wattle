@@ -1,9 +1,6 @@
 export interface Exercise {
-  id?: string;
-  name?: string;
-  title?: string;
+  title: string;
   description: string;
-  component?: React.ComponentType<any>;
 }
 
 export interface LearningUnit {
@@ -11,7 +8,7 @@ export interface LearningUnit {
   title: string;
   category: string;
   description: string;
-  exercises: Exercise[];
+  exercises?: Exercise[];
   status: string;
 }
 

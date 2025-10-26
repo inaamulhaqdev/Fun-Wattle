@@ -24,6 +24,7 @@ class Profile(models.Model):
     name = models.CharField(max_length=100)
     profile_picture = models.URLField(blank=True, null=True)
     pin_hash = models.CharField(max_length=256, blank=True, null=True)  # Null for children, Optional for Therapist, required for Parent (enforced in views)
+    child_details = models.JSONField(null=True, blank=True)  # To store additional child-specific profile details
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -71,6 +72,9 @@ class Task(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     order = models.IntegerField()
+    speaking = models.BooleanField(default=False)
+    task_type = models.CharField(default=None, max_length=20, choices=(('match', 'Match'), ('question', 'Question'), ('true_false', 'True False'), ('re-order', 'Re-order'), ('conversation', 'Conversation')))
+    question_data = models.JSONField(default=None)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
