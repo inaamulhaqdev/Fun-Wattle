@@ -37,6 +37,48 @@ const RegisterPage = () => {
         <Text style={styles.backIcon}>←</Text>
       </TouchableOpacity>
 
+      {/* Sign Up form */}
+      <View style={styles.formSection}>
+        <Text style={styles.formTitle}>Sign Up</Text>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Email address</Text>
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder=""
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Password</Text>
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder=""
+            />
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Feather
+                name={showPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#666"
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
       {/* User type selection */}
       <View style={styles.userTypeSection}>
         <Text style={styles.questionText}>Are you a parent or therapist?</Text>
@@ -82,48 +124,6 @@ const RegisterPage = () => {
         </View>
       </View>
 
-      {/* Sign Up form */}
-      <View style={styles.formSection}>
-        <Text style={styles.formTitle}>Sign Up</Text>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Email address</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder=""
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Password</Text>
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder=""
-            />
-            <TouchableOpacity
-              style={styles.eyeButton}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Feather
-                name={showPassword ? "eye-off" : "eye"}
-                size={20}
-                color="#666"
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Sign Up Button */}
         <TouchableOpacity
           style={styles.signUpButton}
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   userTypeSection: {
-    marginTop: 60,
+    paddingTop: 20,
     marginBottom: 40,
   },
   questionText: {
@@ -197,6 +197,7 @@ const styles = StyleSheet.create({
   },
   formSection: {
     flex: 1,
+    marginTop: 50
   },
   formTitle: {
     fontSize: 32,
