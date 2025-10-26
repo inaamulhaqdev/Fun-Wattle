@@ -15,7 +15,7 @@ export default function AddChildSummary() {
 
   const cardDetails = [
     { label: 'Child Details', description: `${childName} \nAugust, 2021` },
-    { label: `Top Goal ${childName}`, description: 'Increase Vocabulary' },
+    { label: `${childName}'s Top Goal`, description: 'Increase Vocabulary' },
     { label: `Starting point for ${childName}`, description: 'Articulation (Sound Production)' },
   ];
 
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   cardLabel: {
-    fontSize: 20,
+    fontSize: 15,
     fontWeight: "bold",
     lineHeight: 22,
   },
