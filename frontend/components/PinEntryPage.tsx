@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { router } from 'expo-router';
 import { API_URL } from '../config/api';
 import { useApp } from '../context/AppContext';
+import { verifyPin } from '../utils/pinUtils';
 
 const PinEntryPage = () => {
   const { profileId } = useApp();
@@ -45,19 +46,21 @@ const PinEntryPage = () => {
       if (pin.every(digit => digit !== '')) {
         const enteredPin = pin.join('');
 
-        // Get the correct PIN hash from the backend, then compare
-        const response = await fetch(`${API_URL}/api/profile/${profileId}/`, {
+        try {
+          // Get the stored PIN hash from the backend
+          const response = await fetch(`${API_URL}/api/profile/${profileId}/`, {
             method: 'GET',
           });
+
           if (!response.ok) {
-            throw new Error(`Failed to fetch profiles (${response.status})`);
+            throw new Error(`Failed to fetch profile (${response.status})`);
           }
 
           const data = await response.json();
           const correctPinHash = data.pin_hash;
 
-          // TODO: When we store hashed PINs, compare hashes here
-          if (enteredPin === correctPinHash) {
+          // Verify PIN by comparing hashes
+          if (verifyPin(enteredPin, correctPinHash)) {
             // Navigate to appropriate dashboard
             if (data.profile_type === 'parent') {
               router.replace('/parent-introduction');
@@ -69,6 +72,12 @@ const PinEntryPage = () => {
             setPin(['', '', '', '']);
             pinInputRefs.current[0]?.focus();
           }
+        } catch (error) {
+          console.error('PIN verification error:', error);
+          Alert.alert('Error', 'Failed to verify PIN. Please try again.');
+          setPin(['', '', '', '']);
+          pinInputRefs.current[0]?.focus();
+        }
       }
     };
 

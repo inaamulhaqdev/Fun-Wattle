@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { router } from 'expo-router';
 import { supabase } from '../config/supabase';
 import { API_URL } from '../config/api';
+import { hashPin } from '../utils/pinUtils';
 
 const ProfileCreationPage = () => {
   const [name, setName] = useState('');
@@ -64,7 +65,7 @@ const ProfileCreationPage = () => {
           creating_child_profile: false,
           name: name.trim(),
           profile_picture: '', // Placeholder for now - sprint 2 thing
-          pin_hash: createdPin, // TODO: Before production, hash this on the backend
+          pin_hash: hashPin(createdPin), // PIN is now properly hashed
         }),
       });
 
