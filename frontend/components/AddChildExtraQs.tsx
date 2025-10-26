@@ -54,9 +54,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    paddingTop: 20
   },
   title: {
-    fontSize: 25,
+    marginTop: 30,
+    fontSize: 20,
+    paddingRight: 40,
     fontWeight: 'bold',
     textAlign: 'center',
   },
