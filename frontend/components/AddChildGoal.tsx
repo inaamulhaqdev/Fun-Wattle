@@ -47,11 +47,13 @@ export default function AddChildGoal() {
       <RadioButton.Group onValueChange={value => setValue(value)} value={value}>
         {radioOptions.map((option) => (
           <RadioButton.Item
+            key={option.id}
             label={option.label}
             value={option.label}
             color="#FD902B"
             position="leading"
             labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
+            mode="android"
           />
       ))}
       </RadioButton.Group>
@@ -79,6 +81,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    paddingTop: 20
   },
   title: {
     fontSize: 25,

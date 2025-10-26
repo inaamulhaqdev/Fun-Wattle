@@ -35,11 +35,13 @@ export default function AddChildTherapistQ() {
       <RadioButton.Group onValueChange={value => setValue(value)} value={value}>
           {radioOptions.map((option) => (
             <RadioButton.Item
+              key={option.id}
               label={option.label}
               value={option.label}
               color="#FD902B"
               position="leading"
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
+              mode="android"
             />
         ))}
       </RadioButton.Group>

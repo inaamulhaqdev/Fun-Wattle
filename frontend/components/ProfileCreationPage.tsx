@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { KeyboardAvoidingView, Keyboard, Platform, TouchableWithoutFeedback, ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../config/supabase';
 import { API_URL } from '../config/api';
@@ -86,71 +86,81 @@ const ProfileCreationPage = () => {
   const isFormValid = name.trim() && isPinComplete;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Complete your profile</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.title}>Complete your profile</Text>
 
-        {/* Name Input */}
-        <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Name</Text>
-          <TextInput
-            style={styles.nameInput}
-            value={name}
-            onChangeText={setName}
-            placeholder=""
-            autoCapitalize="words"
-            autoCorrect={false}
-          />
-        </View>
+            {/* Name Input */}
+            <View style={styles.inputSection}>
+              <Text style={styles.inputLabel}>Name</Text>
+              <TextInput
+                style={styles.nameInput}
+                value={name}
+                onChangeText={setName}
+                placeholder=""
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+            </View>
 
-        {/* PIN Input */}
-        <View style={styles.pinSection}>
-          <Text style={styles.pinLabel}>Choose 4 digit PIN to secure your account</Text>
-
-          <View style={styles.pinContainer}>
-            {pin.map((digit, index) => (
-              <View key={index} style={styles.pinInputContainer}>
-                <TextInput
-                  ref={(ref) => { pinInputRefs.current[index] = ref; }}
-                  style={styles.pinInput}
-                  value={digit}
-                  onChangeText={(value) => handlePinChange(index, value)}
-                  onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
-                  keyboardType="numeric"
-                  maxLength={1}
-                  textAlign="center"
-                  secureTextEntry={true}
-                  caretHidden={true}
-                  autoFocus={index === 0}
-                />
-                <View style={styles.pinDisplay}>
-                  {digit !== '' && <View style={styles.pinDot} />}
-                </View>
+            {/* PIN Input */}
+            <View style={styles.pinSection}>
+              <Text style={styles.pinLabel}>Choose 4 digit PIN to secure your account</Text>
+              
+              <View style={styles.pinContainer}>
+                {pin.map((digit, index) => (
+                  <View key={index} style={styles.pinInputContainer}>
+                    <TextInput
+                      ref={(ref) => { pinInputRefs.current[index] = ref; }}
+                      style={styles.pinInput}
+                      value={digit}
+                      onChangeText={(value) => handlePinChange(index, value)}
+                      onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
+                      keyboardType="numeric"
+                      maxLength={1}
+                      textAlign="center"
+                      secureTextEntry={true}
+                      caretHidden={true}
+                      autoFocus={index === 0}
+                    />
+                    <View style={styles.pinDisplay}>
+                      {digit !== '' && <View style={styles.pinDot} />}
+                    </View>
+                  </View>
+                ))}
               </View>
-            ))}
+            </View>
+          </ScrollView>
+
+          {/* Continue Button */}
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={[
+                styles.continueButton,
+                isFormValid ? styles.continueButtonActive : styles.continueButtonDisabled
+              ]}
+              onPress={handleContinue}
+              disabled={!isFormValid}
+            >
+              <Text style={[
+                styles.continueButtonText,
+                isFormValid ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
+              ]}>
+                Continue
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </View>
-
-      {/* Continue Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            isFormValid ? styles.continueButtonActive : styles.continueButtonDisabled
-          ]}
-          onPress={handleContinue}
-          disabled={!isFormValid}
-        >
-          <Text style={[
-            styles.continueButtonText,
-            isFormValid ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
-          ]}>
-            Continue
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -162,8 +172,9 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    padding: 20, 
+    paddingBottom: 120
   },
   title: {
     fontSize: 32,
@@ -234,8 +245,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#000',
   },
-  footer: {
-    marginTop: 'auto',
+  footer: { 
+    position: 'absolute', 
+    bottom: 0, 
+    left: 0, 
+    right: 0, 
+    padding: 20 
   },
   continueButton: {
     height: 55,

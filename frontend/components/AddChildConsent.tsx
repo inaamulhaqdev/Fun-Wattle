@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View, Alert } from 'react-native';
+import { ScrollView, StyleSheet, View, Alert, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { Checkbox, IconButton, Button, Text } from 'react-native-paper';
 import { supabase } from '../config/supabase';
@@ -71,16 +71,19 @@ export default function AddChildExtraQs() {
         </View>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.middleContainer}>
-          <Text variant="bodyLarge" style={styles.centeredText}>{'\u2022 '}I give Alex permission to use FunWattle on this device and on other linked devices.</Text>
+          <Text variant="bodyLarge" style={styles.centeredText}>{'\u2022 '}I give {childName} permission to use FunWattle on this device and on other linked devices.</Text>
         </View>
 
-        <View style={styles.checkboxRow}>
-          <Checkbox
+        <TouchableOpacity 
+          style={styles.checkboxRow}
+          onPress={() => setConsentChecked(!consentChecked)}
+        > 
+          <Checkbox.Android
             status={consentChecked ? 'checked' : 'unchecked'}
-            onPress={() => setConsentChecked(!consentChecked)}
+            color="#FD902B"
           />
           <Text style={styles.checkboxLabel}>I consent to the statement above</Text>
-        </View>
+        </TouchableOpacity>
 
         <Button
             mode="contained"
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    paddingTop: 25
+    marginTop: 50
   },
   title: {
     fontSize: 25,
