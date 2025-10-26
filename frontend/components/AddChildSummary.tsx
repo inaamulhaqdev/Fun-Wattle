@@ -66,14 +66,9 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
   title: {
     fontSize: 25,
-    marginTop: 30,
+    marginTop: 50,
     paddingBottom: 20,
     fontWeight: 'bold',
     textAlign: 'center',

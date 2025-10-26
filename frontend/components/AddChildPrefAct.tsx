@@ -61,6 +61,7 @@ export default function AddChildPrefAct() {
             status={selectedOptions.includes(option) ? 'checked' : 'unchecked'}
             onPress={() => toggleOption(option)}
             color="#FD902B"
+            mode="android"
           />
         ))}
 
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: 20,
+    marginTop: 50,
   },
   title: {
     paddingLeft: 20,

@@ -52,6 +52,7 @@ export default function AddChildGoal() {
             color="#FD902B"
             position="leading"
             labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
+            mode="android"
           />
       ))}
       </RadioButton.Group>
@@ -79,6 +80,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    paddingTop: 20
   },
   title: {
     fontSize: 25,

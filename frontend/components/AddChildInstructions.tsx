@@ -53,6 +53,7 @@ export default function AddChildInstructions() {
               color="#FD902B"
               position="leading"
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
+              mode="android"
             />
         ))}
         </RadioButton.Group>
@@ -83,10 +84,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: 20,
+    marginTop: 50,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
   },

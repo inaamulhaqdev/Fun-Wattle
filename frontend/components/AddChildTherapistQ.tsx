@@ -40,6 +40,7 @@ export default function AddChildTherapistQ() {
               color="#FD902B"
               position="leading"
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
+              mode="android"
             />
         ))}
       </RadioButton.Group>

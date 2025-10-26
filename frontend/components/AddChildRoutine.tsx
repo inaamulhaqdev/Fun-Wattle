@@ -60,6 +60,7 @@ export default function AddChildRoutine() {
               position="leading"
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
               color="#FD902B"
+              mode="android"
             />
         ))}
         </RadioButton.Group>
@@ -74,6 +75,7 @@ export default function AddChildRoutine() {
               position="leading"
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
               color="#FD902B"
+              mode="android"
             />
         ))}
         </RadioButton.Group>
@@ -104,7 +106,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: 20,
+    paddingTop: 50,
   },
   title: {
     fontSize: 25,
