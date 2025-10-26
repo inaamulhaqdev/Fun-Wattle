@@ -7,6 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
 // import { API_URL } from '../config/api'; // Commented out - using route params instead
 
+
 // Task data structure
 interface Task {
   id: string;
@@ -23,11 +24,55 @@ interface MascotData {
 // Sample tasks -
 const sampleTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
-  { id: '2', name: 'opposites_exercise', completed: false },
-  { id: '3', name: 'activity3', completed: false },
+  { id: '2', name: 'describe_exercise', completed: false },
+  { id: '3', name: 'opposites_exercise', completed: false },
   { id: '4', name: 'activity4', completed: false },
   { id: '5', name: 'activity5', completed: false },
 ];
+
+// Function to fetch child's coin balance from backend (currenty using hardocoded value)
+// const fetchCoinBalance = async () => {
+//   try {
+//     const response = await fetch(`${API_URL}/api/children/current/coins`, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//     });
+
+//     if (response.ok) {
+//       const data = await response.json();
+//       setCoinBalance(data.coins || 0);
+//       console.log('Coin balance fetched successfully:', data.coins);
+//     } else {
+//       console.warn('Failed to fetch coin balance:', response.status);
+//     }
+//   } catch (error) {
+//     console.error('Error fetching coin balance:', error);
+//   }
+// };
+
+// Function to fetch child's streak count from backend (currenty using hardocoded value)
+// const fetchStreakCount = async () => {
+//   try {
+//     const response = await fetch(`${API_URL}/api/children/current/streak`, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//     });
+
+//     if (response.ok) {
+//       const data = await response.json();
+//       setStreakCount(data.streak || 0);
+//       console.log('Streak count fetched successfully:', data.streak);
+//     } else {
+//       console.warn('Failed to fetch streak count:', response.status);
+//     }
+//   } catch (error) {
+//     console.error('Error fetching streak count:', error);
+//   }
+// };
 
 
 // Completed Task Image with shape-aware shadow and blooming animation
@@ -215,6 +260,8 @@ const ChildDashboard = () => {
   const [tasks, setTasks] = useState<Task[]>(sampleTasks);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
+  const [streakCount, setStreakCount] = useState(12); // HARDCODED - setStreakCount used in commented fetchStreakCount function
+  const [coinBalance, setCoinBalance] = useState(120); // HARDCODED - setCoinBalance used in commented fetchCoinBalance function
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
   const tasksRef = React.useRef<Task[]>(sampleTasks);
@@ -262,7 +309,10 @@ const ChildDashboard = () => {
     }
   }, [bodyType, accessoryId]);
 
-
+  // Load streak count on component mount (COMMENTED OUT - using hardcoded value instead)
+  // useEffect(() => {
+  //   fetchStreakCount();
+  // }, []);
 
   // Handle task completion from activity page with blooming animation
   useEffect(() => {
@@ -348,12 +398,40 @@ const ChildDashboard = () => {
   const handleTaskPress = async (task: Task) => {
     if (task.completed) return;
     
-    // Navigate directly to the task
+    // Navigate directly to the task with mascot data
     router.push({
-      // Task name is used as the route name
-      pathname: `/${task.name}` as typeof router.push extends (args: { pathname: infer T, params?: any }) => any ? T : string,
-      params: { taskId: task.id, taskName: task.name }
+      pathname: `/${task.name}` as any,
+      params: { 
+        taskId: task.id, 
+        taskName: task.name,
+        bodyType: mascotData.bodyType,
+        accessoryId: mascotData.accessoryId?.toString() || ''
+      }
     });
+    
+    // try {
+    //   const moduleId = 'some-module-id'; // TODO: Get actual module ID from props/context
+    //   const res = await fetch(`${API_URL}/api/modules/${moduleId}/activities`);
+    //   if (!res.ok) throw new Error('Failed to fetch activities');
+
+    //   const assignedActivities = await res.json();
+    //   const currentTask = assignedActivities.find((a: any) => a.activity.id === task.id);
+    //   
+    //   if (currentTask) {
+    //     router.push({
+    //       pathname: `/${task.name}` as any,
+    //       params: { 
+    //         taskId: task.id, 
+    //         taskName: task.name,
+    //         bodyType: mascotData.bodyType,
+    //         accessoryId: mascotData.accessoryId?.toString() || '',
+    //         activityData: JSON.stringify(currentTask)
+    //       }
+    //     });
+    //   }
+    // } catch (err) {
+    //   console.error('Failed to fetch task data:', err);
+    // }
   };
 
   const handleMascotCustomization = () => {
@@ -396,11 +474,11 @@ const ChildDashboard = () => {
         <View style={styles.headerRight}>
           <View style={styles.streakContainer}>
             <FontAwesome6 name="fire" size={24} color="#FF4500" />
-            <Text style={styles.streakText}>12</Text>
+            <Text style={styles.streakText}>{streakCount}</Text>
           </View>
           <View style={styles.starContainer}>
             <MaterialCommunityIcons name="star-circle" size={24} color="#007ae6ff" />
-            <Text style={styles.starText}>120</Text>
+            <Text style={styles.starText}>{coinBalance}</Text>
           </View>
         </View>
       </View>
