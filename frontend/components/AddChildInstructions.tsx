@@ -48,6 +48,7 @@ export default function AddChildInstructions() {
         <RadioButton.Group onValueChange={value => setValue(value)} value={value}>
           {radioOptions.map((option) => (
             <RadioButton.Item
+              key={option.id}
               label={option.label}
               value={option.label}
               color="#FD902B"
