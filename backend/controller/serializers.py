@@ -21,6 +21,11 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = '__all__'
 
+class AssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assignment
+        fields = '__all__'
+
 class LearningUnitSerializer(serializers.ModelSerializer):
     exercises = TaskSerializer(source='tasks', many=True, read_only=True)
     status = serializers.SerializerMethodField()
