@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { Alert, ScrollView, StyleSheet } from 'react-native';
 import { Provider as PaperProvider, Text, TextInput, Button, IconButton, Menu, DefaultTheme } from 'react-native-paper';
 import { router } from 'expo-router';
-
 import { useChild } from '@/context/ChildContext';
 
 const months = [
-  'January', 'February', 'March', 'April', 'May', 'June', 
+  'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
@@ -20,10 +19,23 @@ const AddChildDetails = () => {
   };
 
   const handleNext = () => {
+    if (!selectedMonth || !year.trim()) {
+      Alert.alert('Missing Information', 'Please enter date of birth.');
+      return;
+    }
+
+    if (isNaN(Number(year)) || year.length !== 4 || Number(year) < 1900 || Number(year) > new Date().getFullYear()) {
+      Alert.alert('Invalid Year', 'Please enter a valid 4-digit year.');
+      return;
+    }
+
+    const dob = `${selectedMonth} ${year}`;
+    setDateOfBirth(dob);
+
     router.push('/parent/child-goal');
   };
 
-  const { childName, setChildName } = useChild();
+  const { childName, setChildName, setDateOfBirth } = useChild();
 
   return (
     <PaperProvider theme={DefaultTheme}>

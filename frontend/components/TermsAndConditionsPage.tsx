@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -10,18 +10,21 @@ const TermsAndConditionsPage = () => {
   const { email, password, userType, signedPrivacyPolicy, setSignedPrivacyPolicy } = useRegistration();
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    setSignedPrivacyPolicy(false);
+  }, []);
 
   const goBack = () => {
     router.back();
   };
 
   const handleContinue = async () => {
+    setLoading(true);
+
     if (!signedPrivacyPolicy) {
       alert('Please agree to the Terms & Conditions to continue');
       return;
     }
-
-    setLoading(true);
 
     // Create new user account
     try {
@@ -54,6 +57,7 @@ const TermsAndConditionsPage = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Navigate to confirmation page once registration complete (can't go back to terms)
+      setLoading(false);
       router.replace('/confirmation');
 
     } catch (error: any) {
@@ -190,12 +194,13 @@ const TermsAndConditionsPage = () => {
             signedPrivacyPolicy ? styles.continueButtonActive : styles.continueButtonDisabled
           ]}
           onPress={handleContinue}
+          disabled={!signedPrivacyPolicy || loading}
         >
           <Text style={[
             styles.continueButtonText,
             signedPrivacyPolicy ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
           ]}>
-            Continue
+            {loading ? 'Loading...' : 'Continue'}
           </Text>
         </TouchableOpacity>
       </View>

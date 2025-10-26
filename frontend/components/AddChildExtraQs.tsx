@@ -2,7 +2,6 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { IconButton, Button, Text } from 'react-native-paper';
-
 import { useChild } from '@/context/ChildContext';
 
 export default function AddChildExtraQs() {
@@ -55,9 +54,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    paddingTop: 20
   },
   title: {
-    fontSize: 25,
+    marginTop: 30,
+    fontSize: 20,
+    paddingRight: 40,
     fontWeight: 'bold',
     textAlign: 'center',
   },

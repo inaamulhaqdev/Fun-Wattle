@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -8,21 +8,33 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Clear form when component mounts
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+  }, []);
 
   const handleLogin = async () => {
+    setLoading(true);
     try {
+      // Note that AppContext will handle storing session info, and the onAuthStateChange listener will pick this up
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) {
+        setLoading(false);
         Alert.alert('Login Error', error.message);
         return;
       }
+      setLoading(false);
       // Navigate to account selection
       router.push('/account-selection');
 
     } catch (error) {
+      setLoading(false);
       Alert.alert('Login Error', 'Login failed, please try again.');
     }
   };
@@ -104,10 +116,13 @@ const LoginPage = () => {
 
         {/* Login Button */}
         <TouchableOpacity
-          style={styles.loginButton}
+          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
           onPress={handleLogin}
+          disabled={loading}
         >
-          <Text style={styles.loginButtonText}>Log In</Text>
+          <Text style={styles.loginButtonText}>
+            {loading ? 'Logging in...' : 'Log In'}
+          </Text>
         </TouchableOpacity>
       </View>
 

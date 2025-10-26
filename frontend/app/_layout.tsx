@@ -6,6 +6,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { IconButton } from 'react-native-paper';
 import { RegistrationProvider } from '../context/RegistrationContext';
 import { ChildProvider } from '@/context/ChildContext';
+import { AppProvider } from '../context/AppContext';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -15,20 +16,22 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <RegistrationProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <AppProvider>
+      <RegistrationProvider>
+        <ChildProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
-          <Stack.Screen 
-            name="index" 
-            options={{ headerShown: false }} 
+          <Stack.Screen
+            name="index"
+            options={{ headerShown: false }}
           />
-          <Stack.Screen 
-            name="intro-video" 
-            options={{ headerShown: false }} 
+          <Stack.Screen
+            name="intro-video"
+            options={{ headerShown: false }}
           />
-          <Stack.Screen 
-            name="welcome" 
-            options={{ headerShown: false }} 
+          <Stack.Screen
+            name="welcome"
+            options={{ headerShown: false }}
           />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="register" options={{ headerShown: false }} />
@@ -64,7 +67,9 @@ export default function RootLayout() {
           <Stack.Screen name="parent" options={{ headerShown: false }} />
           <Stack.Screen name="exercise-screen" options={{ headerShown: false }} />
         </Stack>
-      </ThemeProvider>
-    </RegistrationProvider>
+          </ThemeProvider>
+        </ChildProvider>
+      </RegistrationProvider>
+    </AppProvider>
   );
 }

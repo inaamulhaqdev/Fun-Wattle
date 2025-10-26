@@ -1,13 +1,65 @@
 import React, { useState } from 'react';
-import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Card, IconButton, Divider, Text, Searchbar, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { LearningUnit, Exercise, LibraryProps } from '../../types/learningUnitTypes';
+import { useApp } from '../../context/AppContext';
+import { API_URL } from '@/config/api';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
+
+const assignLearningUnit = async (
+  learningUnitId: string,
+  childId: string,
+  userId: string,
+  participationType: 'required' | 'recommended'
+) => {
+  const response = await fetch(`${API_URL}/api/assignments/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      learning_unit_id: learningUnitId,
+      child_id: childId,
+      user_id: userId,
+      participation_type: participationType,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to assign learning unit (${response.status})`);
+  }
+
+  return await response.json();
+};
+
+const unassignLearningUnit = async (
+  learningUnitId: string,
+  childId: string,
+  userId: string
+) => {
+  const response = await fetch(`${API_URL}/api/assignments/`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      learning_unit_id: learningUnitId,
+      child_id: childId,
+      user_id: userId,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to unassign learning unit (${response.status})`);
+  }
+
+  return await response.json();
+};
 
 function matchesFilters(
   item: LearningUnit,
@@ -28,6 +80,9 @@ function matchesFilters(
 }
 
 export default function LearningLibrary({ data }: LibraryProps) {
+  const { childId, session } = useApp();
+  const userId = session?.user?.id;
+
   const [selectedItem, setSelectedItem] = useState<LearningUnit | null>(null);
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,7 +126,7 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
         <Text variant="headlineMedium" style={styles.title}>{selectedItem.title}</Text>
         <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
-        
+
         <Text variant="bodyMedium" style={styles.description}>
           {selectedItem.description}
         </Text>
@@ -81,16 +136,16 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
           {selectedItem.exercises?.map((exercise, index) => (
-            <Card 
-            key={index} 
-            onPress={() => 
+            <Card
+            key={index}
+            onPress={() =>
               router.push({
                 pathname: '/exercise-screen',
-                params: { title: exercise.name, component: exercise.name?.replace(" ", "")},
+                params: { title: exercise.title, component: exercise.title?.replace(" ", "")},
               })
             }
             >
-            <Card.Title title={exercise.name}/>
+            <Card.Title title={exercise.title}/>
             <Card.Content>
               <Text variant="bodyMedium" style={styles.description}>
                 {exercise.description}
@@ -112,8 +167,29 @@ export default function LearningLibrary({ data }: LibraryProps) {
                 setSnackbarVisible(true);
               }
             }}
-            onSelect={(newStatus) => {
-              setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
+            onSelect={async (newStatus) => {
+              try {
+                if (!childId || !userId) {
+                  Alert.alert('Error', 'Missing user or child information');
+                  return;
+                }
+
+                if (newStatus === 'Unassigned') {
+                  await unassignLearningUnit(selectedItem.id, childId, userId);
+                } else if (newStatus === 'Assigned as Required') {
+                  await assignLearningUnit(selectedItem.id, childId, userId, 'required');
+                } else if (newStatus === 'Assigned as Recommended') {
+                  await assignLearningUnit(selectedItem.id, childId, userId, 'recommended');
+                }
+
+                setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
+
+                Alert.alert('Success', `Learning unit ${newStatus.toLowerCase()} successfully!`);
+
+              } catch (error) {
+                console.error('Error updating assignment:', error);
+                Alert.alert('Error', 'Failed to update assignment. Please try again.');
+              }
             }}
           />
 

@@ -1,5 +1,5 @@
 import React, { useState} from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { Checkbox, IconButton, Button, Text } from 'react-native-paper';
 
@@ -7,7 +7,7 @@ import { useChild } from '@/context/ChildContext';
 
 export default function AddChildPrefAct() {
 
-  const { childName } = useChild();
+  const { childName, setChildPreferredActivities } = useChild();
 
   const options = [
     'Story-based activities',
@@ -35,6 +35,13 @@ export default function AddChildPrefAct() {
   };
 
   const handleNext = () => {
+    if (selectedOptions.length === 0) {
+      Alert.alert('Missing Information', 'Please select at least one activity.');
+      return;
+    }
+
+    setChildPreferredActivities(selectedOptions);
+
     router.push('/parent/child-motivations');
   };
 
@@ -61,6 +68,7 @@ export default function AddChildPrefAct() {
             status={selectedOptions.includes(option) ? 'checked' : 'unchecked'}
             onPress={() => toggleOption(option)}
             color="#FD902B"
+            mode="android"
           />
         ))}
 
@@ -90,7 +98,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: 20,
+    marginTop: 50,
   },
   title: {
     paddingLeft: 20,
@@ -99,7 +107,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   question: {
-    fontSize: 20, 
+    fontSize: 20,
     paddingBottom: 10,
     paddingTop: 15,
   },

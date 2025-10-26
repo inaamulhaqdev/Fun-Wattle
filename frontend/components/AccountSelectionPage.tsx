@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { supabase } from '../config/supabase';
 import { API_URL } from '../config/api';
+import { useApp } from '../context/AppContext';
 
 // Account data structure
 export interface Account {
@@ -37,15 +38,16 @@ const accounts: Account[] = [
 ];
 
 const AccountSelectionPage = () => {
+  const { session, setProfile } = useApp(); // Here useApp provides session and lets us set profile and child id's
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [firstChild, setFirstChild] = useState<Account | null>(null);
 
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-
-        const { data: { session }} = await supabase.auth.getSession();
         if (!session) {
           Alert.alert('No active session', 'Please log in again.');
+          router.replace('/login');
           return;
         }
 
@@ -58,7 +60,6 @@ const AccountSelectionPage = () => {
           throw new Error(`Failed to fetch profiles (${response.status})`);
         }
 
-        console.log('URL used: ', `${API_URL}/api/profiles/${user.id}/`);
         const data = await response.json();
 
         // Transform API data to match frontend Account type
@@ -70,6 +71,12 @@ const AccountSelectionPage = () => {
         }));
 
         setAccounts(transformedData);
+
+        // Set the first child account if it exists
+        const firstChildAccount = transformedData.find((profile: Account) => profile.type === 'child');
+        if (firstChildAccount) {
+          setFirstChild(firstChildAccount);
+        }
       } catch (error) {
         console.error('Error fetching profiles:', error);
         Alert.alert('Error', 'Failed to load profiles. Please try again.');
@@ -77,15 +84,18 @@ const AccountSelectionPage = () => {
     };
 
     fetchAccounts();
-  }, []);
+  }, [session]); // Re-run when session changes
 
-  const handleAccountSelect = (account: Account) => {
+  const handleAccountSelect = async (account: Account) => {
+    // Store profile and child IDs in global context
+    await setProfile(account.id, firstChild?.id);
+
     if (account.isLocked) {
       // Navigate to PIN entry screen for locked accounts
-      router.push({ pathname: '/pin-entry', params: { profile_id: account.id } });
+      router.push('/pin-entry');
       return;
     } else if (account.type === 'therapist') {
-      router.replace({ pathname: '/therapist-dashboard', params: { profile_id: account.id } });
+      router.replace('/therapist-dashboard');
       return;
     } else if (account.type === 'parent') {
       // Parent accounts must have PINs
@@ -93,7 +103,7 @@ const AccountSelectionPage = () => {
       return;
     } else {
       // Child accounts don't have PINs
-      router.replace({ pathname: '/child-dashboard', params: { profile_id: account.id } });
+      router.replace('/child-dashboard');
       return;
     }
   };
