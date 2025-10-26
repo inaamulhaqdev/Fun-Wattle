@@ -165,8 +165,13 @@ def get_profile(request, profile_id):
 
 @api_view(['GET'])
 def get_all_learning_units(request):
+	child_id = request.query_params.get('child_id')
 	learning_units = Learning_Unit.objects.all()
-	serializer = LearningUnitSerializer(learning_units, many=True)
+	serializer = LearningUnitSerializer(
+    	learning_units,
+    	many=True,
+    	context={'child_id': child_id}
+	)
 	return Response(serializer.data, status=200)
 
 

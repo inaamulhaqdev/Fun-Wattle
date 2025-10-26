@@ -1,3 +1,5 @@
+// This temporarily holds registration data across multiple steps before actually creating the account
+
 import { createContext, useContext, useState } from 'react';
 
 type NewUserData = {

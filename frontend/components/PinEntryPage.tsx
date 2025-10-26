@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { useLocalSearchParams } from 'expo-router';
 import { API_URL } from '../config/api';
+import { useApp } from '../context/AppContext';
 
 const PinEntryPage = () => {
+  const { profileId } = useApp();
   const [pin, setPin] = useState(['', '', '', '']);
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
-  const { profile_id } = useLocalSearchParams<{ profile_id: string }>();
 
   const handlePinChange = (index: number, value: string) => {
     // Only allow single digits
@@ -44,8 +44,9 @@ const PinEntryPage = () => {
     const submitPin = async () => {
       if (pin.every(digit => digit !== '')) {
         const enteredPin = pin.join('');
-        // TODO: Validate PIN with backend
-        const response = await fetch(`${API_URL}/api/profile/${profile_id}/`, {
+
+        // Get the correct PIN hash from the backend, then compare
+        const response = await fetch(`${API_URL}/api/profile/${profileId}/`, {
             method: 'GET',
           });
           if (!response.ok) {

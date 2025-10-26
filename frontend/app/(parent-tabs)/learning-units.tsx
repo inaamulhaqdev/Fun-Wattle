@@ -3,14 +3,16 @@ import LearningLibrary from '../../components/shared/learning-library';
 import { Alert } from 'react-native';
 import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
 import { API_URL } from '../../config/api';
+import { useApp } from '../../context/AppContext';
 
 export default function LearningUnits() {
   const [data, setData] = useState<LearningUnit[]>([]);
+  const { childId } = useApp();
 
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/learning_units`, {
+        const response = await fetch(`${API_URL}/api/learning_units?child_id=${childId}`, {
           method: 'GET',
         });
 
@@ -30,7 +32,7 @@ export default function LearningUnits() {
             title: exercise.title,
             description: exercise.description,
           })),
-          status: 'Unassigned', // TODO: Remove, this should be queried somewhere else (got from assignments table)
+          status: unit.status
         }));
 
         setData(learningUnits);

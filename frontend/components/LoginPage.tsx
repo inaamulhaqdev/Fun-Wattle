@@ -19,6 +19,7 @@ const LoginPage = () => {
   const handleLogin = async () => {
     setLoading(true);
     try {
+      // Note that AppContext will handle storing session info, and the onAuthStateChange listener will pick this up
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

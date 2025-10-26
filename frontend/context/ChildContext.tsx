@@ -1,3 +1,5 @@
+// This temporarily holds child-related data across multiple components/pages before creating the childs profile
+
 import React, { createContext, useContext, useState } from 'react';
 
 interface ChildContextType {
