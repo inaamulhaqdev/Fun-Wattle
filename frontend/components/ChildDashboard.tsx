@@ -5,9 +5,8 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
-import { API_URL } from '../config/api';
+// import { API_URL } from '../config/api'; // Commented out - using route params instead
 
-const { id } = useLocalSearchParams();
 
 // Task data structure
 interface Task {
@@ -16,17 +15,64 @@ interface Task {
   completed: boolean;
 }
 
+// Mascot data structure
+interface MascotData {
+  bodyType: string;
+  accessoryId?: number;
+}
+
 // Sample tasks -
 const sampleTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
-  { id: '2', name: 'opposites_exercise', completed: false },
-  { id: '3', name: 'activity3', completed: false },
+  { id: '2', name: 'describe_exercise', completed: false },
+  { id: '3', name: 'opposites_exercise', completed: false },
   { id: '4', name: 'activity4', completed: false },
   { id: '5', name: 'activity5', completed: false },
 ];
 
+// Function to fetch child's coin balance from backend (currenty using hardocoded value)
+// const fetchCoinBalance = async () => {
+//   try {
+//     const response = await fetch(`${API_URL}/api/children/current/coins`, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//     });
 
+//     if (response.ok) {
+//       const data = await response.json();
+//       setCoinBalance(data.coins || 0);
+//       console.log('Coin balance fetched successfully:', data.coins);
+//     } else {
+//       console.warn('Failed to fetch coin balance:', response.status);
+//     }
+//   } catch (error) {
+//     console.error('Error fetching coin balance:', error);
+//   }
+// };
 
+// Function to fetch child's streak count from backend (currenty using hardocoded value)
+// const fetchStreakCount = async () => {
+//   try {
+//     const response = await fetch(`${API_URL}/api/children/current/streak`, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//     });
+
+//     if (response.ok) {
+//       const data = await response.json();
+//       setStreakCount(data.streak || 0);
+//       console.log('Streak count fetched successfully:', data.streak);
+//     } else {
+//       console.warn('Failed to fetch streak count:', response.status);
+//     }
+//   } catch (error) {
+//     console.error('Error fetching streak count:', error);
+//   }
+// };
 
 
 // Completed Task Image with shape-aware shadow and blooming animation
@@ -179,31 +225,113 @@ const AnimatedNavButton: React.FC<{ children: React.ReactNode; style?: any; onPr
   );
 };
 
+// Mascot image mappings
+const getMascotImages = (mascotData: MascotData) => {
+  const bodyImages = {
+    koala: require('@/assets/images/koala.png'),
+    kangaroo: require('@/assets/images/roo.png'),
+  };
+
+  const accessoryImages = {
+    1: { // Shirt
+      koala: require('@/assets/images/shirt_koala.png'),
+      kangaroo: require('@/assets/images/shirt_roo.png'),
+    },
+    2: { // Sunglasses  
+      koala: require('@/assets/images/sunglasses_koala.png'),
+      kangaroo: require('@/assets/images/sunglasses_roo.png'),
+    },
+  };
+
+  const bodyType = mascotData.bodyType.toLowerCase();
+  const bodyImage = bodyImages[bodyType as keyof typeof bodyImages] || bodyImages.koala;
+  
+  let accessoryImage = null;
+  if (mascotData.accessoryId && accessoryImages[mascotData.accessoryId as keyof typeof accessoryImages]) {
+    const accessorySet = accessoryImages[mascotData.accessoryId as keyof typeof accessoryImages];
+    accessoryImage = accessorySet[bodyType as keyof typeof accessorySet] || accessorySet.koala;
+  }
+
+  return { bodyImage, accessoryImage };
+};
+
 const ChildDashboard = () => {
-  const { completedTaskId } = useLocalSearchParams();
+  const { completedTaskId, bodyType, accessoryId } = useLocalSearchParams();
   const [tasks, setTasks] = useState<Task[]>(sampleTasks);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
+  const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
+  const [streakCount, setStreakCount] = useState(12); // HARDCODED - setStreakCount used in commented fetchStreakCount function
+  const [coinBalance, setCoinBalance] = useState(120); // HARDCODED - setCoinBalance used in commented fetchCoinBalance function
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
+  const tasksRef = React.useRef<Task[]>(sampleTasks);
+
+  // Keep tasksRef in sync with tasks state
+  React.useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
+  // Fetch mascot data from backend
+  // const fetchMascotData = async () => {
+  //   try {
+  //     const response = await fetch(`${API_URL}/api/children/current/mascot`, {
+  //       method: 'GET',
+  //       headers: {
+  //          'Content-Type': 'application/json',
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       if (data.mascot) {
+  //         setMascotData(data.mascot);
+  //       }
+  //     } else {
+  //       console.warn('Failed to fetch mascot data:', response.status);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching mascot data:', error);
+  //     // Keep default mascot on error
+  //   }
+  // };
+
+  // Load mascot data from route parameters
+  useEffect(() => {
+    if (bodyType || accessoryId) {
+      setMascotData({
+        bodyType: (bodyType as string) || 'koala',
+        accessoryId: accessoryId ? parseInt(accessoryId as string) : undefined
+      });
+      console.log('Updated mascot from route params:', {
+        bodyType: bodyType || 'koala',
+        accessoryId: accessoryId ? parseInt(accessoryId as string) : undefined
+      });
+    }
+  }, [bodyType, accessoryId]);
+
+  // Load streak count on component mount (COMMENTED OUT - using hardcoded value instead)
+  // useEffect(() => {
+  //   fetchStreakCount();
+  // }, []);
 
   // Handle task completion from activity page with blooming animation
   useEffect(() => {
     console.log('=== COMPLETION EFFECT TRIGGERED ===');
     console.log('completedTaskId received:', completedTaskId);
-    console.log('Current tasks state:', tasks);
+    console.log('Current tasks state:', tasksRef.current);
 
     if (completedTaskId && typeof completedTaskId === 'string') {
       console.log('Processing completion for task ID:', completedTaskId);
 
       // Check if task is already completed to avoid duplicate processing
-      const currentTask = tasks.find(task => task.id === completedTaskId);
+      const currentTask = tasksRef.current.find(task => task.id === completedTaskId);
       if (currentTask?.completed) {
         console.log('Task already completed, skipping...');
         return;
       }
 
       // Find the completed task index for scrolling
-      const completedTaskIndex = tasks.findIndex(task => task.id === completedTaskId);
+      const completedTaskIndex = tasksRef.current.findIndex(task => task.id === completedTaskId);
       console.log('Task index found:', completedTaskIndex);
 
       // Scroll to center the blooming flower
@@ -238,21 +366,20 @@ const ChildDashboard = () => {
 
         // After blooming animation, scroll to next incomplete task
         setTimeout(() => {
-          setTasks(currentTasks => {
-            const nextIncompleteIndex = currentTasks.findIndex(t => !t.completed);
-            console.log('Next incomplete task index:', nextIncompleteIndex);
+          // Find next incomplete task using the updated tasks from ref
+          const currentTasks = tasksRef.current;
+          const nextIncompleteIndex = currentTasks.findIndex(t => !t.completed);
+          console.log('Next incomplete task index:', nextIncompleteIndex);
 
-            if (scrollViewRef.current && nextIncompleteIndex !== -1) {
-              const nextTaskPosition = nextIncompleteIndex * 200;
-              const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
-              console.log('Scrolling to next task at position:', nextCenterOffset);
-              scrollViewRef.current.scrollTo({
-                y: Math.max(0, nextCenterOffset),
-                animated: true
-              });
-            }
-            return currentTasks;
-          });
+          if (scrollViewRef.current && nextIncompleteIndex !== -1) {
+            const nextTaskPosition = nextIncompleteIndex * 200;
+            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
+            console.log('Scrolling to next task at position:', nextCenterOffset);
+            scrollViewRef.current.scrollTo({
+              y: Math.max(0, nextCenterOffset),
+              animated: true
+            });
+          }
         }, 2000); // Wait for bloom animation to finish
 
         // Clear the blooming state after animation completes
@@ -264,38 +391,57 @@ const ChildDashboard = () => {
 
       return () => clearTimeout(completionTimeout);
     }
-  }, [completedTaskId, tasks, screenHeight]);
+  }, [completedTaskId, screenHeight]);
 
-  // Debug effect to track task state changes
-  useEffect(() => {
-    console.log('=== TASKS STATE CHANGED ===');
-    console.log('Current tasks:', tasks);
-    tasks.forEach((task, index) => {
-      console.log(`Task ${index}: ${task.name} - completed: ${task.completed}`);
-    });
-  }, [tasks]);
+
 
   const handleTaskPress = async (task: Task) => {
     if (task.completed) return;
-    try {
-      const res = await fetch(`${API_URL}/api/modules/${id}/`);
-      if (!res.ok) throw new Error('Failed to fetch activities');
+    
+    // Navigate directly to the task with mascot data
+    router.push({
+      pathname: `/${task.name}` as any,
+      params: { 
+        taskId: task.id, 
+        taskName: task.name,
+        bodyType: mascotData.bodyType,
+        accessoryId: mascotData.accessoryId?.toString() || ''
+      }
+    });
+    
+    // try {
+    //   const moduleId = 'some-module-id'; // TODO: Get actual module ID from props/context
+    //   const res = await fetch(`${API_URL}/api/modules/${moduleId}/activities`);
+    //   if (!res.ok) throw new Error('Failed to fetch activities');
 
-      const assignedActivities = await res.json();
-      const currentTask = assignedActivities.find((a: any) => a.activity.id === task.id);
-
-      router.push({
-        // Task name is used as the route name
-        pathname: `/${task.name}` as typeof router.push extends (args: { pathname: infer T, params?: any }) => any ? T : string,
-        params: { taskId: task.id, taskName: task.name }
-      });
-    } catch (err) {
-      console.error(err);
-    }
+    //   const assignedActivities = await res.json();
+    //   const currentTask = assignedActivities.find((a: any) => a.activity.id === task.id);
+    //   
+    //   if (currentTask) {
+    //     router.push({
+    //       pathname: `/${task.name}` as any,
+    //       params: { 
+    //         taskId: task.id, 
+    //         taskName: task.name,
+    //         bodyType: mascotData.bodyType,
+    //         accessoryId: mascotData.accessoryId?.toString() || '',
+    //         activityData: JSON.stringify(currentTask)
+    //       }
+    //     });
+    //   }
+    // } catch (err) {
+    //   console.error('Failed to fetch task data:', err);
+    // }
   };
 
   const handleMascotCustomization = () => {
-    router.push('/mascot-customization');
+    router.push({
+      pathname: '/mascot-customization',
+      params: {
+        currentBodyType: mascotData.bodyType,
+        currentAccessoryId: mascotData.accessoryId?.toString() || ''
+      }
+    });
   };
 
   const handleSettings = () => {
@@ -328,11 +474,11 @@ const ChildDashboard = () => {
         <View style={styles.headerRight}>
           <View style={styles.streakContainer}>
             <FontAwesome6 name="fire" size={24} color="#FF4500" />
-            <Text style={styles.streakText}>12</Text>
+            <Text style={styles.streakText}>{streakCount}</Text>
           </View>
           <View style={styles.starContainer}>
             <MaterialCommunityIcons name="star-circle" size={24} color="#007ae6ff" />
-            <Text style={styles.starText}>120</Text>
+            <Text style={styles.starText}>{coinBalance}</Text>
           </View>
         </View>
       </View>
@@ -445,13 +591,27 @@ const ChildDashboard = () => {
         <View style={{ height: 200 }} />
       </ScrollView>
 
-      {/* Koala Character */}
+      {/* Mascot Character */}
       <View style={styles.koalaContainer} pointerEvents="none">
-          <Image
-            source={require('@/assets/images/mascot.png')}
-            style={styles.mascotImage}
-            resizeMode="contain"
-          />
+        {(() => {
+          const { bodyImage, accessoryImage } = getMascotImages(mascotData);
+          return (
+            <>
+              <Image
+                source={bodyImage}
+                style={styles.mascotImage}
+                resizeMode="contain"
+              />
+              {accessoryImage && (
+                <Image
+                  source={accessoryImage}
+                  style={[styles.mascotImage, styles.mascotAccessory]}
+                  resizeMode="contain"
+                />
+              )}
+            </>
+          );
+        })()}
       </View>
 
       {/* Bottom Navigation */}
@@ -651,18 +811,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   koalaContainer: {
-    position: 'absolute',
-    bottom: 70,
-    right: -30,
-    height: 300,
-    width: 200,
+    position: 'fixed',
+    bottom: 120,
+    left: 90,
+    height: 200,
+    width: 400,
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
   },
   mascotImage: {
-    width: 400,
-    height: 700,
+    width: 300,
+    height: 500,
+    position: 'absolute',
+    zIndex: 1,
+  },
+  mascotAccessory: {
+    position: 'absolute',
+    zIndex: 2,
   },
   koalaText: {
     fontSize: 16,

@@ -1,13 +1,113 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { router } from 'expo-router';
+// import { useLocalSearchParams } from 'expo-router'; // Commented out - will be used with route params
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+// import { API_URL } from '../config/api';
 
 const MascotCustomization = () => {
-  // Define options first
+  // const { currentBodyType, currentAccessoryId } = useLocalSearchParams();
+
+  // const saveMascotData = async (mascotData: { bodyType: string; accessoryId?: number }) => {
+  //   try {
+  //     const response = await fetch(`${API_URL}/api/children/current/mascot`, { // not sure about endpoint
+  //       method: 'PUT',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         mascot: {
+  //           bodyType: mascotData.bodyType,
+  //           accessoryId: mascotData.accessoryId || null,
+  //         }
+  //       }),
+  //     });
+
+  //     if (!response.ok) {
+  //       console.warn('Failed to save mascot data:', response.status);
+  //     } else {
+  //       console.log('Mascot data saved successfully');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error saving mascot data:', error);
+  //   }
+  // };
+  
+  // Local function to handle mascot data changes (can delete this when backend is used)
+  const saveMascotData = (mascotData: { bodyType: string; accessoryId?: number }) => {
+    console.log('Mascot data updated locally:', mascotData);
+  };
+
+  // Function to fetch child's coin balance from backend (currenty using hardocoded value)
+  // const fetchCoinBalance = async () => {
+  //   try {
+  //     const response = await fetch(`${API_URL}/api/children/current/coins`, {
+  //       method: 'GET',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setCoinBalance(data.coins || 0);
+  //       console.log('Coin balance fetched successfully:', data.coins);
+  //     } else {
+  //       console.warn('Failed to fetch coin balance:', response.status);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching coin balance:', error);
+  //   }
+  // };
+
+  // Function to update child's coin balance in backend
+  // const updateCoinBalance = async (newBalance: number) => {
+  //   try {
+  //     const response = await fetch(`${API_URL}/api/children/current/coins`, {
+  //       method: 'PUT',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         coins: newBalance
+  //       }),
+  //     });
+
+  //     if (response.ok) {
+  //       console.log('Coin balance updated successfully:', newBalance);
+  //     } else {
+  //       console.warn('Failed to update coin balance:', response.status);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error updating coin balance:', error);
+  //   }
+  // };
+
+  // Function to fetch child's unlocked accessories from backend
+  // const fetchUnlockedAccessories = async () => {
+  //   try {
+  //     const response = await fetch(`${API_URL}/api/children/current/accessories`, {
+  //       method: 'GET',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setUnlockedAccessories(data.unlockedAccessoryIds || []);
+  //       console.log('Unlocked accessories fetched successfully:', data.unlockedAccessoryIds);
+  //     } else {
+  //       console.warn('Failed to fetch unlocked accessories:', response.status);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching unlocked accessories:', error);
+  //   }
+  // };
+
   const bodyOptions = [
     { id: 1, name: 'Koala', image: require('@/assets/images/koala.png') },
     { id: 2, name: 'Kangaroo', image: require('@/assets/images/roo.png') },
@@ -23,11 +123,23 @@ const MascotCustomization = () => {
     unlocked: boolean
   } | null>(null);
   const [selectedBody, setSelectedBody] = useState(bodyOptions[0]); // Default to first body option
-  const [coinBalance, setCoinBalance] = useState(120); // Current user coins
+  const [coinBalance, setCoinBalance] = useState(120); // HARDCODED - should be fetched from backend
   const [unlockedAccessories, setUnlockedAccessories] = useState<number[]>([]); // Track unlocked accessory IDs
 
+  // Fetch coin balance on component mount
+  // useEffect(() => {
+  //   fetchCoinBalance();
+  // }, []);
+
   const handleHome = () => {
-    router.push('/child-dashboard' as any);
+    router.push({
+      pathname: '/child-dashboard' as any,
+      // currently using route params to pass mascot data but we can delete this when backend is used!!
+      params: {
+        bodyType: selectedBody.name.toLowerCase(),
+        accessoryId: selectedAccessory?.id?.toString() || ''
+      }
+    });
   };
 
   const handleStats = () => {
@@ -44,21 +156,28 @@ const MascotCustomization = () => {
     
     const bodyType = selectedBody.name.toLowerCase();
     return selectedAccessory.overlays[bodyType as keyof typeof selectedAccessory.overlays] || 
-           selectedAccessory.overlays.koala; // fallback to koala version
+           selectedAccessory.overlays.koala;
   };
 
-  // Check if an accessory is unlocked
   const isAccessoryUnlocked = (accessoryId: number) => {
     return unlockedAccessories.includes(accessoryId);
   };
 
-  // Handle accessory purchase
   const purchaseAccessory = (accessory: any) => {
     if (coinBalance >= accessory.cost && !isAccessoryUnlocked(accessory.id)) {
-      setCoinBalance(coinBalance - accessory.cost);
+      const newBalance = coinBalance - accessory.cost;
+      setCoinBalance(newBalance);
       setUnlockedAccessories([...unlockedAccessories, accessory.id]);
-      // Auto-select the newly purchased accessory
       setSelectedAccessory({...accessory, unlocked: true});
+      
+      // Update coin balance in backend
+      // updateCoinBalance(newBalance);
+      
+      // Save mascot data with new accessory
+      saveMascotData({ 
+        bodyType: selectedBody.name.toLowerCase(), 
+        accessoryId: accessory.id 
+      });
     }
   };
 
@@ -66,6 +185,11 @@ const MascotCustomization = () => {
   const handleAccessorySelect = (accessory: any) => {
     if (isAccessoryUnlocked(accessory.id)) {
       setSelectedAccessory({...accessory, unlocked: true});
+      // Save mascot data with selected accessory
+      saveMascotData({ 
+        bodyType: selectedBody.name.toLowerCase(), 
+        accessoryId: accessory.id 
+      });
     } else {
       // If locked, attempt to purchase
       purchaseAccessory(accessory);
@@ -156,7 +280,13 @@ const MascotCustomization = () => {
                   styles.optionItem, 
                   selectedBody?.id === option.id && styles.selectedOption
                 ]}
-                onPress={() => setSelectedBody(option)}
+                onPress={() => {
+                  setSelectedBody(option);
+                  saveMascotData({ 
+                    bodyType: option.name.toLowerCase(), 
+                    accessoryId: selectedAccessory?.id 
+                  });
+                }}
               >
                 <Image source={option.image} style={styles.optionImage} resizeMode="contain" />
                 <Text style={styles.optionName}>{option.name}</Text>
@@ -171,7 +301,13 @@ const MascotCustomization = () => {
                   styles.optionItem, 
                   !selectedAccessory && styles.selectedOption // Selected when no accessory is chosen
                 ]}
-                onPress={() => setSelectedAccessory(null)}
+                onPress={() => {
+                  setSelectedAccessory(null);
+                  saveMascotData({ 
+                    bodyType: selectedBody.name.toLowerCase(), 
+                    accessoryId: undefined 
+                  });
+                }}
               >
                 <MaterialIcons name="highlight-remove" size={24} color="black" />
                 <Text style={styles.optionName}>Remove</Text>
