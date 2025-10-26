@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff7de',
+    backgroundColor: '#fff',
   },
   searchbar: {
     marginTop: 40,
@@ -237,7 +237,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   categoryButtonActive: {
-    backgroundColor: '#000',
+    backgroundColor: '#FF6B35',
+    borderColor: '#FF6B35',
   },
   categoryUnselected: {
     color: '#000',
