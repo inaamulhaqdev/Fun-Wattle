@@ -1,12 +1,14 @@
+import React from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { router, Stack } from 'expo-router';
 import 'react-native-reanimated';
-
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconButton } from 'react-native-paper';
+import { IconButton, Provider as PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { RegistrationProvider } from '../context/RegistrationContext';
 import { ChildProvider } from '@/context/ChildContext';
 import { AppProvider } from '../context/AppContext';
+import { useFonts, Poppins_400Regular, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
+import { ActivityIndicator } from 'react-native';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -14,6 +16,15 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular, 
+    Poppins_600SemiBold,
+  }); 
+
+  if (!fontsLoaded) {
+    return <ActivityIndicator style={{ flex: 1, justifyContent: 'center'}} />;
+  }
 
   return (
     <AppProvider>
