@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
+import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers'; 
+import { RecordingOptionsPresets } from 'expo-av/build/Audio';
 
 // Questions data
 const questions = [
@@ -106,7 +109,11 @@ const DescribeExercise = () => {
     timestamp: number;
   }[]>([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  
+
+  // Audio recorder set up 
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY); 
+  const recorderState = useAudioRecorderState(audioRecorder); 
+
   // Animation values
   const speechBubbleAnim = React.useRef(new Animated.Value(0)).current;
   const responseAnim = React.useRef(new Animated.Value(0)).current;
@@ -231,15 +238,49 @@ const DescribeExercise = () => {
   // };
 
   // Handle mic button press
-  const handleMicPress = () => {
+  const handleMicPress = async () => {
     if (!isRecording) {
       // Starting to record - reset question timer
+      const hasPermission = await requestAudioPermissions();
+      if (!hasPermission) return;
+
       setQuestionStartTime(Date.now());
+      const started = await startRecording(audioRecorder);
+      if (started) setIsRecording(true);
+    } else {
+      const uri = await stopRecording(audioRecorder);
+      setIsRecording(false);
+
+      if (!uri) return;
+
+      const timeSpent = Date.now() - questionStartTime;
+      const responseData = {
+        questionId: questions[currentQuestion].id,
+        question: questions[currentQuestion].question,
+        response: uri, // save audio URI
+        timeSpent,
+        timestamp: Date.now(),
+      };
+      //setExerciseResponses(prev => [...prev, responseData]);
+      
+
+      // mascot response animation 
+      setShowMascotResponse(true);
+      Animated.spring(responseAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+
+      setTimeout(() => {
+        setShowMascotResponse(false);
+        responseAnim.setValue(0);
+      }, 2000);
     }
-    setIsRecording(!isRecording);
-    // TODO: Add actual voice recording logic here
   };
 
+  /*
   // Handle submit answer
   const handleSubmit = () => {
     if (!isRecording) return;
@@ -274,6 +315,7 @@ const DescribeExercise = () => {
       responseAnim.setValue(0);
     }, 2000);
   };
+*/
 
   // Handle next question
   const handleNextQuestion = () => {
@@ -427,44 +469,25 @@ const DescribeExercise = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* Action buttons */}
-        <View style={styles.actionButtons}>
-          {/* Submit button */}
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              !isRecording && styles.submitButtonDisabled
-            ]}
-            onPress={handleSubmit}
-            disabled={!isRecording}
-          >
-            <Text style={[
-              styles.submitButtonText,
-              !isRecording && styles.submitButtonTextDisabled
-            ]}>
-              Submit
-            </Text>
-          </TouchableOpacity>
-
-          {/* Next question button */}
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !showMascotResponse && styles.nextButtonDisabled
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            !exerciseResponses.some(r => r.questionId === currentQ.id) && styles.nextButtonDisabled
             ]}
             onPress={handleNextQuestion}
-            disabled={!showMascotResponse}
+            disabled={!exerciseResponses.some(r => r.questionId === currentQ.id)}
           >
             <Text style={[
               styles.nextButtonText,
-              !showMascotResponse && styles.nextButtonTextDisabled
+              !exerciseResponses.some(r => r.questionId === currentQ.id) && styles.nextButtonTextDisabled
             ]}>
               {currentQuestion < questions.length - 1 ? "Next Question" : "Finish"}
             </Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
+
+
         </View>
       </View>
-    </View>
   );
 };
 
