@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     color: "black",
   },
   childButton: {
-    backgroundColor: "#1E3A8A",
+    backgroundColor: "#fff",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
