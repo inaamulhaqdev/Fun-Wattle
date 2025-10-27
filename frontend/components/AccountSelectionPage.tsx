@@ -14,6 +14,29 @@ export interface Account {
   isLocked?: boolean;
 }
 
+// Placeholder accounts
+const accounts: Account[] = [
+  {
+    id: '1',
+    name: 'Alice',
+    type: 'parent',
+    isLocked: true,
+  },
+  {
+    id: '2',
+    name: 'Dwight',
+    type: 'therapist',
+    isLocked: true,
+  },
+  // Add more accounts here as needed
+  // {
+  //   id: '2',
+  //   name: 'Child Profile',
+  //   type: 'child',
+  //   isLocked: false,
+  // },
+];
+
 const AccountSelectionPage = () => {
   const { session, setProfile } = useApp(); // Here useApp provides session and lets us set profile and child id's
   const [accounts, setAccounts] = useState<Account[]>([]);
