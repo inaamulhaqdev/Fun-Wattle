@@ -10,25 +10,63 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useApp } from '@/context/AppContext';
+import { API_URL } from '@/config/api';
+
 
 const { width, height } = Dimensions.get('window');
 
-interface Exercise {
+interface Question {
   id: number;
   question: string;
   correctAnswer: string;
   options: string[];
 }
 
-interface ExerciseData {
+interface Exercise {
+  id: number;
   title: string;
-  exercises: Exercise[];
+  questions: Question[];
+}
+
+const { childId } = useApp();
+
+//Fetch exercise data from backend
+const fetchExerciseData = async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/profile/${childId}/exercise`, {
+      method: 'GET',
+      headers: {
+          'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.exercise) {
+        setQuestionData(data.exercise);
+      }
+    } else {
+      console.warn('Failed to fetch question data:', response.status);
+    }
+  } catch (error) {
+    console.error('Error fetching question data:', error);
+  }
+};
+
+const OPPOSITES_EXERCISES = {};
+const setQuestionData = (exercise: Exercise[]) => {
+  console.log('Fetched Questions:', exercise);
+  OPPOSITES_EXERCISES.title = exercise.title;
+  OPPOSITES_EXERCISES.id = exercise.id;
+  OPPOSITES_EXERCISES.questions = exercise.questions;
 }
 
 // Static exercise data for opposites
-const OPPOSITES_EXERCISES: ExerciseData = {
+/*
+const OPPOSITES_EXERCISES: Exercise = {
   title: "Opposite Words",
-  exercises: [
+  questions: [
     {
       id: 1,
       question: "What is the opposite of 'hot'?",
@@ -61,6 +99,7 @@ const OPPOSITES_EXERCISES: ExerciseData = {
     }
   ]
 };
+*/
 
 interface DraggableOptionProps {
   text: string;
@@ -228,121 +267,32 @@ const DraggableOption: React.FC<DraggableOptionProps> = ({
 
 export default function OppositesExercise() {
   const router = useRouter();
-  const [currentExercise, setCurrentExercise] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   
-  // Track all exercise data for submission at the end
-  const [exerciseResults, setExerciseResults] = useState<{
-    questionId: number;
-    question: string;
-    correctAnswer: string;
-    answerGiven: string | null;
-    isCorrect: boolean;
-    timeSpent: number;
-    startTime: number;
-    skipped?: boolean;
-  }[]>([]);
-  
   const [sessionStartTime] = useState(Date.now());
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
 
-  const exercise = OPPOSITES_EXERCISES.exercises[currentExercise];
+  const question = OPPOSITES_EXERCISES.questions[currentQuestion];
 
   // Initialize session and handle cleanup
   useEffect(() => {
     // Initialize question timer
     setQuestionStartTime(Date.now());
-    
-    // Try to retry any failed submissions from previous sessions
-    retryFailedSubmissions();
-    
-    return () => {
-      // Cleanup: Save current progress if user exits mid-exercise
-      if (exerciseResults.length > 0 && exerciseResults.length < OPPOSITES_EXERCISES.exercises.length) {
-        const partialSubmission = {
-          exerciseType: 'opposites',
-          activityId: 8,
-          childId: 'current-child-id',
-          partialResults: exerciseResults,
-          completed: false,
-          exitedAt: Date.now()
-        };
-        
-        const partialSubmissions = JSON.parse(
-          localStorage.getItem('partialExerciseSubmissions') || '[]'
-        );
-        partialSubmissions.push(partialSubmission);
-        localStorage.setItem('partialExerciseSubmissions', JSON.stringify(partialSubmissions));
-      }
-    };
   }, []);
-
-  // Retry mechanism for failed submissions
-  const retryFailedSubmissions = async () => {
-    const failedSubmissions = JSON.parse(
-      localStorage.getItem('pendingExerciseSubmissions') || '[]'
-    );
-    
-    if (failedSubmissions.length === 0) return;
-    
-    const successfulRetries: number[] = [];
-    const userToken = 'dummy-token'; // Would come from auth context
-    
-    for (let i = 0; i < failedSubmissions.length; i++) {
-      try {
-        const response = await fetch('/api/exercise-completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userToken}`
-          },
-          body: JSON.stringify(failedSubmissions[i])
-        });
-        
-        if (response.ok) {
-          successfulRetries.push(i);
-          console.log(`Successfully retried submission ${i}`);
-        }
-      } catch (error) {
-        console.log(`Retry ${i} failed, will try again later`);
-      }
-    }
-    
-    // Remove successful retries from pending list
-    const remainingSubmissions = failedSubmissions.filter((_: any, index: number) => 
-      !successfulRetries.includes(index)
-    );
-    localStorage.setItem('pendingExerciseSubmissions', JSON.stringify(remainingSubmissions));
-  };
 
   const handleDrop = (isCorrect: boolean) => {
     if (answered) return;
     
-    const droppedOption = exercise.options.find(opt => 
-      isCorrect ? opt === exercise.correctAnswer : opt !== exercise.correctAnswer
+    const droppedOption = question.options.find(opt => 
+      isCorrect ? opt === question.correctAnswer : opt !== question.correctAnswer
     );
     
     setSelectedOption(droppedOption || null);
     setAnswered(true);
-    
-    // Record this answer for later submission
-    const questionEndTime = Date.now();
-    const timeSpent = questionEndTime - questionStartTime;
-    
-    const resultEntry = {
-      questionId: exercise.id,
-      question: exercise.question,
-      correctAnswer: exercise.correctAnswer,
-      answerGiven: droppedOption || null,
-      isCorrect: isCorrect,
-      timeSpent: timeSpent,
-      startTime: questionStartTime
-    };
-    
-    setExerciseResults(prev => [...prev, resultEntry]);
     
     if (isCorrect) {
       setScore(score + 10);
@@ -350,7 +300,7 @@ export default function OppositesExercise() {
       
       setTimeout(() => {
         setShowCelebration(false);
-        handleNextExercise();
+        handleNextQuestion();
       }, 2500);
     } else {
       // Show feedback for wrong answer
@@ -363,8 +313,6 @@ export default function OppositesExercise() {
             onPress: () => {
               setAnswered(false);
               setSelectedOption(null);
-              // Reset question start time for retry
-              setQuestionStartTime(Date.now());
             }
           }]
         );
@@ -372,9 +320,9 @@ export default function OppositesExercise() {
     }
   };
 
-  const handleNextExercise = () => {
-    if (currentExercise < OPPOSITES_EXERCISES.exercises.length - 1) {
-      setCurrentExercise(currentExercise + 1);
+  const handleNextQuestion = () => {
+    if (currentQuestion < OPPOSITES_EXERCISES.questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
       setAnswered(false);
       setSelectedOption(null);
       
@@ -392,16 +340,15 @@ export default function OppositesExercise() {
     
     const exerciseSubmission = {
       exerciseType: 'opposites',
-      activityId: 8, // From learning unit data - "Find the Opposite"
-      childId: 'current-child-id', // Would come from auth/context
+      activityId: OPPOSITES_EXERCISES.id, 
+      childId: childId,
       sessionStartTime: sessionStartTime,
       sessionEndTime: sessionEndTime,
       totalTimeSpent: totalSessionTime,
-      totalQuestions: OPPOSITES_EXERCISES.exercises.length,
+      totalQuestions: OPPOSITES_EXERCISES.questions.length,
       correctAnswers: score,
-      incorrectAnswers: OPPOSITES_EXERCISES.exercises.length - score,
-      accuracy: Math.round((score / OPPOSITES_EXERCISES.exercises.length) * 100),
-      individualResults: exerciseResults,
+      incorrectAnswers: OPPOSITES_EXERCISES.questions.length - score,
+      accuracy: Math.round((score / OPPOSITES_EXERCISES.questions.length) * 100),
       completed: true
     };
 
@@ -412,15 +359,11 @@ export default function OppositesExercise() {
       params: { completedTaskId: 2 }
     });
 
-    // Submit all exercise data to backend after completion
-    /*
     try {
-      const userToken = 'dummy-token'; // Would come from auth context
-      const response = await fetch('/api/exercise-completions', {
+      const response = await fetch(`${API_URL}/api/profile/${childId}/exercise`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userToken}`
         },
         body: JSON.stringify(exerciseSubmission)
       });
@@ -437,29 +380,13 @@ export default function OppositesExercise() {
       
     } catch (error) {
       console.error('Error submitting exercise:', error);
-      
-      // Store locally for retry later
-      const failedSubmissions = JSON.parse(
-        localStorage.getItem('pendingExerciseSubmissions') || '[]'
-      );
-      failedSubmissions.push(exerciseSubmission);
-      localStorage.setItem('pendingExerciseSubmissions', JSON.stringify(failedSubmissions));
-      
-      // Still allow navigation but show retry option
-      Alert.alert(
-        'Exercise Completed!',
-        'Your progress has been saved locally and will sync when connection is restored.',
-        [{ text: 'OK', onPress: () => router.push('/child-dashboard') }]
-      );
     }
-    */
+    
   };
 
   const completeActivity = () => {
-    // Submit results to backend
     submitExerciseResults();
   };
-
 
   const skipQuestion = () => {
     Alert.alert(
@@ -470,24 +397,7 @@ export default function OppositesExercise() {
         { 
           text: "Skip", 
           onPress: () => {
-            // Record skip as incorrect answer
-            const questionEndTime = Date.now();
-            const timeSpent = questionEndTime - questionStartTime;
-            
-            const resultEntry = {
-              questionId: exercise.id,
-              question: exercise.question,
-              correctAnswer: exercise.correctAnswer,
-              answerGiven: null,
-              isCorrect: false,
-              timeSpent: timeSpent,
-              startTime: questionStartTime,
-              skipped: true
-            };
-            
-            setExerciseResults(prev => [...prev, resultEntry]);
-            
-            handleNextExercise();
+            handleNextQuestion();
           }
         }
       ]
@@ -507,13 +417,13 @@ export default function OppositesExercise() {
         
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
-            Question {currentExercise + 1} of {OPPOSITES_EXERCISES.exercises.length}
+            Question {currentQuestion + 1} of {OPPOSITES_EXERCISES.questions.length}
           </Text>
           <View style={styles.progressBar}>
             <View 
               style={[
                 styles.progressFill, 
-                { width: `${((currentExercise + 1) / OPPOSITES_EXERCISES.exercises.length) * 100}%` }
+                { width: `${((currentQuestion + 1) / OPPOSITES_EXERCISES.questions.length) * 100}%` }
               ]} 
             />
           </View>
@@ -526,20 +436,20 @@ export default function OppositesExercise() {
 
       {/* Question */}
       <View style={styles.questionContainer}>
-        <Text style={styles.questionNumber}>Question {currentExercise + 1}</Text>
-        <Text style={styles.questionText}>{exercise.question}</Text>
+        <Text style={styles.questionNumber}>Question {currentQuestion + 1}</Text>
+        <Text style={styles.questionText}>{question.question}</Text>
       </View>
 
       {/* Drop Zone */}
       <View style={[
         styles.dropZone,
         answered && styles.dropZoneAnswered,
-        selectedOption === exercise.correctAnswer && styles.dropZoneCorrect
+        selectedOption === question.correctAnswer && styles.dropZoneCorrect
       ]}>
         {selectedOption ? (
           <View style={styles.droppedAnswer}>
             <Text style={styles.droppedAnswerText}>{selectedOption}</Text>
-            {selectedOption === exercise.correctAnswer && (
+            {selectedOption === question.correctAnswer && (
               <Text style={styles.correctIcon}>✓</Text>
             )}
           </View>
@@ -552,11 +462,11 @@ export default function OppositesExercise() {
 
       {/* Options */}
       <View style={styles.optionsContainer}>
-        {exercise.options.map((option, index) => (
+        {question.options.map((option, index) => (
           <DraggableOption
-            key={`${currentExercise}-${index}`} // <-- add currentExercise to key
+            key={`${currentQuestion}-${index}`} // <-- add currentQuestion to key
             text={option}
-            isCorrect={option === exercise.correctAnswer}
+            isCorrect={option === question.correctAnswer}
             onDrop={handleDrop}
             disabled={answered}
             isSelected={selectedOption === option}

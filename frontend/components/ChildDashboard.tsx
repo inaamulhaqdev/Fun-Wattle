@@ -25,7 +25,7 @@ interface MascotData {
 const sampleTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
   { id: '2', name: 'describe_exercise', completed: false },
-  { id: '3', name: 'opposites_exercise', completed: false },
+  { id: '3', name: 'multiple_drag_exercise', completed: false },
   { id: '4', name: 'activity4', completed: false },
   { id: '5', name: 'activity5', completed: false },
 ];
@@ -319,6 +319,9 @@ const ChildDashboard = () => {
     console.log('=== COMPLETION EFFECT TRIGGERED ===');
     console.log('completedTaskId received:', completedTaskId);
     console.log('Current tasks state:', tasksRef.current);
+
+
+    // UPDATE STREAK COUNTER IF TODAY's STREAK NOT YET UPDATED
 
     if (completedTaskId && typeof completedTaskId === 'string') {
       console.log('Processing completion for task ID:', completedTaskId);
