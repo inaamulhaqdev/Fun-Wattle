@@ -54,8 +54,12 @@ const fetchExerciseData = async () => {
   }
 };
 
-const OPPOSITES_EXERCISES = {};
-const setQuestionData = (exercise: Exercise[]) => {
+const OPPOSITES_EXERCISES : Exercise = {
+  id: 0,
+  title: "",
+  questions: []
+};
+const setQuestionData = (exercise: Exercise) => {
   console.log('Fetched Questions:', exercise);
   OPPOSITES_EXERCISES.title = exercise.title;
   OPPOSITES_EXERCISES.id = exercise.id;

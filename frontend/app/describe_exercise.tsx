@@ -2,8 +2,63 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useApp } from '@/context/AppContext';
+import { API_URL } from '@/config/api';
+
+
+interface Question {
+  id: number,
+  question: string,
+  showPointer: boolean,
+  pointerPosition: { top: number, left: number }
+}
+
+interface Exercise {
+  id: number;
+  title: string;
+  questions: Question[];
+}
+
+const { childId } = useApp();
+
+//Fetch exercise data from backend
+const fetchExerciseData = async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/profile/${childId}/exercise`, {
+      method: 'GET',
+      headers: {
+          'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.exercise) {
+        setQuestionData(data.exercise);
+      }
+    } else {
+      console.warn('Failed to fetch question data:', response.status);
+    }
+  } catch (error) {
+    console.error('Error fetching question data:', error);
+  }
+};
+
+const DESCRIBE_EXERCISE : Exercise = {
+  id: 0,
+  title: "",
+  questions: []
+};
+const setQuestionData = (exercise: Exercise) => {
+  if (!exercise) return;
+  console.log('Fetched Questions:', exercise);
+  DESCRIBE_EXERCISE.title = exercise.title;
+  DESCRIBE_EXERCISE.id = exercise.id;
+  DESCRIBE_EXERCISE.questions = exercise.questions;
+}
 
 // Questions data
+/*
 const questions = [
   {
     id: 1,
@@ -30,6 +85,7 @@ const questions = [
     pointerPosition: null
   }
 ];
+*/
 
 // Mascot data interface
 interface MascotData {
@@ -37,7 +93,7 @@ interface MascotData {
   accessoryId?: number;
 }
 
-// Mascot image helper function
+
 const getMascotImages = (mascotData: MascotData) => {
   const bodyImages = {
     koala: require('@/assets/images/koala.png'),
@@ -66,30 +122,6 @@ const getMascotImages = (mascotData: MascotData) => {
   return { bodyImage, accessoryImage };
 };
 
-// Fetch mascot data from backend
-// const fetchMascotData = async () => {
-//   try {
-//     const response = await fetch(`${API_URL}/api/children/current/mascot`, {
-//       method: 'GET',
-//       headers: {
-//          'Content-Type': 'application/json',
-//       },
-//     });
-
-//     if (response.ok) {
-//       const data = await response.json();
-//       if (data.mascot) {
-//         setMascotData(data.mascot);
-//       }
-//     } else {
-//       console.warn('Failed to fetch mascot data:', response.status);
-//     }
-//   } catch (error) {
-//     console.error('Error fetching mascot data:', error);
-//     // Keep default mascot on error
-//   }
-// };
-
 const DescribeExercise = () => {
   const { taskId, bodyType, accessoryId } = useLocalSearchParams();
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -111,6 +143,30 @@ const DescribeExercise = () => {
   const speechBubbleAnim = React.useRef(new Animated.Value(0)).current;
   const responseAnim = React.useRef(new Animated.Value(0)).current;
   const pointerAnim = React.useRef(new Animated.Value(1)).current;
+
+  //Fetch mascot data from backend
+  const fetchMascotData = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/${childId}/mascot`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.mascot) {
+          setMascotData(data.mascot);
+        }
+      } else {
+        console.warn('Failed to fetch mascot data:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching mascot data:', error);
+      // Keep default mascot on error
+    }
+  };
 
   // Load mascot data from route parameters
   useEffect(() => {
@@ -140,7 +196,7 @@ const DescribeExercise = () => {
 
   // Animate pointer pulsing effect
   useEffect(() => {
-    if (questions[currentQuestion].showPointer) {
+    if (DESCRIBE_EXERCISE.questions[currentQuestion].showPointer) {
       const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(pointerAnim, {
@@ -164,71 +220,52 @@ const DescribeExercise = () => {
     }
   }, [currentQuestion, pointerAnim]);
 
-  // const submitExerciseResults = async () => {
-  //   const sessionEndTime = Date.now();
-  //   const totalSessionTime = sessionEndTime - sessionStartTime;
-  //   
-  //   const exerciseSubmission = {
-  //     exerciseType: 'describe',
-  //     activityId: 9, // From learning unit data - "Describe Exercise"
-  //     childId: 'current-child-id', // Would come from auth/context
-  //     sessionStartTime: sessionStartTime,
-  //     sessionEndTime: sessionEndTime,
-  //     totalTimeSpent: totalSessionTime,
-  //     totalQuestions: questions.length,
-  //     responses: exerciseResponses,
-  //     questionsCompleted: currentQuestion + 1,
-  //     completed: isCompleted,
-  //     accuracy: 100,
-  //   };
+  const submitExerciseResults = async () => {
+    const sessionEndTime = Date.now();
+    const totalSessionTime = sessionEndTime - sessionStartTime;
+    
+    const exerciseSubmission = {
+      exerciseType: 'describe',
+      activityId: DESCRIBE_EXERCISE.id,
+      childId: childId,
+      sessionStartTime: sessionStartTime,
+      sessionEndTime: sessionEndTime,
+      totalTimeSpent: totalSessionTime,
+      totalQuestions: DESCRIBE_EXERCISE.questions.length,
+      correctAnswers: 0, //number of correct answers
+      incorrectAnswers: 0, //number of incorrect answers
+      accuracy: 100,
+      completed: true,
+    };
 
-  //   try {
-  //     const response = await fetch('/api/exercise-completions', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify(exerciseSubmission)
-  //     });
-  //     
-  //     if (!response.ok) {
-  //       throw new Error('Failed to submit exercise results');
-  //     }
-  //     
-  //     const result = await response.json();
-  //     console.log('Exercise submitted successfully:', result);
-  //     
-  //     // Navigate back to dashboard after successful submission
-  //     router.push({
-  //       pathname: '/child-dashboard' as any,
-  //       params: { 
-  //         completedTaskId: taskId,
-  //         bodyType: mascotData.bodyType,
-  //         accessoryId: mascotData.accessoryId?.toString() || ''
-  //       }
-  //     });
-  //     
-  //   } catch (error) {
-  //     console.error('Error submitting exercise:', error);
-  //     
-  //     // Store locally for retry later
-  //     const failedSubmissions = JSON.parse(
-  //       localStorage.getItem('pendingExerciseSubmissions') || '[]'
-  //     );
-  //     failedSubmissions.push(exerciseSubmission);
-  //     localStorage.setItem('pendingExerciseSubmissions', JSON.stringify(failedSubmissions));
-  //     
-  //     // Still allow navigation
-  //     router.push({
-  //       pathname: '/child-dashboard' as any,
-  //       params: { 
-  //         completedTaskId: taskId,
-  //         bodyType: mascotData.bodyType,
-  //         accessoryId: mascotData.accessoryId?.toString() || ''
-  //       }
-  //     });
-  //   }
-  // };
+    try {
+      const response = await fetch(`${API_URL}/api/profile/${childId}/exercise`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(exerciseSubmission)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit exercise results');
+      }
+      
+      const result = await response.json();
+      console.log('Exercise submitted successfully:', result);
+      
+      // Navigate back to dashboard after successful submission
+      router.push({
+        pathname: '/child-dashboard' as any,
+        params: { 
+          completedTaskId: taskId
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error submitting exercise:', error);
+    }
+  };
 
   // Handle mic button press
   const handleMicPress = () => {
@@ -249,8 +286,8 @@ const DescribeExercise = () => {
     
     // Record the response (in real app, this would be transcribed audio)
     const responseData = {
-      questionId: questions[currentQuestion].id,
-      question: questions[currentQuestion].question,
+      questionId: DESCRIBE_EXERCISE.questions[currentQuestion].id,
+      question: DESCRIBE_EXERCISE.questions[currentQuestion].question,
       response: "Audio response transcription would go here", // TODO: Replace with actual transcription
       timeSpent: timeSpent,
       timestamp: currentTime
@@ -277,7 +314,7 @@ const DescribeExercise = () => {
 
   // Handle next question
   const handleNextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
+    if (currentQuestion < DESCRIBE_EXERCISE.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setQuestionStartTime(Date.now()); // Reset timer for next question
       speechBubbleAnim.setValue(0);
@@ -302,7 +339,7 @@ const DescribeExercise = () => {
     }
   };
 
-  const currentQ = questions[currentQuestion];
+  const currentQ = DESCRIBE_EXERCISE.questions[currentQuestion];
   const { bodyImage, accessoryImage } = getMascotImages(mascotData);
 
   if (isCompleted) {
@@ -318,12 +355,12 @@ const DescribeExercise = () => {
     <View style={styles.container}>
       {/* Progress indicator */}
       <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>Question {currentQuestion + 1} of {questions.length}</Text>
+        <Text style={styles.progressText}>Question {currentQuestion + 1} of {DESCRIBE_EXERCISE.questions.length}</Text>
         <View style={styles.progressBar}>
           <View 
             style={[
               styles.progressFill, 
-              { width: `${((currentQuestion + 1) / questions.length) * 100}%` }
+              { width: `${((currentQuestion + 1) / DESCRIBE_EXERCISE.questions.length) * 100}%` }
             ]} 
           />
         </View>
@@ -459,7 +496,7 @@ const DescribeExercise = () => {
               styles.nextButtonText,
               !showMascotResponse && styles.nextButtonTextDisabled
             ]}>
-              {currentQuestion < questions.length - 1 ? "Next Question" : "Finish"}
+              {currentQuestion < DESCRIBE_EXERCISE.questions.length - 1 ? "Next Question" : "Finish"}
             </Text>
           </TouchableOpacity>
         </View>
