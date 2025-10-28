@@ -8,7 +8,7 @@ from rest_framework.exceptions import MethodNotAllowed
 
 @api_view(['GET'])
 def get_assigned(request, profile_id):
-    return Response({'Message': 'This profile/id/activies route is unimplemented'}, status=501)
+    return Response({'Message': 'This profile/id/activities route is unimplemented'}, status=501)
 #       """
 #     Get all assigned activities for a child profile.
 #     Endpoint: GET /modules/{child_id}
