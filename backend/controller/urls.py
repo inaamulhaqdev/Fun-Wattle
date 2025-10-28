@@ -9,6 +9,7 @@ urlpatterns = [
     path('profile/<str:profile_id>/', get_profile, name='get_profile'),
     path('learning_units/', get_all_learning_units, name='get_all_learning_units'),
     path('assignments/', manage_assignment, name='manage_assignment'),
+    path("assess/", assess_speech, name="assess_speech"),
     # path('modules/<int:child_id>/', get_child_assigned_activities, name='get_child_activities'),
     # path('modules/', get_activities, name='get_activities'),
     # path('modules/<int:id>/', assign_activity_to_child, name='assign_activity_to_child'),
