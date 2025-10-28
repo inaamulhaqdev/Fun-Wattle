@@ -231,9 +231,6 @@ def manage_assignment(request):
 			return Response({'message': 'Assignment removed successfully'}, status=200)
 
 
-
-
-
 # @api_view(['GET'])
 # def get_activities(request):
 #     """
@@ -244,22 +241,6 @@ def manage_assignment(request):
 #     activities = Activity.objects.all()
 #     serializer = ActivitySerializer(activities, many=True)
 #     return Response(serializer.data, status=200)
-
-# @api_view(['GET'])
-# def get_child_assigned_activities(request, child_id):
-#     """
-#     Get all assigned activities for a child profile.
-#     Endpoint: GET /modules/{child_id}
-#     """
-
-#     try:
-#         child_profile = Profile.objects.get(id=child_id, profile_type='child')
-#     except Profile.DoesNotExist:
-#         return Response({'error': 'Child profile not found'}, status=404)
-
-#     assigned_activities = AssignedActivity.objects.filter(child_assigned_to=child_profile)
-#     serializer = AssignedActivitySerializer(assigned_activities, many=True)
-#     return Response(serializer.data)
 
 # @api_view(['POST'])
 # def assign_activity_to_child(request, id):
