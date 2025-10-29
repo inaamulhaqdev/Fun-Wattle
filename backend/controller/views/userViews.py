@@ -1,9 +1,8 @@
-from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Learning_Unit, User, Profile, User_Profile, Assignment
-from .serializers import UserSerializer, ProfileSerializer, User_ProfileSerializer, LearningUnitSerializer, AssignmentSerializer
+from ..models import *
+from ..serializers import *
 from rest_framework.exceptions import MethodNotAllowed
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -26,14 +25,6 @@ class User_ProfileViewSet(viewsets.ModelViewSet):
 
 	def destroy(self, request, *args, **kwargs):
 		raise MethodNotAllowed('DELETE')
-
-# class ActivityViewSet(viewsets.ModelViewSet):
-# 	queryset = Activity.objects.all()
-# 	serializer_class = ActivitySerializer
-
-# class AssignedActivityViewSet(viewsets.ModelViewSet):
-# 	queryset = AssignedActivity.objects.all()
-# 	serializer_class = AssignedActivitySerializer
 
 
 @api_view(['POST'])
@@ -161,120 +152,3 @@ def get_profile(request, profile_id):
 
     serializer = ProfileSerializer(profile)
     return Response(serializer.data, status=200)
-
-
-@api_view(['GET'])
-def get_all_learning_units(request):
-	child_id = request.query_params.get('child_id')
-	learning_units = Learning_Unit.objects.all()
-	serializer = LearningUnitSerializer(
-    	learning_units,
-    	many=True,
-    	context={'child_id': child_id}
-	)
-	return Response(serializer.data, status=200)
-
-
-@api_view(['POST', 'DELETE'])
-def manage_assignment(request):
-	learning_unit_id = request.data.get('learning_unit_id')
-	child_id = request.data.get('child_id')
-	user_id = request.data.get('user_id')
-	participation_type = request.data.get('participation_type')
-
-	if not all([learning_unit_id, child_id, user_id]):
-		return Response({'error': 'learning_unit_id, child_id, and user_id are required'}, status=400)
-
-	# Verify all required entities exist
-	try:
-		learning_unit = Learning_Unit.objects.get(id=learning_unit_id)
-	except Learning_Unit.DoesNotExist:
-		return Response({'error': 'Learning unit not found'}, status=404)
-
-	try:
-		child_profile = Profile.objects.get(id=child_id, profile_type='child')
-	except Profile.DoesNotExist:
-		return Response({'error': 'Child profile not found'}, status=404)
-
-	try:
-		user = User.objects.get(id=user_id)
-	except User.DoesNotExist:
-		return Response({'error': 'User not found'}, status=404)
-
-	if request.method == 'POST':
-		# If post or put, we are either creating or updating assignment
-		if not participation_type or participation_type not in ['required', 'recommended']:
-			return Response({'error': 'participation_type must be "required" or "recommended"'}, status=400)
-
-		assignment, created = Assignment.objects.update_or_create(
-			# These two are the "lookup" fields
-			learning_unit=learning_unit,
-			assigned_to=child_profile,
-   			# these are the "update" fields
-			defaults={
-				'participation_type': participation_type,
-				'assigned_by': user,
-			}
-		)
-
-		serializer = AssignmentSerializer(assignment)
-		return Response(serializer.data, status=201 if created else 200)
-
-	elif request.method == 'DELETE':
-		# Delete assignment if we select unassigned and an assignment exists
-		assignment = Assignment.objects.get(
-			learning_unit=learning_unit,
-			assigned_to=child_profile
-		)
-		if assignment:
-			assignment.delete()
-			return Response({'message': 'Assignment removed successfully'}, status=200)
-
-
-# @api_view(['GET'])
-# def get_activities(request):
-#     """
-#     Get all activities
-#     Endpoint: GET /modules/
-#     """
-
-#     activities = Activity.objects.all()
-#     serializer = ActivitySerializer(activities, many=True)
-#     return Response(serializer.data, status=200)
-
-# @api_view(['POST'])
-# def assign_activity_to_child(request, id):
-#     """
-#     Assign an activity (by id) to a child profile.
-#     Endpoint: POST /modules/{id}/
-#     """
-
-#     try:
-#         activity = Activity.objects.get(id=id)
-#     except Activity.DoesNotExist:
-#         return Response({"error": "Activity not found"}, status=400)
-
-#     child_id = request.data.get('child_id')
-#     user_id = request.data.get('user_id')
-
-#     if not child_id or not user_id:
-#         return Response({"error": "child_id and user_id are required"}, status=400)
-
-# 	# Get child and user
-#     try:
-#         child = Profile.objects.get(id=child_id, profile_type='child')
-#         user = User.objects.get(id=user_id)
-#     except Profile.DoesNotExist:
-#         return Response({"error": "Child profile not found"}, status=404)
-#     except User.DoesNotExist:
-#         return Response({"error": "User not found"}, status=404)
-
-# 	# Set activity, child, and user
-#     assigned_activity = AssignedActivity.objects.create(
-#         activity=activity,
-#         child_assigned_to=child,
-#         user_assigned_by=user
-#     )
-
-#     serializer = AssignedActivitySerializer(assigned_activity)
-#     return Response(serializer.data, status=201)
