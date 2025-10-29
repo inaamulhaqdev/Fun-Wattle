@@ -244,104 +244,91 @@ AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
 
 @api_view(['POST'])
 def assess_speech(request):
-    """
-    Receive a child's audio, run pronunciation assessment via Azure Speech,
-    then provide feedback via Azure OpenAI.
-    Expects multipart/form-data with 'audio_file' and 'reference_text'.
-    """
     audio_file = request.FILES.get('audio_file')
     reference_text = request.data.get('reference_text')
 
     if not audio_file or not reference_text:
         return Response({'error': 'audio_file and reference_text are required'}, status=400)
 
-    # Azure Speech config
-    speech_config = speechsdk.SpeechConfig(
-        subscription=settings.AZURE_SPEECH_KEY,
-        region=settings.AZURE_SPEECH_REGION
-    )
-    audio_input = speechsdk.AudioConfig(stream=speechsdk.AudioDataStream(audio_file.read()))
-    recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
+    temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".m4a")
+    for chunk in audio_file.chunks():
+        temp_input.write(chunk)
+    temp_input.close()
 
-    # Transcribe audio
-    result = recognizer.recognize_once()
-    if result.reason != speechsdk.ResultReason.RecognizedSpeech:
-        return Response({'error': 'Speech recognition failed', 'reason': str(result.reason)}, status=400)
+    temp_output_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
+    try:
+        sound = AudioSegment.from_file(temp_input.name)
+        sound.export(temp_output_path, format="wav")
 
-    child_transcript = result.text
+        # Azure Speech config
+        speech_config = speechsdk.SpeechConfig(
+            subscription=settings.AZURE_SPEECH_KEY,
+            region=settings.AZURE_SPEECH_REGION
+        )
+        audio_input = speechsdk.AudioConfig(filename=temp_output_path)
+        recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
 
-    # Pronunciation assessment
-    pron_config = speechsdk.PronunciationAssessmentConfig(
-        reference_text=reference_text,
-        grading_system=speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
-        granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
-        enable_miscue=True
-    )
-    pron_config.apply_to(recognizer)
+        # Pronunciation assessment
+        pron_config = speechsdk.PronunciationAssessmentConfig(
+            reference_text=reference_text,
+            grading_system=speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
+            granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
+            enable_miscue=True
+        )
+        pron_config.apply_to(recognizer)
 
-    pron_result_raw = recognizer.recognize_once()
-    if pron_result_raw.reason != speechsdk.ResultReason.RecognizedSpeech:
-        return Response({'error': 'Pronunciation assessment failed', 'reason': str(pron_result_raw.reason)}, status=400)
+        result = recognizer.recognize_once()
+        if result.reason != speechsdk.ResultReason.RecognizedSpeech:
+            return Response({'error': 'Speech recognition failed'}, status=400)
 
-    pron_result = speechsdk.PronunciationAssessmentResult(pron_result_raw)
+        pron_result = speechsdk.PronunciationAssessmentResult(result)
+        pron_data = {
+            "recognized_text": result.text,
+            "accuracy_score": pron_result.accuracy_score,
+            "fluency_score": pron_result.fluency_score,
+            "completeness_score": pron_result.completeness_score,
+            "pronunciation_score": pron_result.pronunciation_score,
+        }
 
-    pron_data = {
-        "recognized_text": pron_result_raw.text,
-        "accuracy_score": pron_result.accuracy_score,
-        "fluency_score": pron_result.fluency_score,
-        "completeness_score": pron_result.completeness_score,
-        "pronunciation_score": pron_result.pronunciation_score,
-        "word_level": [
-            {
-                "word": w.word,
-                "accuracy_score": w.accuracy_score,
-                "phoneme_scores": [p.accuracy_score for p in w.phonemes],
-            } for w in pron_result.words
-        ],
-    }
+        # GPT Feedback
+        client = AzureOpenAI(
+            api_version="2024-12-01-preview",
+            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+            api_key=settings.AZURE_OPENAI_KEY,
+        )
 
-    # GPT Feedback via Azure OpenAI
-    client = AzureOpenAI(
-        api_version="2024-12-01-preview",
-        azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
-        api_key=settings.AZURE_OPENAI_KEY,
-    )
+        system_prompt = "You are a friendly speech therapist helping children practice pronunciation."
+        user_prompt = f"""
+        Reference sentence: "{reference_text}"
+        Child's speech: "{result.text}"
+        Pronunciation Assessment Results: {json.dumps(pron_data, indent=2)}
+        Give:
+        1. A short encouraging summary
+        2. One area to improve
+        3. A fun motivational line
+        """
 
-    system_prompt = """
-    You are a friendly virtual speech therapist helping a child improve pronunciation.
-    Give simple, encouraging feedback based on their pronunciation assessment and text.
-    Avoid technical terms and use a supportive tone suitable for 6-10 year olds.
-    """
-    user_prompt = f"""
-    Reference sentence: "{reference_text}"
-    Child's speech: "{child_transcript}"
+        response_gpt = client.chat.completions.create(
+            model="feedback-gpt4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=300,
+            temperature=0.8,
+        )
 
-    Pronunciation Assessment Results:
-    {json.dumps(pron_data, indent=2)}
+        feedback_text = response_gpt.choices[0].message.content
 
-    Please give:
-    1. A short encouraging summary (2-3 sentences)
-    2. One key area to practice next time
-    3. A fun motivational line (child-friendly)
-    """
+        return Response({
+            "transcript": result.text,
+            "pronunciation": pron_data,
+            "feedback": feedback_text
+        }, status=200)
 
-    response_gpt = client.chat.completions.create(
-        model="feedback-gpt4o-mini",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        max_tokens=300,
-        temperature=0.8,
-    )
-
-    feedback_text = response_gpt.choices[0].message.content
-
-    return Response({
-        "transcript": child_transcript,
-        "pronunciation": pron_data,
-        "feedback": feedback_text
-    }, status=200)
+    finally:
+        os.remove(temp_input.name)
+        os.remove(temp_output_path)
 
 # @api_view(['GET'])
 # def get_activities(request):
