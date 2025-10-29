@@ -1,8 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { API_URL } from '../config/api';
+import { useApp } from '../context/AppContext';
+import { verifyPin } from '../utils/pinUtils';
 
 const PinEntryPage = () => {
+  const { profileId } = useApp();
   const [pin, setPin] = useState(['', '', '', '']);
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
 
@@ -33,16 +37,51 @@ const PinEntryPage = () => {
 
   const handleForgotPin = () => {
     // TODO: Implement forgot PIN functionality
+    // Do this after we have PINs properly hashed and stored
   };
 
   // Auto-submit when PIN is complete
   React.useEffect(() => {
-    if (pin.every(digit => digit !== '')) {
-      const enteredPin = pin.join('');
-      // TODO: Validate PIN with backend
-      // Navigate to parent introduction page (only on first login)
-      router.replace('/parent-introduction' as any);
-    }
+    const submitPin = async () => {
+      if (pin.every(digit => digit !== '')) {
+        const enteredPin = pin.join('');
+
+        try {
+          // Get the stored PIN hash from the backend
+          const response = await fetch(`${API_URL}/api/profile/${profileId}/`, {
+            method: 'GET',
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch profile (${response.status})`);
+          }
+
+          const data = await response.json();
+          const correctPinHash = data.pin_hash;
+
+          // Verify PIN by comparing hashes
+          if (verifyPin(enteredPin, correctPinHash)) {
+            // Navigate to appropriate dashboard
+            if (data.profile_type === 'parent') {
+              router.replace('/parent-introduction');
+            } else { // Therapist
+              router.replace('/therapist-dashboard');
+            }
+          } else {
+            Alert.alert('Error', 'Incorrect PIN. Please try again.');
+            setPin(['', '', '', '']);
+            pinInputRefs.current[0]?.focus();
+          }
+        } catch (error) {
+          console.error('PIN verification error:', error);
+          Alert.alert('Error', 'Failed to verify PIN. Please try again.');
+          setPin(['', '', '', '']);
+          pinInputRefs.current[0]?.focus();
+        }
+      }
+    };
+
+    submitPin();
   }, [pin]);
 
   return (
@@ -54,7 +93,7 @@ const PinEntryPage = () => {
 
       <View style={styles.content}>
         <Text style={styles.title}>Enter your passcode</Text>
-        
+
         {/* PIN Input */}
         <View style={styles.pinContainer}>
           {pin.map((digit, index) => (

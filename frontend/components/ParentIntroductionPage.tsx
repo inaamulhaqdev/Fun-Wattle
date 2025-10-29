@@ -54,7 +54,7 @@ const ParentIntroductionPage = () => {
       setCurrentSlide(currentSlide + 1);
     } else if (currentSlide === tutorialSlides.length - 1) {
       // Navigate to parent dashboard
-      router.replace('/(tabs)/parent-dashboard' as any);
+      router.replace('/(parent-tabs)/parent-dashboard');
     }
   };
 
@@ -66,7 +66,7 @@ const ParentIntroductionPage = () => {
 
   const handleSkip = () => {
     // Navigate to parent dashboard
-    router.replace('/(tabs)/parent-dashboard' as any);
+    router.replace('/(parent-tabs)/parent-dashboard');
   };
 
   const currentSlideData = tutorialSlides[currentSlide];
@@ -80,21 +80,21 @@ const ParentIntroductionPage = () => {
         {/* Image Placeholder Container */}
         <View style={styles.imageContainer}>
           {/* Left tap area */}
-          <TouchableOpacity 
-            style={styles.leftTapArea} 
+          <TouchableOpacity
+            style={styles.leftTapArea}
             onPress={prevSlide}
             disabled={currentSlide === 0}
           />
-          
+
           {/* Image placeholder */}
           <View style={styles.imagePlaceholder}>
             <Text style={styles.placeholderIcon}>{currentSlideData.imagePlaceholder}</Text>
             <Feather name="image" size={40} color="#666" />
           </View>
-          
+
           {/* Right tap area */}
-          <TouchableOpacity 
-            style={styles.rightTapArea} 
+          <TouchableOpacity
+            style={styles.rightTapArea}
             onPress={nextSlide}
           />
         </View>

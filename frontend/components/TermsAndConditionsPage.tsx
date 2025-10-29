@@ -1,22 +1,71 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { supabase } from '../config/supabase';
+import { useRegistration } from '../context/RegistrationContext';
+import { API_URL } from '../config/api';
 
 const TermsAndConditionsPage = () => {
-  const [agreed, setAgreed] = useState(false);
+  const { email, password, userType, signedPrivacyPolicy, setSignedPrivacyPolicy } = useRegistration();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setSignedPrivacyPolicy(false);
+  }, []);
 
   const goBack = () => {
     router.back();
   };
 
-  const handleContinue = () => {
-    if (!agreed) {
+  const handleContinue = async () => {
+    setLoading(true);
+
+    if (!signedPrivacyPolicy) {
       alert('Please agree to the Terms & Conditions to continue');
       return;
     }
-    // Navigate to main app after agreeing
-    router.replace('/confirmation');
+
+    // Create new user account
+    try {
+      // Save user authentication to Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error || !data.user) {
+        Alert.alert('Registration Error', error?.message || 'Failed to create account');
+        setLoading(false);
+        return;
+      }
+
+      const user = data.user;
+
+      // Save user information to postgres via backend API
+      await fetch(`${API_URL}/api/create/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: user.id,
+          email: user.email,
+          user_type: userType,
+        })
+      });
+
+      // Wait a bit for the session to be fully persisted
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Navigate to confirmation page once registration complete (can't go back to terms)
+      setLoading(false);
+      router.replace('/confirmation');
+
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      Alert.alert('Registration Error', 'Registration failed. Please try again and contact support if the issue persists.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,7 +87,7 @@ const TermsAndConditionsPage = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>1. About Our Service</Text>
             <Text style={styles.sectionText}>
-                FunWattle provides tools, exercises, and resources to support speech and language development. We do not provide medical advice. The app is intended as a supplement to, not a replacement for, professional speech therapy services. Always consult a qualified healthcare professional regarding diagnosis or treatment of speech or language conditions.
+              FunWattle provides tools, exercises, and resources to support speech and language development. We do not provide medical advice. The app is intended as a supplement to, not a replacement for, professional speech therapy services. Always consult a qualified healthcare professional regarding diagnosis or treatment of speech or language conditions.
             </Text>
           </View>
 
@@ -46,7 +95,7 @@ const TermsAndConditionsPage = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>2. Eligibility</Text>
             <Text style={styles.sectionText}>
-                You must be at least 18 years old, or have a parent/guardian’s permission, to use this app. Parents or guardians are responsible for supervising use by children.
+              You must be at least 18 years old, or have a parent/guardian’s permission, to use this app. Parents or guardians are responsible for supervising use by children.
             </Text>
           </View>
 
@@ -72,25 +121,25 @@ const TermsAndConditionsPage = () => {
           {/* Section 5 */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Subscriptions & Payments (if applicable)</Text>
-              <Text style={styles.bulletPoint}>• Some features may require a paid subscription.</Text>
-              <Text style={styles.bulletPoint}>• Fees, billing periods, and cancellation terms will be clearly stated before purchase.</Text>
-              <Text style={styles.bulletPoint}>• Payments are processed through [App Store / Google Play / Payment Provider].</Text>
+            <Text style={styles.bulletPoint}>• Some features may require a paid subscription.</Text>
+            <Text style={styles.bulletPoint}>• Fees, billing periods, and cancellation terms will be clearly stated before purchase.</Text>
+            <Text style={styles.bulletPoint}>• Payments are processed through [App Store / Google Play / Payment Provider].</Text>
           </View>
 
           {/* Section 6 */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>6. Intellectual Property</Text>
             <Text style={styles.sectionText}>
-                All app content—including exercises, designs, graphics, and branding—belongs to [Company Name] unless otherwise stated. You may use it only within the app for personal, non-commercial purposes.
+              All app content—including exercises, designs, graphics, and branding—belongs to [Company Name] unless otherwise stated. You may use it only within the app for personal, non-commercial purposes.
             </Text>
           </View>
 
           {/* Section 7 */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>7. Disclaimers & Limitations of Liability</Text>
-              <Text style={styles.bulletPoint}>• The app is provided “as is” without warranties of any kind.</Text>
-              <Text style={styles.bulletPoint}>• We do not guarantee that the app will always be available, error-free, or secure.</Text>
-              <Text style={styles.bulletPoint}>• To the maximum extent permitted by law, we are not liable for any loss, injury, or damages arising from your use of the app.</Text>
+            <Text style={styles.bulletPoint}>• The app is provided “as is” without warranties of any kind.</Text>
+            <Text style={styles.bulletPoint}>• We do not guarantee that the app will always be available, error-free, or secure.</Text>
+            <Text style={styles.bulletPoint}>• To the maximum extent permitted by law, we are not liable for any loss, injury, or damages arising from your use of the app.</Text>
           </View>
 
           {/* Section 8 */}
@@ -121,10 +170,10 @@ const TermsAndConditionsPage = () => {
           <View style={styles.agreementSection}>
             <TouchableOpacity
               style={styles.checkboxContainer}
-              onPress={() => setAgreed(!agreed)}
+              onPress={() => setSignedPrivacyPolicy(!signedPrivacyPolicy)}
             >
-              <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
-                {agreed && <Feather name="check" size={16} color="#fff" />}
+              <View style={[styles.checkbox, signedPrivacyPolicy && styles.checkboxChecked]}>
+                {signedPrivacyPolicy && <Feather name="check" size={16} color="#fff" />}
               </View>
               <Text style={styles.agreementText}>
                 I agree to the Terms & Conditions
@@ -142,15 +191,16 @@ const TermsAndConditionsPage = () => {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            agreed ? styles.continueButtonActive : styles.continueButtonDisabled
+            signedPrivacyPolicy ? styles.continueButtonActive : styles.continueButtonDisabled
           ]}
           onPress={handleContinue}
+          disabled={!signedPrivacyPolicy || loading}
         >
           <Text style={[
             styles.continueButtonText,
-            agreed ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
+            signedPrivacyPolicy ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
           ]}>
-            Continue
+            {loading ? 'Loading...' : 'Continue'}
           </Text>
         </TouchableOpacity>
       </View>

@@ -1,34 +1,68 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { getAuth } from 'firebase/auth';
-import { firestore } from '../config/firebase';
-import { updateDoc, doc } from 'firebase/firestore';
+import { supabase } from '../config/supabase';
+import { useRegistration } from '../context/RegistrationContext';
+import { API_URL } from '../config/api';
 
 const MembershipPage = () => {
 
-  const handleStartFreeTrial = async () => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (user) {
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        membershipType: 'free_trial',
-        trialStartDate: new Date(),
-        trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days free trial
-      });
-    }
-    router.push('/profile-creation');
-  };
+  const { userType } = useRegistration();
 
-  const handlePaidSubscription = async () => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (user) {
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        membershipType: 'paid',
-        subscriptionStartDate: new Date()
+  const handleSubscription = async (type: 'free_trial' | 'paid') => {
+    try {
+      const { data: { session }} = await supabase.auth.getSession();
+      if (!session) {
+        Alert.alert('No active session', 'Please log in again.');
+        return;
+      }
+
+      const user = session.user;
+
+      if (type === 'free_trial') {
+        // Save membership type (free), start (now) and end date (7 days from now)
+        const response = await fetch(`${API_URL}/api/subscribe/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: user.id,
+            subscription_type: 'free_trial',
+            subscription_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days later
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('Subscription error:', error);
+          Alert.alert('Error', 'Failed to set up free trial. Please try again.');
+          return;
+        }
+      } else if (type === 'paid') {
+        // Save membership type (paid) and start date (now)
+        const response = await fetch(`${API_URL}/api/subscribe/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: user.id,
+            subscription_type: 'paid',
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('Subscription error:', error);
+          Alert.alert('Error', 'Failed to set up subscription. Please try again.');
+          return;
+        }
+      }
+
+      router.push({
+        pathname: '/profile-creation',
+        params: { userType: userType } // Might do this differently with postgres....
       });
+    } catch (error) {
+      console.error('Subscription error:', error);
+      Alert.alert('Error', 'An error occurred. Please try again.');
     }
-    router.push('/profile-creation');
   };
 
   return (
@@ -68,7 +102,7 @@ const MembershipPage = () => {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.trialButton} onPress={handleStartFreeTrial}>
+          <TouchableOpacity style={styles.trialButton} onPress={() => handleSubscription('free_trial')}>
             <Text style={styles.trialButtonText}>Start free 7-day trial</Text>
           </TouchableOpacity>
         </View>
@@ -101,7 +135,7 @@ const MembershipPage = () => {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.paidButton} onPress={handlePaidSubscription}>
+          <TouchableOpacity style={styles.paidButton} onPress={() => handleSubscription('paid')}>
             <Text style={styles.paidButtonText}>Pay $30/month</Text>
           </TouchableOpacity>
         </View>
