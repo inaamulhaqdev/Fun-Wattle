@@ -245,10 +245,9 @@ AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
 @api_view(['POST'])
 def assess_speech(request):
     audio_file = request.FILES.get('audio_file')
-    reference_text = request.data.get('reference_text')
 
-    if not audio_file or not reference_text:
-        return Response({'error': 'audio_file and reference_text are required'}, status=400)
+    if not audio_file:
+        return Response({'error': 'audio_file is required'}, status=400)
 
     temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".m4a")
     for chunk in audio_file.chunks():
@@ -280,6 +279,15 @@ def assess_speech(request):
         result = recognizer.recognize_once()
         if result.reason != speechsdk.ResultReason.RecognizedSpeech:
             return Response({'error': 'Speech recognition failed'}, status=400)
+
+		# Pronunciation assessment
+        pron_config = speechsdk.PronunciationAssessmentConfig(
+            reference_text=result.text,
+            grading_system=speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
+            granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
+            enable_miscue=True
+        )
+        pron_config.apply_to(recognizer)
 
         pron_result = speechsdk.PronunciationAssessmentResult(result)
         pron_data = {
