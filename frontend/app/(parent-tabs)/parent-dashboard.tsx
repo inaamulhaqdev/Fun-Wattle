@@ -4,48 +4,44 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, ActivityIndicator } from "react-native-paper";
 import Filters from "@/components/parent/Filters";
 import AddChild from '@/components/AddChildCard';
-import { supabase } from '@/config/supabase';
 import { API_URL } from '@/config/api';
-
 import { Account } from '@/components/AccountSelectionPage';
+import { useApp } from '@/context/AppContext';
+import { router } from "expo-router";
 
 export default function ParentDashboard() {
+  const { profileId, childId, session } = useApp();
   const [loading, setLoading] = useState(true);
   const [parentName, setParentName] = useState('');
-  const [selectedChild, setSelectedChild] = useState('');
+  const [selectedChildName, setSelectedChildName] = useState('');
 
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           Alert.alert('No active session', 'Please log in again.');
+          router.replace('/login');
           return;
         }
 
-        const user = session.user;
-        const response = await fetch(`${API_URL}/api/profiles/${user.id}/`);
-        if (!response.ok) throw new Error(`Failed to fetch profiles (${response.status})`);
+        // Get parent profile
+        const parentProfileResponse = await fetch(`${API_URL}/api/profile/${profileId}/`);
+        if (!parentProfileResponse.ok) {
+          throw new Error(`Failed to fetch parent profile (${parentProfileResponse.status})`);
+        }
+        const parentProfileData = await parentProfileResponse.json();
+        setParentName(parentProfileData.name);
 
-        const data = await response.json();
+        // Get selected child profile
+        const selectedChildResponse = await fetch(`${API_URL}/api/profile/${childId}/`);
+        if (!selectedChildResponse.ok) {
+          throw new Error(`Failed to fetch child profile (${selectedChildResponse.status})`);
+        }
+        const selectedChildData = await selectedChildResponse.json();
+        setSelectedChildName(selectedChildData.name);
 
-        // Transform API data to match frontend Account type
-        const transformedData: Account[] = data.map((profile: any) => ({
-          id: profile.id.toString(),
-          name: profile.name,
-          type: profile.profile_type,
-          isLocked: !!profile.pin_hash,
-        }));
-
-        const parentProfile = transformedData.find(profile => profile.type === 'parent');
-        if (parentProfile) setParentName(parentProfile.name);
-
-        const firstChildProfile = transformedData.find(profile => profile.type === 'child');
-        if (firstChildProfile) setSelectedChild(firstChildProfile.name);
-
-      } catch (error) {
-        console.error('Error fetching profiles:', error);
-        Alert.alert('Error', 'Failed to load profiles. Please try again.');
+      } catch (error: any) {
+        Alert.alert('Error', error.message);
       } finally {
         setLoading(false);
       }
@@ -66,7 +62,7 @@ export default function ParentDashboard() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {!selectedChild ? (
+      {!selectedChildName ? (
         <>
           <Text variant='titleLarge' style={styles.title}>Welcome, {parentName}!</Text>
           <AddChild />
@@ -74,7 +70,7 @@ export default function ParentDashboard() {
       ) : (
         <>
           <Text variant='titleLarge' style={styles.title}>Good evening, {parentName}!</Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>{selectedChild}&apos;s progress this week.</Text>
+          <Text variant="bodyMedium" style={styles.subtitle}>{selectedChildName}&apos;s progress this week.</Text>
           <Filters />
         </>
       )}

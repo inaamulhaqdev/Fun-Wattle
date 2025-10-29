@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import User, Profile, User_Profile #, Activity, AssignedActivity
-from .serializers import UserSerializer, ProfileSerializer, User_ProfileSerializer #, ActivitySerializer, AssignedActivitySerializer
+from .models import Learning_Unit, User, Profile, User_Profile, Assignment
+from .serializers import UserSerializer, ProfileSerializer, User_ProfileSerializer, LearningUnitSerializer, AssignmentSerializer
 from rest_framework.exceptions import MethodNotAllowed
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -100,6 +100,7 @@ def create_profile(request):
 	creating_child_profile = request.data.get('creating_child_profile')
 	profile_picture = request.data.get('profile_picture')
 	pin_hash = request.data.get('pin_hash')
+	child_details = request.data.get('child_details', None)
 
 	if not name or not user_id or creating_child_profile is None:
 		return Response({'error': 'Missing required fields: name, user_id, creating_child_profile'}, status=400)
@@ -122,6 +123,7 @@ def create_profile(request):
 		name=name,
 		profile_picture=profile_picture,
 		pin_hash=pin_hash,
+		child_details=child_details
 	)
 
 	# Link profile to user
@@ -159,6 +161,78 @@ def get_profile(request, profile_id):
 
     serializer = ProfileSerializer(profile)
     return Response(serializer.data, status=200)
+
+
+@api_view(['GET'])
+def get_all_learning_units(request):
+	child_id = request.query_params.get('child_id')
+	learning_units = Learning_Unit.objects.all()
+	serializer = LearningUnitSerializer(
+    	learning_units,
+    	many=True,
+    	context={'child_id': child_id}
+	)
+	return Response(serializer.data, status=200)
+
+
+@api_view(['POST', 'DELETE'])
+def manage_assignment(request):
+	learning_unit_id = request.data.get('learning_unit_id')
+	child_id = request.data.get('child_id')
+	user_id = request.data.get('user_id')
+	participation_type = request.data.get('participation_type')
+
+	if not all([learning_unit_id, child_id, user_id]):
+		return Response({'error': 'learning_unit_id, child_id, and user_id are required'}, status=400)
+
+	# Verify all required entities exist
+	try:
+		learning_unit = Learning_Unit.objects.get(id=learning_unit_id)
+	except Learning_Unit.DoesNotExist:
+		return Response({'error': 'Learning unit not found'}, status=404)
+
+	try:
+		child_profile = Profile.objects.get(id=child_id, profile_type='child')
+	except Profile.DoesNotExist:
+		return Response({'error': 'Child profile not found'}, status=404)
+
+	try:
+		user = User.objects.get(id=user_id)
+	except User.DoesNotExist:
+		return Response({'error': 'User not found'}, status=404)
+
+	if request.method == 'POST':
+		# If post or put, we are either creating or updating assignment
+		if not participation_type or participation_type not in ['required', 'recommended']:
+			return Response({'error': 'participation_type must be "required" or "recommended"'}, status=400)
+
+		assignment, created = Assignment.objects.update_or_create(
+			# These two are the "lookup" fields
+			learning_unit=learning_unit,
+			assigned_to=child_profile,
+   			# these are the "update" fields
+			defaults={
+				'participation_type': participation_type,
+				'assigned_by': user,
+			}
+		)
+
+		serializer = AssignmentSerializer(assignment)
+		return Response(serializer.data, status=201 if created else 200)
+
+	elif request.method == 'DELETE':
+		# Delete assignment if we select unassigned and an assignment exists
+		assignment = Assignment.objects.get(
+			learning_unit=learning_unit,
+			assigned_to=child_profile
+		)
+		if assignment:
+			assignment.delete()
+			return Response({'message': 'Assignment removed successfully'}, status=200)
+
+
+
+
 
 # @api_view(['GET'])
 # def get_activities(request):

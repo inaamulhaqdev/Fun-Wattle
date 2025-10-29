@@ -36,7 +36,7 @@ const Filters = () => {
             mode={selected === segment.value ? "contained" : "outlined"}
             onPress={() => setSelected(segment.value)}
             style={styles.segment}
-            buttonColor={selected === segment.value ? "#FDD652" : ""}
+            buttonColor={selected === segment.value ? "#48d1cc" : ""}
             textColor="#000000"
             labelStyle={{ fontSize: 13 }}
           >

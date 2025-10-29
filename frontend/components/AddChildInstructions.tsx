@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { IconButton, RadioButton, Button, Text } from 'react-native-paper';
 
@@ -7,13 +7,19 @@ import { useChild } from '@/context/ChildContext';
 
 export default function AddChildInstructions() {
 
-  const { childName } = useChild();
+  const { childName, setChildInstructionsAbility } = useChild();
 
   const handleBack = () => {
     router.back();
   };
 
   const handleNext = () => {
+    if (!value) {
+      Alert.alert('Missing Information', 'Please select an option.');
+      return;
+    }
+
+    setChildInstructionsAbility(value);
     router.push('/parent/child-preferred-activities');
   };
 
@@ -48,11 +54,13 @@ export default function AddChildInstructions() {
         <RadioButton.Group onValueChange={value => setValue(value)} value={value}>
           {radioOptions.map((option) => (
             <RadioButton.Item
+              key={option.id}
               label={option.label}
               value={option.label}
               color="#FD902B"
               position="leading"
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
+              mode="android"
             />
         ))}
         </RadioButton.Group>
@@ -83,15 +91,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: 20,
+    marginTop: 50,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   question: {
-    fontSize: 20, 
+    fontSize: 20,
     paddingBottom: 10,
     paddingTop: 15,
   },

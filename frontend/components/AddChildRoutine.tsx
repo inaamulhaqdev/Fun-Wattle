@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { IconButton, RadioButton, Button, Text } from 'react-native-paper';
 
@@ -7,17 +7,27 @@ import { useChild } from '@/context/ChildContext';
 
 export default function AddChildRoutine() {
 
-  const { childName } = useChild();
+  const { childName, setChildHomePracticeFrequency, setChildPracticeDuration } = useChild();
 
   const handleBack = () => {
     router.back();
   };
 
   const handleNext = () => {
+    if (!freqValue || !durationValue) {
+      Alert.alert('Missing Information', 'Please select an option for both questions.');
+      return;
+    }
+
+    setChildHomePracticeFrequency(freqValue);
+    setChildPracticeDuration(durationValue);
+
     router.push('/parent/child-instructions');
   };
 
-  const [value, setValue] = React.useState('');
+  // Separate selection state for each question (store selected option IDs as strings)
+  const [freqValue, setFreqValue] = React.useState('');
+  const [durationValue, setDurationValue] = React.useState('');
 
   interface Option {
     id: number;
@@ -52,30 +62,34 @@ export default function AddChildRoutine() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text variant="headlineSmall" style={styles.question}>How often does {childName} currently practice speech activities at home?</Text>
 
-        <RadioButton.Group onValueChange={value => setValue(value)} value={value}>
+        <RadioButton.Group onValueChange={setFreqValue} value={freqValue}>
           {radioOptions1.map((option) => (
             <RadioButton.Item
+              key={option.id}
               label={option.label}
               value={option.label}
               position="leading"
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
               color="#FD902B"
+              mode="android"
             />
-        ))}
+          ))}
         </RadioButton.Group>
 
         <Text variant="headlineSmall" style={styles.question}>On average, how long does {childName} spend per practice session?</Text>
 
-        <RadioButton.Group onValueChange={value => setValue(value)} value={value}>
+        <RadioButton.Group onValueChange={setDurationValue} value={durationValue}>
           {radioOptions2.map((option) => (
             <RadioButton.Item
+              key={option.id}
               label={option.label}
               value={option.label}
               position="leading"
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
               color="#FD902B"
+              mode="android"
             />
-        ))}
+          ))}
         </RadioButton.Group>
 
         <Button
@@ -104,7 +118,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: 20,
+    paddingTop: 50,
   },
   title: {
     fontSize: 25,
@@ -112,7 +126,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   question: {
-    fontSize: 20, 
+    fontSize: 20,
     paddingBottom: 10,
     paddingTop: 15,
   },

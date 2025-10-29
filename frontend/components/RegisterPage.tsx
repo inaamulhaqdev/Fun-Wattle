@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -9,6 +9,13 @@ import { useRegistration } from '../context/RegistrationContext';
 const RegisterPage = () => {
   const { email, setEmail, password, setPassword, userType, setUserType } = useRegistration();
   const [showPassword, setShowPassword] = useState(false);
+
+  // Clear form when component mounts
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+    setUserType(null);
+  }, []);
 
   const handleRegister = async () => {
     if (!email || !password || !userType) {
@@ -36,6 +43,48 @@ const RegisterPage = () => {
       <TouchableOpacity style={styles.backButton} onPress={goBack}>
         <Text style={styles.backIcon}>←</Text>
       </TouchableOpacity>
+
+      {/* Sign Up form */}
+      <View style={styles.formSection}>
+        <Text style={styles.formTitle}>Sign Up</Text>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Email address</Text>
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder=""
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Password</Text>
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder=""
+            />
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Feather
+                name={showPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#666"
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
 
       {/* User type selection */}
       <View style={styles.userTypeSection}>
@@ -82,48 +131,6 @@ const RegisterPage = () => {
         </View>
       </View>
 
-      {/* Sign Up form */}
-      <View style={styles.formSection}>
-        <Text style={styles.formTitle}>Sign Up</Text>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Email address</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder=""
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Password</Text>
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder=""
-            />
-            <TouchableOpacity
-              style={styles.eyeButton}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Feather
-                name={showPassword ? "eye-off" : "eye"}
-                size={20}
-                color="#666"
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Sign Up Button */}
         <TouchableOpacity
           style={styles.signUpButton}
@@ -156,7 +163,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   userTypeSection: {
-    marginTop: 60,
+    paddingTop: 20,
     marginBottom: 40,
   },
   questionText: {
@@ -197,6 +204,7 @@ const styles = StyleSheet.create({
   },
   formSection: {
     flex: 1,
+    marginTop: 50
   },
   formTitle: {
     fontSize: 32,
