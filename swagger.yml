@@ -8,7 +8,7 @@ servers:
     description: Backend Server
 
 paths:
-  /create:
+  /create/:
     post:
       summary: Register a new user
       description: Register a new user (Parent or Therapist)
@@ -42,7 +42,7 @@ paths:
         '400':
           description: Missing required fields or invalid user type
 
-  /subscribe:
+  /subscribe/:
     post:
       summary: Update user subscription
       description: Update a user's subscription status and type
@@ -76,7 +76,7 @@ paths:
           description: Missing required fields
         '404':
           description: User not found
-  /profile:
+  /profile/:
     post:
       summary: Create a new profile
       description: Create a new profile for a user
@@ -123,7 +123,7 @@ paths:
         '404':
           description: User not found
 
-  /profile/{profile_id}:
+  /profile/{profile_id}/:
     get:
       summary: Get profile by ID
       description: Retrieve a specific profile by its ID
@@ -145,7 +145,7 @@ paths:
         '404':
           description: Profile not found
 
-  /profiles/{user_id}:
+  /profiles/{user_id}/:
     get:
       summary: Get all profiles for a user
       description: Retrieve all profiles associated with a user
@@ -169,7 +169,7 @@ paths:
         '404':
           description: User not found
 
-  /learning_units:
+  /learning_units/:
     get:
       summary: Get all learning units
       description: Retrieve all available learning units
@@ -191,7 +191,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/LearningUnit'
 
-  /exercises/{learning_unit_id}:
+  /exercises/{learning_unit_id}/:
     get:
       summary: Get exercises for a learning unit
       description: Retrieve all exercises for a specific learning unit
@@ -215,7 +215,7 @@ paths:
         '404':
           description: Learning unit not found
 
-  /questions/{exercise_id}:
+  /questions/{exercise_id}/:
     get:
       summary: Get questions for an exercise
       description: Retrieve all questions for a specific exercise
@@ -238,10 +238,10 @@ paths:
                   $ref: '#/components/schemas/Question'
         '404':
           description: Exercise not found
-  /activities/{user_id}:
+  /activities/{user_id}/:
     get:
-      summary: Get assigned activities
-      description: Retrieve all activities assigned by a user
+      summary: Get all learning units a user has assigned
+      description: Retrieve all learning units assigned by a user
       tags:
         - Learning Unit
       parameters:
@@ -252,7 +252,7 @@ paths:
             type: string
       responses:
         '200':
-          description: List of assigned activities
+          description: List of assigned learning units
           content:
             application/json:
               schema:
@@ -262,9 +262,9 @@ paths:
         '404':
           description: User not found
 
-  /assignments/{child_id}:
+  /assignments/{child_id}/:
     get:
-      summary: Get assignments for a child
+      summary: Get all learning units a child has been assigned
       description: Retrieve all assignments for a specific child
       tags:
         - Learning Unit
@@ -285,9 +285,9 @@ paths:
                   $ref: '#/components/schemas/Assignment'
         '404':
           description: Child profile not found
-    
+
     post:
-      summary: Create or update assignment
+      summary: Create or update a child's learning unit assignment
       description: Create or update an assignment for a child
       tags:
         - Learning Unit
@@ -327,9 +327,9 @@ paths:
         '404':
           description: Child profile, learning unit, or user not found
 
-  /assignments/{child_id}/learning_unit/{learning_unit_id}:
+  /assignments/{child_id}/learning_unit/{learning_unit_id}/:
     delete:
-      summary: Remove assignment
+      summary: Remove a child's learning unit assignment
       description: Remove a learning unit assignment from a child
       tags:
         - Learning Unit
@@ -350,9 +350,9 @@ paths:
         '404':
           description: Assignment, child profile, or learning unit not found
 
-  /results/{child_id}:
+  /results/{child_id}/:
     get:
-      summary: Get exercise results
+      summary: Get all exercise results for a child
       description: Retrieve all exercise results for a child
       tags:
         - Learning Unit
@@ -374,9 +374,9 @@ paths:
         '404':
           description: Child profile not found
 
-  /results/{child_id}/exercise/{exercise_id}:
+  /results/{child_id}/exercise/{exercise_id}/:
     get:
-      summary: Get results for specific exercise
+      summary: Get child's results for a specific exercise
       description: Retrieve results for a specific exercise for a child
       tags:
         - Learning Unit
@@ -402,9 +402,9 @@ paths:
                   $ref: '#/components/schemas/ExerciseResult'
         '404':
           description: Child profile or exercise not found
-    
+
     post:
-      summary: Create or update exercise result
+      summary: Create or update child's exercise result
       description: Create or update a result for a specific exercise for a child
       tags:
         - Learning Unit
@@ -451,11 +451,11 @@ components:
       properties:
         id:
           type: string
+        email:
+          type: string
         user_type:
           type: string
           enum: [parent, therapist]
-        email:
-          type: string
         subscription_type:
           type: string
           nullable: true
@@ -465,6 +465,9 @@ components:
           format: date-time
           nullable: true
           description: End date of the subscription. Can be null for users without an active subscription.
+        created_at:
+          type: string
+          format: date-time
 
     Profile:
       type: object
@@ -490,10 +493,15 @@ components:
     UserProfile:
       type: object
       properties:
+        id:
+          type: string
         user:
           $ref: '#/components/schemas/User'
         profile:
           $ref: '#/components/schemas/Profile'
+        created_at:
+          type: string
+          format: date-time
 
     LearningUnit:
       type: object
@@ -504,10 +512,13 @@ components:
           type: string
         description:
           type: string
-        is_assigned:
-          type: boolean
+        category:
+          type: string
         image:
           type: string
+        created_at:
+          type: string
+          format: date-time
 
     Exercise:
       type: object
@@ -520,11 +531,14 @@ components:
           type: string
         description:
           type: string
-        order: 
+        order:
           type: integer
         exercise_type:
           type: string
           enum: [multiple_drag, multiple_select, ordered_drag, speaking]
+        created_at:
+          type: string
+          format: date-time
 
     Question:
       type: object
@@ -533,7 +547,7 @@ components:
           type: string
         exercise:
           $ref: '#/components/schemas/Exercise'
-        order: 
+        order:
           type: integer
         exercise_type:
           type: string
