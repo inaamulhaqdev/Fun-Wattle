@@ -52,12 +52,12 @@ def get_assigned(request, user_id):
     return Response(serializer.data, status=200)
 
 
-@api_view(['GET', 'POST', 'DELETE'])
+@api_view(['GET', 'POST'])
 def manage_assignment(request, child_id):
     if request.method == 'GET':
         child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
         if not child_profile:
-            return Response({'error': 'Child profile not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Child profile not found'}, status=404)
 
         assignments = Assignment.objects.filter(assigned_to=child_profile)
         serializer = AssignmentSerializer(assignments, many=True)
@@ -94,7 +94,7 @@ def manage_assignment(request, child_id):
             },
         )
         serializer = AssignmentSerializer(assignment)
-        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        return Response(serializer.data, status=201 if created else 200)
 
 
 @api_view(['DELETE'])
@@ -150,7 +150,6 @@ def results_for_exercise(request, child_id, exercise_id):
     elif request.method == 'POST':
         time_spent = request.data.get('time_spent')
         accuracy = request.data.get('accuracy')
-        completed_at = request.data.get('completed_at')
 
         assignment = Assignment.objects.filter(
             assigned_to=child_profile,
@@ -164,8 +163,7 @@ def results_for_exercise(request, child_id, exercise_id):
             exercise=exercise,
             defaults={
                 'time_spent': time_spent,
-                'accuracy': accuracy,
-                'completed_at': completed_at
+                'accuracy': accuracy
             }
         )
         serializer = ExerciseResultSerializer(result)
