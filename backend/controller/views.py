@@ -267,15 +267,6 @@ def assess_speech(request):
         audio_input = speechsdk.AudioConfig(filename=temp_output_path)
         recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
 
-        # Pronunciation assessment
-        pron_config = speechsdk.PronunciationAssessmentConfig(
-            reference_text=reference_text,
-            grading_system=speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
-            granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
-            enable_miscue=True
-        )
-        pron_config.apply_to(recognizer)
-
         result = recognizer.recognize_once()
         if result.reason != speechsdk.ResultReason.RecognizedSpeech:
             return Response({'error': 'Speech recognition failed'}, status=400)
