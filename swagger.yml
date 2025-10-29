@@ -1,19 +1,19 @@
 openapi: 3.0.0
 info:
   title: Funwattle MVP API
-  description: API for the Funwattle MVP app - a speach therapy assitance app
+  description: API for the Funwattle MVP app - a speech therapy assistance app
   version: 1.0.0
 servers:
-  - url: http://localhost:8000/api
+  - url: http://localhost:7000/api
     description: Backend Server
 
 paths:
-  /login:
+  /create:
     post:
-      summary: Login as user
-      description: Authenticate user and return session token
+      summary: Register a new user
+      description: Register a new user (Parent or Therapist)
       tags:
-        - Authentication
+        - Users
       requestBody:
         required: true
         content:
@@ -28,20 +28,60 @@ paths:
                 user_type:
                   type: string
                   enum: [parent, therapist]
+              required:
+                - id
+                - email
+                - user_type
       responses:
         '201':
-          description: Successful login
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
         '400':
-          description: Invalid user type, or missing feilds
-        '401':
-          description: User Already exists
+          description: Missing required fields or invalid user type
 
-  /create:
+  /subscribe:
     post:
-      summary: Create a new account
-      description: Register a new user account
+      summary: Update user subscription
+      description: Update a user's subscription status and type
       tags:
-        - Authentication
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                subscription_type:
+                  type: string
+                subscription_end:
+                  type: string
+                  format: date-time
+              required:
+                - id
+                - subscription_type
+      responses:
+        '200':
+          description: Subscription updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Missing required fields
+        '404':
+          description: User not found
+  /profile:
+    post:
+      summary: Create a new profile
+      description: Create a new profile for a user
+      tags:
+        - Profiles
       requestBody:
         required: true
         content:
@@ -51,186 +91,208 @@ paths:
               properties:
                 user_id:
                   type: string
-                password:
-                  type: string
-                email:
-                  type: string
-      responses:
-        '201':
-          description: Account created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  message:
-                    type: string
-        '400':
-          description: Bad request
-  /subscribe:
-    post:
-      summary: Login as user
-      description: Authenticate user and return session token
-      tags:
-        - Authentication
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                password:
-                  type: string
-      responses:
-        '200':
-          description: Successful login
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                  message:
-                    type: string
-        '401':
-          description: Unauthorized
-
-
-  /profile/{id}:
-    get:
-      summary: Find all profiles for an account
-      description: Retrieve all profiles associated with an account ID
-      tags:
-        - Profiles
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    profileId:
-                      type: string
-                    name:
-                      type: string
-                    settings:
-                      type: object
-        '404':
-          description: Account not found
-
-    put:
-      summary: Add a new profile to an account
-      description: Create a new profile for the specified account
-      tags:
-        - Profiles
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
                 name:
                   type: string
-                settings:
+                creating_child_profile:
+                  type: boolean
+                profile_picture:
+                  type: string
+                  format: uri
+                pin_hash:
+                  type: string
+                child_details:
                   type: object
+              required:
+                - user_id
+                - name
+                - creating_child_profile
       responses:
-        '200':
-          description: Profile added successfully
+        '201':
+          description: Profile created successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  profileId:
-                    type: string
-                  message:
-                    type: string
+                  profile:
+                    $ref: '#/components/schemas/Profile'
+                  user_profile:
+                    $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Missing required fields
         '404':
-          description: Account not found
+          description: User not found
 
-  /modules:
+  /profile/{profile_id}:
     get:
-      summary: Get All Modules
-      description: Retrieve all available modules
+      summary: Get profile by ID
+      description: Retrieve a specific profile by its ID
       tags:
-        - Modules
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    moduleId:
-                      type: string
-                    name:
-                      type: string
-                    description:
-                      type: string
-
-  /modules/{id}:
-    get:
-      summary: Get All set Modules for a profile
-      description: Retrieve all modules configured for a specific profile
-      tags:
-        - Modules
+        - Profiles
       parameters:
-        - name: id
+        - name: profile_id
           in: path
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Successful operation
+          description: Profile found
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    moduleId:
-                      type: string
-                    name:
-                      type: string
-                    configuration:
-                      type: object
+                $ref: '#/components/schemas/Profile'
         '404':
           description: Profile not found
 
-    put:
-      summary: Set a module for a profile
-      description: Configure a module for a specific profile
+  /profiles/{user_id}:
+    get:
+      summary: Get all profiles for a user
+      description: Retrieve all profiles associated with a user
       tags:
-        - Modules
+        - Profiles
       parameters:
-        - name: id
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Profile'
+        '404':
+          description: User not found
+
+  /learning_units:
+    get:
+      summary: Get all learning units
+      description: Retrieve all available learning units
+      tags:
+        - Learning Unit
+      parameters:
+        - name: child_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of learning units
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningUnit'
+
+  /exercises/{learning_unit_id}:
+    get:
+      summary: Get exercises for a learning unit
+      description: Retrieve all exercises for a specific learning unit
+      tags:
+        - Learning Unit
+      parameters:
+        - name: learning_unit_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of exercises
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Exercise'
+        '404':
+          description: Learning unit not found
+
+  /questions/{exercise_id}:
+    get:
+      summary: Get questions for an exercise
+      description: Retrieve all questions for a specific exercise
+      tags:
+        - Learning Unit
+      parameters:
+        - name: exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Question'
+        '404':
+          description: Exercise not found
+  /activities/{user_id}:
+    get:
+      summary: Get assigned activities
+      description: Retrieve all activities assigned by a user
+      tags:
+        - Learning Unit
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of assigned activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Assignment'
+        '404':
+          description: User not found
+
+  /assignments/{child_id}:
+    get:
+      summary: Get assignments for a child
+      description: Retrieve all assignments for a specific child
+      tags:
+        - Learning Unit
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Assignment'
+        '404':
+          description: Child profile not found
+    
+    post:
+      summary: Create or update assignment
+      description: Create or update an assignment for a child
+      tags:
+        - Learning Unit
+      parameters:
+        - name: child_id
           in: path
           required: true
           schema:
@@ -242,19 +304,285 @@ paths:
             schema:
               type: object
               properties:
-                moduleId:
+                learning_unit_id:
                   type: string
-                configuration:
-                  type: object
+                user_id:
+                  type: string
+                participation_type:
+                  type: string
+                  enum: [required, recommended]
+              required:
+                - learning_unit_id
+                - user_id
+                - participation_type
       responses:
-        '200':
-          description: Module configured successfully
+        '201':
+          description: Assignment created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Assignment'
+        '400':
+          description: Missing required fields or invalid participation type
         '404':
-          description: Profile or module not found
+          description: Child profile, learning unit, or user not found
+
+  /assignments/{child_id}/learning_unit/{learning_unit_id}:
+    delete:
+      summary: Remove assignment
+      description: Remove a learning unit assignment from a child
+      tags:
+        - Learning Unit
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: learning_unit_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Assignment removed successfully
+        '404':
+          description: Assignment, child profile, or learning unit not found
+
+  /results/{child_id}:
+    get:
+      summary: Get exercise results
+      description: Retrieve all exercise results for a child
+      tags:
+        - Learning Unit
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of exercise results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExerciseResult'
+        '404':
+          description: Child profile not found
+
+  /results/{child_id}/exercise/{exercise_id}:
+    get:
+      summary: Get results for specific exercise
+      description: Retrieve results for a specific exercise for a child
+      tags:
+        - Learning Unit
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of exercise results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExerciseResult'
+        '404':
+          description: Child profile or exercise not found
+    
+    post:
+      summary: Create or update exercise result
+      description: Create or update a result for a specific exercise for a child
+      tags:
+        - Learning Unit
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                time_spent:
+                  type: integer
+                accuracy:
+                  type: number
+                  format: float
+              required:
+                - time_spent
+                - accuracy
+      responses:
+        '201':
+          description: Result created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseResult'
+        '404':
+          description: Child profile, exercise, or assignment not found
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        user_type:
+          type: string
+          enum: [parent, therapist]
+        email:
+          type: string
+        subscription_type:
+          type: string
+          nullable: true
+          description: Type of subscription. Can be null for users without an active subscription.
+        subscription_end:
+          type: string
+          format: date-time
+          nullable: true
+          description: End date of the subscription. Can be null for users without an active subscription.
+
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+        profile_type:
+          type: string
+          enum: [parent, therapist, child]
+        name:
+          type: string
+        profile_picture:
+          type: string
+          format: uri
+        pin_hash:
+          type: string
+        child_details:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        profile:
+          $ref: '#/components/schemas/Profile'
+
+    LearningUnit:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        is_assigned:
+          type: boolean
+        image:
+          type: string
+
+    Exercise:
+      type: object
+      properties:
+        id:
+          type: string
+        learning_unit:
+          $ref: '#/components/schemas/LearningUnit'
+        title:
+          type: string
+        description:
+          type: string
+        order: 
+          type: integer
+        exercise_type:
+          type: string
+          enum: [multiple_drag, multiple_select, ordered_drag, speaking]
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: string
+        exercise:
+          $ref: '#/components/schemas/Exercise'
+        order: 
+          type: integer
+        exercise_type:
+          type: string
+          enum: [multiple_drag, multiple_select, ordered_drag, speaking]
+        question_data:
+          type: string
+          format: JSON
+          description: This will be JSON data
+
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: string
+        learning_unit:
+          $ref: '#/components/schemas/LearningUnit'
+        assigned_to:
+          $ref: '#/components/schemas/Profile'
+        assigned_by:
+          $ref: '#/components/schemas/User'
+        participation_type:
+          type: string
+          enum: [required, recommended]
+        assigned_at:
+          type: string
+          format: date-time
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ExerciseResult:
+      type: object
+      properties:
+        id:
+          type: string
+        assignment:
+          $ref: '#/components/schemas/Assignment'
+        exercise:
+          $ref: '#/components/schemas/Exercise'
+        time_spent:
+          type: integer
+        accuracy:
+          type: number
+          format: float
+        completed_at:
+          type: string
+          format: date-time
