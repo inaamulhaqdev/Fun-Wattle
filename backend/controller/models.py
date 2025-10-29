@@ -56,7 +56,6 @@ class Learning_Unit(models.Model):
     description = models.TextField(blank=True)
     category = models.CharField(max_length=20, choices=(('articulation', 'Articulation'), ('language_building', 'Language Building'), ('comprehension', 'Comprehension')))
     image = models.URLField(blank=True, null=True)
-    num_tasks = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -66,22 +65,34 @@ class Learning_Unit(models.Model):
         return f"learning_unit={self.title}, category={self.category}"
 
 
-class Task(models.Model):
+class Exercise(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    learning_unit = models.ForeignKey(Learning_Unit, on_delete=models.CASCADE, related_name='tasks')
+    learning_unit = models.ForeignKey(Learning_Unit, on_delete=models.CASCADE, related_name='exercises')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     order = models.IntegerField()
-    speaking = models.BooleanField(default=False)
-    task_type = models.CharField(default=None, max_length=20, choices=(('match', 'Match'), ('question', 'Question'), ('true_false', 'True False'), ('re-order', 'Re-order'), ('conversation', 'Conversation')))
-    question_data = models.JSONField(default=None)
+    exercise_type = models.CharField(max_length=20, choices=(('multiple_drag', 'Multiple Drag'), ('multiple_select', 'Multiple Select'), ('ordered_drag', 'Ordered Drag'), ('speaking', 'Speaking')))
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'Task'
+        db_table = 'Exercise'
 
     def __str__(self):
-        return f"learning_unit={self.learning_unit.title}, task={self.title}"
+        return f"learning_unit={self.learning_unit.title}, exercise={self.title}"
+
+
+class Question(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='questions')
+    question_type = models.CharField(max_length=20, choices=(('multiple_drag', 'Multiple Drag'), ('multiple_select', 'Multiple Select'), ('ordered_drag', 'Ordered Drag'), ('speaking', 'Speaking')))
+    order = models.IntegerField()
+    question_data = models.JSONField()
+
+    class Meta:
+        db_table = 'Question'
+
+    def __str__(self):
+        return f"exercise={self.exercise.title}, question_id={self.id}"
 
 
 class Assignment(models.Model):
@@ -92,7 +103,6 @@ class Assignment(models.Model):
     assigned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_assignments')
     assigned_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField(null=True, blank=True)
-    num_tasks_completed = models.IntegerField(default=0)
     completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -102,23 +112,20 @@ class Assignment(models.Model):
         return f"learning_unit={self.learning_unit.title}, assigned_to={self.assigned_to.name}"
 
 
-class Task_Progress(models.Model):
+class Exercise_Result(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='task_progresses')
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_progresses')
-    session_start_time = models.DateTimeField(auto_now_add=True)
-    session_end_time = models.DateTimeField(null=True, blank=True)
-    total_time_spent = models.IntegerField(default=0)  # this will be in seconds
-    attempts_made = models.IntegerField(default=0)
-    got_correct = models.BooleanField(default=False)
-    accuracy = models.FloatField(default=0.0) # this will be a percentage
-    answer_data = models.JSONField(null=True, blank=True)  # to store detailed answer info (for all attempts)
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='exercise_results')
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='exercise_results')
+    time_spent = models.IntegerField(null=True, blank=True)
+    accuracy = models.FloatField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'Task_Progress'
+        db_table = 'Exercise_Result'
 
     def __str__(self):
-        return f"learning_unit={self.assignment.learning_unit.title}, task={self.task.title}, child={self.assignment.assigned_to.name}"
+        return f"learning_unit={self.assignment.learning_unit.title}, exercise={self.exercise.title}, child={self.assignment.assigned_to.name}"
+
+
 
 
