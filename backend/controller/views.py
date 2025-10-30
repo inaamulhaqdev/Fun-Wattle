@@ -289,11 +289,14 @@ def assess_speech(request):
             granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
             enable_miscue=True
         )
+		audio_input = speechsdk.AudioConfig(filename=temp_output_path)
+		recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
         pron_config.apply_to(recognizer)
+        pron_result_raw = recognizer.recognize_once()
 
-        pron_result = speechsdk.PronunciationAssessmentResult(result)
+        pron_result = speechsdk.PronunciationAssessmentResult(pron_result_raw)
         pron_data = {
-            "recognized_text": result.text,
+            "recognized_text": pron_result.text,
             "accuracy_score": pron_result.accuracy_score,
             "fluency_score": pron_result.fluency_score,
             "completeness_score": pron_result.completeness_score,
