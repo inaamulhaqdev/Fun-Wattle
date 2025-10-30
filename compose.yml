@@ -1,17 +1,4 @@
 services:
- swagger-ui:
-  image: swaggerapi/swagger-ui
-  container_name: swagger-ui
-  ports:
-    - "8080:8080"
-  environment:
-    - SWAGGER_JSON=/swagger/swagger.yml
-    - BASE_URL=/swagger
-  volumes:
-    - ./swagger.yml:/swagger/swagger.yml
-  depends_on:
-    - backend
-
  backend:
    build: ./backend
    container_name: backend
@@ -19,19 +6,31 @@ services:
      - "8000:8000"
    env_file:
      - .env
-   # This is a volume mapping - maps the local "backend" directory to "/app" in the container
-   # This means:
-   #   - Code changes made locally are immediately reflected inside the container.
-   #   - Files created in the container (like Django migrations) are saved locally.
    volumes:
      - ./backend:/app
    working_dir: /app
 
+ frontend:
+   build: ./frontend
+   container_name: frontend
+   depends_on:
+     - backend
+   ports:
+     - "19000:19000" # Expo go port
+     - "19001:19001" # WebSocket debugger port
+     - "8081:8081" # Metro bundler port
+   volumes:
+     - ./frontend:/app
+     - /app/node_modules # Keep the node_modules folder created in docker, don't use local node_modules (wont work)
+   working_dir: /app
+   tty: true
+   stdin_open: true
+   extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-# IPv6 is REQUIRED for Supabase DB connection (their DB host is IPv6-only)
-# Please check that:
-# 1.) Docker is running with IPv6 enabled in network settings
-# 2.) Windows Network Adapter → Properties → "Internet Protocol Version 6 (TCP/IPv6)" is checked
-networks:
-  default:
-    enable_ipv6: true
+
+   # Container volume mappings explained: maps the local "backend" and "frontend" directories into their respective "/app" directory in the container
+   # This means:
+   #   - Code changes made locally are immediately reflected inside the container.
+   #   - Files created in the container (like Django migrations) are saved locally.
+   # For production, we can remove these volumes, it is just for dev

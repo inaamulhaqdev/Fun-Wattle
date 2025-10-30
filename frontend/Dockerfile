@@ -1,23 +1,15 @@
-FROM node:18
+FROM node:20-slim
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install -g expo-cli
+# Freshly Install dependencies
+COPY package.json ./
 RUN npm install
 
 # Copy source code
 COPY . .
 
-# Expose both web and dev client ports
-EXPOSE 8000
-EXPOSE 8888
-EXPOSE 19000
-EXPOSE 19001
-EXPOSE 19002
+# Expose Expo / Metro ports
+EXPOSE 19000 19001 8081
 
-# Start Expo with proper host binding
-CMD ["npx", "expo", "start", "--web", "--host", "tunnel", "--port", "8000"]
+CMD ["npx", "expo", "start", "--tunnel"]
