@@ -18,10 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose Django's port
-EXPOSE 8000
+EXPOSE 7000
 
 # Development mode (this with volume mapping gives us live-reload with `docker-compose up`, so we don't need to rebuild image on code changes!!)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-
-# Production mode (Gunicorn, multiple workers for handling multiple requests - runs much better in production)
-# CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "backend.wsgi:application"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:7000"]

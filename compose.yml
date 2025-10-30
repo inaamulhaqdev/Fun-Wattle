@@ -5,10 +5,13 @@ services:
   ports:
     - "8080:8080"
   environment:
-    - SWAGGER_JSON=/swagger/swagger.yml
+    # Point Swagger UI at the mounted file. Use an absolute host path so Docker can
+    # resolve the bind-mount correctly under WSL/Docker Desktop.
+    - SWAGGER_JSON=/usr/share/nginx/html/swagger.yml
     - BASE_URL=/swagger
   volumes:
-    - ./swagger.yml:/swagger/swagger.yml
+    # Use ${PWD} to ensure Docker sees the correct absolute path for the bind mount.
+    - ${PWD}/swagger.yml:/usr/share/nginx/html/swagger.yml:ro
   depends_on:
     - backend
 
@@ -16,7 +19,7 @@ services:
    build: ./backend
    container_name: backend
    ports:
-     - "8000:8000"
+     - "7000:7000"
    env_file:
      - .env
    # This is a volume mapping - maps the local "backend" directory to "/app" in the container
@@ -26,6 +29,26 @@ services:
    volumes:
      - ./backend:/app
    working_dir: /app
+
+ frontend:
+  build: ./frontend
+  container_name: frontend
+  ports:
+    - "8000:8000"
+    - "8888:8888"
+    - "19000:19000"
+    - "19001:19001"
+    - "19002:19002"
+  depends_on:
+    - backend
+  env_file:
+    - .env
+  environment:
+    - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+    - REACT_NATIVE_PACKAGER_HOSTNAME=${HOST_IP}
+  # Optional: mount frontend for live edits during development
+  volumes:
+    - ./frontend:/app
 
 
 # IPv6 is REQUIRED for Supabase DB connection (their DB host is IPv6-only)
