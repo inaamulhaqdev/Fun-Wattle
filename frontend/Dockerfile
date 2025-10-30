@@ -1,17 +1,15 @@
-FROM node:lts-slim
+FROM node:20-slim
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
+# Freshly Install dependencies
+COPY package.json ./
 RUN npm install
 
 # Copy source code
 COPY . .
 
-EXPOSE 8000
-EXPOSE 8888
+# Expose Expo / Metro ports
+EXPOSE 19000 19001 8081
 
-CMD ["npx", "expo", "start", "--web", "--host", "lan", "--port", "8000"]
+CMD ["npx", "expo", "start", "--tunnel"]
