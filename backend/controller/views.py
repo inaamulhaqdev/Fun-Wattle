@@ -8,9 +8,14 @@ from rest_framework.exceptions import MethodNotAllowed
 import json
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+import os
+import tempfile
+import json
+from pydub import AudioSegment
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 import azure.cognitiveservices.speech as speechsdk
 from openai import AzureOpenAI
-from django.conf import settings
 
 class UserViewSet(viewsets.ModelViewSet):
 	queryset = User.objects.all()
@@ -261,8 +266,8 @@ def assess_speech(request):
 
         # Azure Speech config
         speech_config = speechsdk.SpeechConfig(
-            subscription=settings.AZURE_SPEECH_KEY,
-            region=settings.AZURE_SPEECH_REGION
+            subscription=AZURE_SPEECH_KEY,
+            region=AZURE_SPEECH_REGION
         )
         audio_input = speechsdk.AudioConfig(filename=temp_output_path)
         recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
@@ -271,6 +276,12 @@ def assess_speech(request):
         if result.reason != speechsdk.ResultReason.RecognizedSpeech:
             return Response({'error': 'Speech recognition failed'}, status=400)
 
+		###
+		### response = client.embeddings.create(
+		###	input = result.text,
+		###	model= "text-embedding-3-small"
+		### )
+		### 
 		# Pronunciation assessment
         pron_config = speechsdk.PronunciationAssessmentConfig(
             reference_text=result.text,
@@ -292,13 +303,12 @@ def assess_speech(request):
         # GPT Feedback
         client = AzureOpenAI(
             api_version="2024-12-01-preview",
-            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
-            api_key=settings.AZURE_OPENAI_KEY,
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            api_key=AZURE_OPENAI_KEY,
         )
 
         system_prompt = "You are a friendly speech therapist helping children practice pronunciation."
         user_prompt = f"""
-        Reference sentence: "{reference_text}"
         Child's speech: "{result.text}"
         Pronunciation Assessment Results: {json.dumps(pron_data, indent=2)}
         Give:

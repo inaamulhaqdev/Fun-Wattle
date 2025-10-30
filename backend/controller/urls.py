@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import get_all_learning_units, get_user_profiles, get_profile, register_user, create_profile, subscribe_user, manage_assignment
+from .views import get_all_learning_units, get_user_profiles, get_profile, register_user, create_profile, subscribe_user, manage_assignment, assess_speech
 
 urlpatterns = [
     path('create/', register_user, name='register_user'),

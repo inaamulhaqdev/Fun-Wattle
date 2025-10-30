@@ -11,3 +11,7 @@ django-filter
 PyYAML
 django-guardian
 django-cors-headers
+azure-cognitiveservices-speech
+openai
+pydub
+audioop-lts

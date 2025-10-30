@@ -6,6 +6,7 @@ import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPreset
 import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers'; 
 import { RecordingOptionsPresets } from 'expo-av/build/Audio';
 
+// Send the audio file as a POST request 
 // Questions data
 const questions = [
   {
@@ -252,18 +253,53 @@ const DescribeExercise = () => {
       setIsRecording(false);
 
       if (!uri) return;
-
-      const timeSpent = Date.now() - questionStartTime;
-      const responseData = {
-        questionId: questions[currentQuestion].id,
-        question: questions[currentQuestion].question,
-        response: uri, // save audio URI
-        timeSpent,
-        timestamp: Date.now(),
-      };
-      //setExerciseResponses(prev => [...prev, responseData]);
       
 
+      const timeSpent = Date.now() - questionStartTime;
+      const currentQData = questions[currentQuestion];
+
+      try {
+        const formData = new FormData();
+        console.log('Uploading file with URI:', uri);
+        console.log('FormData object:', formData);
+
+        formData.append('file', {
+          uri, 
+          name: `question_${currentQData.id}.m4a`,
+          type: 'audio/m4a',
+        } as any );
+        formData.append('questionId', currentQData.id.toString());
+        formData.append('questionText', currentQData.question);
+
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/assess`, {
+          method: 'POST', 
+          body: formData, 
+          headers: {
+            // fetch and FormData automatically sets this 
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload audio');
+        }
+
+        const data = await response.json();
+        console.log('Audio successfully sent:', data);
+        setExerciseResponses(prev => [
+          ...prev,
+          {
+            questionId: currentQData.id,
+            question: currentQData.question,
+            response: uri, // save audio uri 
+            timeSpent,
+            timestamp: Date.now(),
+          }
+        ]);
+      } catch (error) {
+        console.error('Error uploading audio:', error);
+      }
+      
+/*
       // mascot response animation 
       setShowMascotResponse(true);
       Animated.spring(responseAnim, {
@@ -277,6 +313,8 @@ const DescribeExercise = () => {
         setShowMascotResponse(false);
         responseAnim.setValue(0);
       }, 2000);
+
+      */
     }
   };
 
