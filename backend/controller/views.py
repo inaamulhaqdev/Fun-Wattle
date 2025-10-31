@@ -246,13 +246,12 @@ AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "australiaeast")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
-
 @api_view(['POST'])
 def assess_speech(request):
-    audio_file = request.FILES.get('audio_file')
+    audio_file = request.FILES.get('file')
 
     if not audio_file:
-        return Response({'error': 'audio_file is required'}, status=400)
+        return Response({'error': 'audio file is required'}, status=400)
 
     temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".m4a")
     for chunk in audio_file.chunks():
@@ -276,27 +275,27 @@ def assess_speech(request):
         if result.reason != speechsdk.ResultReason.RecognizedSpeech:
             return Response({'error': 'Speech recognition failed'}, status=400)
 
-		###
-		### response = client.embeddings.create(
-		###	input = result.text,
-		###	model= "text-embedding-3-small"
-		### )
-		### 
-		# Pronunciation assessment
+        ###
+        ### response = client.embeddings.create(
+        ###     input = result.text,
+        ###     model= "text-embedding-3-small"
+        ### )
+
+        # Pronunciation assessment
         pron_config = speechsdk.PronunciationAssessmentConfig(
             reference_text=result.text,
             grading_system=speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
             granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
             enable_miscue=True
         )
-		audio_input = speechsdk.AudioConfig(filename=temp_output_path)
-		recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
+        audio_input = speechsdk.AudioConfig(filename=temp_output_path)
+        recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
         pron_config.apply_to(recognizer)
         pron_result_raw = recognizer.recognize_once()
 
         pron_result = speechsdk.PronunciationAssessmentResult(pron_result_raw)
         pron_data = {
-            "recognized_text": pron_result.text,
+            "recognized_text": pron_result_raw.text,
             "accuracy_score": pron_result.accuracy_score,
             "fluency_score": pron_result.fluency_score,
             "completeness_score": pron_result.completeness_score,

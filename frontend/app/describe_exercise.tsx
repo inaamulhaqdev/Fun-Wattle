@@ -5,6 +5,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
 import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers'; 
 import { RecordingOptionsPresets } from 'expo-av/build/Audio';
+import { API_URL } from '../config/api';
 
 // Send the audio file as a POST request 
 // Questions data
@@ -253,7 +254,11 @@ const DescribeExercise = () => {
       setIsRecording(false);
 
       if (!uri) return;
-      
+
+      const blob = await fetch(uri).then(res => res.blob());
+      const file = new File([blob], `question_${questions[currentQuestion].id}.m4a`, {
+        type: 'audio/m4a',
+      });
 
       const timeSpent = Date.now() - questionStartTime;
       const currentQData = questions[currentQuestion];
@@ -263,15 +268,11 @@ const DescribeExercise = () => {
         console.log('Uploading file with URI:', uri);
         console.log('FormData object:', formData);
 
-        formData.append('file', {
-          uri, 
-          name: `question_${currentQData.id}.m4a`,
-          type: 'audio/m4a',
-        } as any );
+        formData.append('file', file);
         formData.append('questionId', currentQData.id.toString());
         formData.append('questionText', currentQData.question);
 
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/assess`, {
+        const response = await fetch(`${API_URL}/api/assess/`, {
           method: 'POST', 
           body: formData, 
           headers: {
