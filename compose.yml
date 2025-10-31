@@ -19,6 +19,10 @@ services:
      - "7000:7000"
    env_file:
      - .env
+   # This is a volume mapping - maps the local "backend" directory to "/app" in the container
+   # This means:
+   #   - Code changes made locally are immediately reflected inside the container.
+   #   - Files created in the container (like Django migrations) are saved locally.
    volumes:
      - ./backend:/app
    working_dir: /app
@@ -40,9 +44,10 @@ services:
    extra_hosts:
       - "host.docker.internal:host-gateway"
 
-
-   # Container volume mappings explained: maps the local "backend" and "frontend" directories into their respective "/app" directory in the container
-   # This means:
-   #   - Code changes made locally are immediately reflected inside the container.
-   #   - Files created in the container (like Django migrations) are saved locally.
-   # For production, we can remove these volumes, it is just for dev
+# IPv6 is REQUIRED for Supabase DB connection (their DB host is IPv6-only)
+# Please check that:
+# 1.) Docker is running with IPv6 enabled in network settings
+# 2.) Windows Network Adapter → Properties → "Internet Protocol Version 6 (TCP/IPv6)" is checked
+networks:
+  default:
+    enable_ipv6: true
