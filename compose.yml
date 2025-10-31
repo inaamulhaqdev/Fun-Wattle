@@ -5,13 +5,10 @@ services:
   ports:
     - "8080:8080"
   environment:
-    # Point Swagger UI at the mounted file. Use an absolute host path so Docker can
-    # resolve the bind-mount correctly under WSL/Docker Desktop.
-    - SWAGGER_JSON=/usr/share/nginx/html/swagger.yml
+    - SWAGGER_JSON=/usr/share/nginx/html/docs/swagger.yml
     - BASE_URL=/swagger
   volumes:
-    # Use ${PWD} to ensure Docker sees the correct absolute path for the bind mount.
-    - ${PWD}/swagger.yml:/usr/share/nginx/html/swagger.yml:ro
+    - ./swagger:/usr/share/nginx/html/docs
   depends_on:
     - backend
 
@@ -37,7 +34,6 @@ services:
      - "8081:8081" # Metro bundler port
    volumes:
      - ./frontend:/app
-     - /app/node_modules # Keep the node_modules folder created in docker, don't use local node_modules (wont work)
    working_dir: /app
    tty: true
    stdin_open: true
