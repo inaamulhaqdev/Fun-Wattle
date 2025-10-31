@@ -36,9 +36,8 @@ services:
      - "19000:19000" # Expo go port
      - "19001:19001" # WebSocket debugger port
      - "8081:8081" # Metro bundler port
-   volumes:
-     - ./frontend:/app
-   working_dir: /app
+     - "8000:8000"
+   working_dir: /
    tty: true
    stdin_open: true
    extra_hosts:
