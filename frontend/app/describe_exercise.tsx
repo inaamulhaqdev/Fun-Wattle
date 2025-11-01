@@ -261,7 +261,7 @@ const DescribeExercise = () => {
       try {
         const formData = new FormData();
         console.log('Uploading file with URI:', uri);
-        console.log('FormData object:', formData);
+        
 
         formData.append('file', {
           uri, 
@@ -270,6 +270,7 @@ const DescribeExercise = () => {
         } as any );
         formData.append('questionId', currentQData.id.toString());
         formData.append('questionText', currentQData.question);
+        console.log('FormData object:', formData);
 
         const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/assess`, {
           method: 'POST', 
