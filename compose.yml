@@ -1,4 +1,17 @@
 services:
+ swagger-ui:
+  image: swaggerapi/swagger-ui
+  container_name: swagger-ui
+  ports:
+    - "8080:8080"
+  environment:
+    - SWAGGER_JSON=/swagger/swagger.yml
+    - BASE_URL=/swagger
+  volumes:
+    - ./swagger.yml:/swagger/swagger.yml
+  depends_on:
+    - backend
+
  backend:
    build: ./backend
    container_name: backend
@@ -13,6 +26,7 @@ services:
    volumes:
      - ./backend:/app
    working_dir: /app
+
 
 # IPv6 is REQUIRED for Supabase DB connection (their DB host is IPv6-only)
 # Please check that:

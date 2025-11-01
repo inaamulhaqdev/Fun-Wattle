@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Learning_Unit, Task, User, Profile, User_Profile, Assignment #, Activity, AssignedActivity
+from .models import *
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,9 +16,19 @@ class User_ProfileSerializer(serializers.ModelSerializer):
         model = User_Profile
         fields = '__all__'
 
-class TaskSerializer(serializers.ModelSerializer):
+class LearningUnitSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Task
+        model = Learning_Unit
+        fields = '__all__'
+
+class ExerciseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Exercise
+        fields = '__all__'
+
+class QuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
         fields = '__all__'
 
 class AssignmentSerializer(serializers.ModelSerializer):
@@ -26,25 +36,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
         model = Assignment
         fields = '__all__'
 
-class LearningUnitSerializer(serializers.ModelSerializer):
-    exercises = TaskSerializer(source='tasks', many=True, read_only=True)
-    status = serializers.SerializerMethodField()
-
-    def get_status(self, obj):
-        child_id = self.context.get('child_id')
-        try:
-            assignment = Assignment.objects.get(
-                learning_unit=obj,
-                assigned_to_id=child_id
-            )
-
-            if assignment.completed_at:
-                return 'Completed'
-
-            return 'Assigned'
-        except Assignment.DoesNotExist:
-            return 'Unassigned'
-
+class ExerciseResultSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Learning_Unit
+        model = Exercise_Result
         fields = '__all__'
