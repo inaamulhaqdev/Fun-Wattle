@@ -433,7 +433,7 @@ const DescribeExercise = () => {
           />
         </View>
       </View>
-       {/* Show GPT feedback TODO: Remove when testing is complete */}
+       {/* Show GPT feedback TODO: Remove when testing is complete! */}
        {gptFeedback && (
         <Text style={{
           textAlign: 'center', 
