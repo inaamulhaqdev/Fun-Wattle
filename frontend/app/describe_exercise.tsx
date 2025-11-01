@@ -6,6 +6,7 @@ import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPreset
 import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers'; 
 import { RecordingOptionsPresets } from 'expo-av/build/Audio';
 import { API_URL } from '../config/api';
+import { Platform } from 'react-native';
 
 // Send the audio file as a POST request 
 // Questions data
@@ -242,7 +243,6 @@ const DescribeExercise = () => {
   // Handle mic button press
   const handleMicPress = async () => {
     if (!isRecording) {
-      // Starting to record - reset question timer
       const hasPermission = await requestAudioPermissions();
       if (!hasPermission) return;
 
@@ -255,29 +255,32 @@ const DescribeExercise = () => {
 
       if (!uri) return;
 
-      const blob = await fetch(uri).then(res => res.blob());
-      const file = new File([blob], `question_${questions[currentQuestion].id}.m4a`, {
-        type: 'audio/m4a',
-      });
-
       const timeSpent = Date.now() - questionStartTime;
       const currentQData = questions[currentQuestion];
 
       try {
         const formData = new FormData();
-        console.log('Uploading file with URI:', uri);
-        console.log('FormData object:', formData);
 
-        formData.append('file', file);
+        if (Platform.OS === 'web') {
+          const blob = await fetch(uri).then(res => res.blob());
+          const file = new File([blob], `question_${currentQData.id}.m4a`, {
+            type: 'audio/m4a',
+          });
+          formData.append('file', file);
+        } else {
+          formData.append('file', {
+            uri,
+            name: `question_${currentQData.id}.m4a`,
+            type: 'audio/m4a',
+          } as any);
+        }
+
         formData.append('questionId', currentQData.id.toString());
         formData.append('questionText', currentQData.question);
 
         const response = await fetch(`${API_URL}/api/assess/`, {
-          method: 'POST', 
-          body: formData, 
-          headers: {
-            // fetch and FormData automatically sets this 
-          }
+          method: 'POST',
+          body: formData,
         });
 
         if (!response.ok) {
@@ -286,15 +289,16 @@ const DescribeExercise = () => {
 
         const data = await response.json();
         console.log('Audio successfully sent:', data);
+
         setExerciseResponses(prev => [
           ...prev,
           {
             questionId: currentQData.id,
             question: currentQData.question,
-            response: uri, // save audio uri 
+            response: uri,
             timeSpent,
             timestamp: Date.now(),
-          }
+          },
         ]);
       } catch (error) {
         console.error('Error uploading audio:', error);
