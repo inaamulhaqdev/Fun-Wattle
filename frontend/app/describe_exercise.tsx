@@ -6,6 +6,7 @@ import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPreset
 import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers'; 
 import { RecordingOptionsPresets } from 'expo-av/build/Audio';
 import { API_URL } from '../config/api';
+import { Platform } from 'react-native';
 
 // Send the audio file as a POST request 
 // Questions data
@@ -111,6 +112,7 @@ const DescribeExercise = () => {
     timestamp: number;
   }[]>([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [gptFeedback, setGptFeedback] = useState<string | null>(null);// Display GPT feedback on UI - only for dev testing TODO: remove this when testing complete
 
   // Audio recorder set up 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY); 
@@ -242,7 +244,6 @@ const DescribeExercise = () => {
   // Handle mic button press
   const handleMicPress = async () => {
     if (!isRecording) {
-      // Starting to record - reset question timer
       const hasPermission = await requestAudioPermissions();
       if (!hasPermission) return;
 
@@ -255,30 +256,50 @@ const DescribeExercise = () => {
 
       if (!uri) return;
 
-      const blob = await fetch(uri).then(res => res.blob());
-      const file = new File([blob], `question_${questions[currentQuestion].id}.m4a`, {
-        type: 'audio/m4a',
-      });
-
       const timeSpent = Date.now() - questionStartTime;
       const currentQData = questions[currentQuestion];
 
       try {
         const formData = new FormData();
-        console.log('Uploading file with URI:', uri);
-        console.log('FormData object:', formData);
 
-        formData.append('file', file);
+        if (Platform.OS === 'web') {
+          const blob = await fetch(uri).then(res => res.blob());
+          const file = new File([blob], `question_${currentQData.id}.m4a`, {
+            type: 'audio/m4a',
+          });
+          formData.append('file', file);
+        } else {
+          formData.append('file', {
+            uri,
+            name: `question_${currentQData.id}.m4a`,
+            type: 'audio/m4a',
+          } as any);
+        }
+
         formData.append('questionId', currentQData.id.toString());
         formData.append('questionText', currentQData.question);
 
         const response = await fetch(`${API_URL}/api/assess/`, {
-          method: 'POST', 
-          body: formData, 
-          headers: {
-            // fetch and FormData automatically sets this 
-          }
+          method: 'POST',
+          body: formData,
         });
+
+        const testUpload = async (uri: string) => {
+  const formData = new FormData();
+  formData.append('file', {
+    uri,
+    name: 'test.m4a',
+    type: 'audio/m4a',
+  } as any);
+
+  try {
+    const res = await fetch(`${API_URL}/api/assess/`, { method: 'POST', body: formData });
+    console.log('Status:', res.status);
+    console.log('Text:', await res.text());
+  } catch (err) {
+    console.error('Test upload failed:', err);
+  }
+};
 
         if (!response.ok) {
           throw new Error('Failed to upload audio');
@@ -286,15 +307,18 @@ const DescribeExercise = () => {
 
         const data = await response.json();
         console.log('Audio successfully sent:', data);
+        setGptFeedback(data.feedback); // TODO: Remove when testing is complete
+        
+
         setExerciseResponses(prev => [
           ...prev,
           {
             questionId: currentQData.id,
             question: currentQData.question,
-            response: uri, // save audio uri 
+            response: uri,
             timeSpent,
             timestamp: Date.now(),
-          }
+          },
         ]);
       } catch (error) {
         console.error('Error uploading audio:', error);
@@ -409,6 +433,18 @@ const DescribeExercise = () => {
           />
         </View>
       </View>
+       {/* Show GPT feedback TODO: Remove when testing is complete */}
+       {gptFeedback && (
+        <Text style={{
+          textAlign: 'center', 
+          color: '#333', 
+          fontSize: 16,
+          marginTop: 10, 
+          marginHorizontal: 20, 
+        }}>
+          {gptFeedback}
+        </Text>
+       )}
 
       {/* Beach image */}
       <View style={styles.imageContainer}>
