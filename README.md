@@ -43,3 +43,8 @@ npx expo start
 ```
 This starts the Expo development server. You can scan the QR code with the Expo Go app on your phone to launch the app.
 
+## Backend Testing Environment
+The backend is currently documented through swagger, which allows for testing of routes to ensure they work and can communciate properly. In order to access this, after starting the Application, visit;
+http://localhost:8080/swagger/
+to test the different routes
+
