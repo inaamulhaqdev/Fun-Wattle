@@ -5,7 +5,8 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
-// import { API_URL } from '../config/api'; // Commented out - using route params instead
+import { API_URL } from '../config/api'; // Commented out - using route params instead
+import { useApp } from "@/context/AppContext";
 
 
 // Task data structure
@@ -22,13 +23,13 @@ interface MascotData {
 }
 
 // Sample tasks -
-const sampleTasks: Task[] = [
+/* const sampleTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
   { id: '2', name: 'describe_exercise', completed: false },
   { id: '3', name: 'opposites_exercise', completed: false },
   { id: '4', name: 'activity4', completed: false },
   { id: '5', name: 'activity5', completed: false },
-];
+]; */
 
 // Function to fetch child's coin balance from backend (currenty using hardocoded value)
 // const fetchCoinBalance = async () => {
@@ -257,14 +258,17 @@ const getMascotImages = (mascotData: MascotData) => {
 
 const ChildDashboard = () => {
   const { completedTaskId, bodyType, accessoryId } = useLocalSearchParams();
-  const [tasks, setTasks] = useState<Task[]>(sampleTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
   const [streakCount, setStreakCount] = useState(12); // HARDCODED - setStreakCount used in commented fetchStreakCount function
   const [coinBalance, setCoinBalance] = useState(120); // HARDCODED - setCoinBalance used in commented fetchCoinBalance function
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const tasksRef = React.useRef<Task[]>(sampleTasks);
+  const tasksRef = React.useRef<Task[]>([]);
+
+  const { childId } = useApp();
+  console.log('Fetching assigned tasks for childId:', childId);
 
   // Keep tasksRef in sync with tasks state
   React.useEffect(() => {
@@ -313,6 +317,51 @@ const ChildDashboard = () => {
   // useEffect(() => {
   //   fetchStreakCount();
   // }, []);
+
+  // Fetch required tasks assigned to the child
+  useEffect(() => {
+    const fetchAssignedTasks = async () => {
+      try {
+        const [unitsResp, assignmentsResp] = await Promise.all([
+          fetch(`${API_URL}/api/learning_units/`, { method: 'GET' }),
+          fetch(`${API_URL}/api/assignments/${childId}`, { method: 'GET' })
+        ]);
+
+        if (!unitsResp.ok || !assignmentsResp.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const allUnits = await unitsResp.json();
+        const childAssignments = await assignmentsResp.json();
+
+        const unitMap: Record<string, any> = {};
+        allUnits.forEach((unit: any) => {
+            unitMap[unit.id] = unit;
+        });
+
+        // Filter for required units and format accordingly
+        const requiredAssignments = childAssignments.filter(
+          (a: any) => a.participation_type === 'required'
+        );
+
+        const formattedTasks: Task[] = requiredAssignments.map((assignment: any) => {
+          const unit = unitMap[assignment.learning_unit];
+          return {
+            id: unit.id,
+            name: unit.title,
+            completed: assignment.completed_at !== null,
+          };
+        });
+
+        setTasks(formattedTasks);
+
+      } catch (err) {
+        console.error('Error fetching assigned tasks:', err);
+      }
+    };
+
+    fetchAssignedTasks();
+  }, [childId]);
 
   // Handle task completion from activity page with blooming animation
   useEffect(() => {
@@ -397,15 +446,24 @@ const ChildDashboard = () => {
 
   const handleTaskPress = async (task: Task) => {
     if (task.completed) return;
+
+    const slugify = (title: string) => {
+      return title
+        .toLowerCase() 
+        .replace(/\s+/g, '_')
+        .replace(/[^\w_]/g, '');
+    };
+
+    const exercise = slugify(task.name);
     
     // Navigate directly to the task with mascot data
     router.push({
-      pathname: `/${task.name}` as any,
+      pathname: `/${exercise}` as any,
       params: { 
         taskId: task.id, 
         taskName: task.name,
         bodyType: mascotData.bodyType,
-        accessoryId: mascotData.accessoryId?.toString() || ''
+        accessoryId: mascotData.accessoryId?.toString() || '',
       }
     });
     

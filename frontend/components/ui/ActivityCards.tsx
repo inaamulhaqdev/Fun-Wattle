@@ -21,7 +21,7 @@ export const ActivityCards: React.FC<ActivityCardsProps> = ({ title, completed, 
                 </Text>
 
                 <Text variant="titleMedium" style={styles.completed}>
-                  {completed} completed
+                  {completed}
                 </Text>
               </View>
 

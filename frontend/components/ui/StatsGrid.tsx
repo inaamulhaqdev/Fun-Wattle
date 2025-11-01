@@ -1,27 +1,34 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Text } from "react-native-paper";
+import { Text, ActivityIndicator } from "react-native-paper";
 
-type StatsGridProps = {
-  stats: [string, string | number][];
+type Stat = {
+  label: string;
+  value: number | string;
+  unit?: string;
 };
 
-const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
+type StatsGridProps = {
+  stats: Stat[];
+  loading?: boolean;
+};
+
+export default function StatsGrid({ stats, loading }: StatsGridProps) {
   return (
     <View style={styles.grid}>
-      {stats.map(([label, stat], index) => (
+      {stats.map(({ label, value, unit }, index) => (
         <View key={index} style={styles.gridItem}>
           <Text style={styles.label}>{label}</Text>
-          <Text style={styles.stat}>
-            {typeof stat === "number" ? `${stat} min` : stat}
-          </Text>
+          {label === "Total Activities Done" && loading ? (
+            <ActivityIndicator size="small" color="orange" style={{ marginTop: 5 }} />
+          ) : (
+            <Text style={styles.stat}>{value}{unit ? ` ${unit}` : ""}</Text>
+          )}
         </View>
       ))}
     </View>
   );
-};
-
-export default StatsGrid;
+}
 
 const styles = StyleSheet.create({
   grid: {
@@ -30,6 +37,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     marginBottom: 0,
+  
   },
   gridItem: {
     width: "48%",
@@ -39,6 +47,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
     borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 1, 
   },
   label: {
     fontSize: 11,

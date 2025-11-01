@@ -15,20 +15,20 @@ export default function ParentLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
       }}>
       <Tabs.Screen
         name="parent-dashboard"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color="black" />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="learning-units"
         options={{
           title: 'Learning Units',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="book.fill" color="black" />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="book.fill" color={color} />,
         }}
       />
     </Tabs>

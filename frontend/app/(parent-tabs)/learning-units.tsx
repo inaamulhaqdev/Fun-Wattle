@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import LearningLibrary from '../../components/shared/learning-library';
 import { Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
+import { LearningUnit } from '../../types/learningUnitTypes';
 import { API_URL } from '../../config/api';
 import { useApp } from '../../context/AppContext';
 
@@ -14,7 +14,7 @@ export default function LearningUnits() {
     React.useCallback(() => {
       const fetchModules = async () => {
         try {
-          const response = await fetch(`${API_URL}/api/learning_units?child_id=${childId}`, {
+          const response = await fetch(`${API_URL}/api/learning_units/`, {
             method: 'GET',
           });
 
@@ -24,17 +24,13 @@ export default function LearningUnits() {
 
           const json_resp = await response.json();
 
-          // Transform backend data to Learning_Unit
+          // Transform backend data to LearningUnit
           const learningUnits: LearningUnit[] = json_resp.map((unit: any) => ({
             id: unit.id.toString(),
             title: unit.title,
             category: unit.category,
             description: unit.description,
-            exercises: unit.exercises.map((exercise: any) => ({
-              title: exercise.title,
-              description: exercise.description,
-            })),
-            status: unit.status
+            image: unit.image,
           }));
 
           setData(learningUnits);
@@ -45,7 +41,7 @@ export default function LearningUnits() {
       };
 
       fetchModules();
-    }, [childId]) // Fetch modules will not only re-run when we load this page, but also when childId changes
+    }, [childId])
   );
 
   return <LearningLibrary data={data} />;
