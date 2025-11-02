@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
+import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers'; 
+import { RecordingOptionsPresets } from 'expo-av/build/Audio';
+import { API_URL } from '../config/api';
+import { Platform } from 'react-native';
 
+// Send the audio file as a POST request 
 // Questions data
 const questions = [
   {
@@ -106,7 +112,12 @@ const DescribeExercise = () => {
     timestamp: number;
   }[]>([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  
+  const [gptFeedback, setGptFeedback] = useState<string | null>(null);// Display GPT feedback on UI - only for dev testing TODO: remove this when testing complete
+
+  // Audio recorder set up 
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY); 
+  const recorderState = useAudioRecorderState(audioRecorder); 
+
   // Animation values
   const speechBubbleAnim = React.useRef(new Animated.Value(0)).current;
   const responseAnim = React.useRef(new Animated.Value(0)).current;
@@ -231,15 +242,108 @@ const DescribeExercise = () => {
   // };
 
   // Handle mic button press
-  const handleMicPress = () => {
+  const handleMicPress = async () => {
     if (!isRecording) {
-      // Starting to record - reset question timer
+      const hasPermission = await requestAudioPermissions();
+      if (!hasPermission) return;
+
       setQuestionStartTime(Date.now());
+      const started = await startRecording(audioRecorder);
+      if (started) setIsRecording(true);
+    } else {
+      const uri = await stopRecording(audioRecorder);
+      setIsRecording(false);
+
+      if (!uri) return;
+
+      const timeSpent = Date.now() - questionStartTime;
+      const currentQData = questions[currentQuestion];
+
+      try {
+        const formData = new FormData();
+
+        if (Platform.OS === 'web') {
+          const blob = await fetch(uri).then(res => res.blob());
+          const file = new File([blob], `question_${currentQData.id}.m4a`, {
+            type: 'audio/m4a',
+          });
+          formData.append('file', file);
+        } else {
+          formData.append('file', {
+            uri,
+            name: `question_${currentQData.id}.m4a`,
+            type: 'audio/m4a',
+          } as any);
+        }
+
+        formData.append('questionId', currentQData.id.toString());
+        formData.append('questionText', currentQData.question);
+
+        const response = await fetch(`${API_URL}/api/assess/`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const testUpload = async (uri: string) => {
+  const formData = new FormData();
+  formData.append('file', {
+    uri,
+    name: 'test.m4a',
+    type: 'audio/m4a',
+  } as any);
+
+  try {
+    const res = await fetch(`${API_URL}/api/assess/`, { method: 'POST', body: formData });
+    console.log('Status:', res.status);
+    console.log('Text:', await res.text());
+  } catch (err) {
+    console.error('Test upload failed:', err);
+  }
+};
+
+        if (!response.ok) {
+          throw new Error('Failed to upload audio');
+        }
+
+        const data = await response.json();
+        console.log('Audio successfully sent:', data);
+        setGptFeedback(data.feedback); // TODO: Remove when testing is complete
+        
+
+        setExerciseResponses(prev => [
+          ...prev,
+          {
+            questionId: currentQData.id,
+            question: currentQData.question,
+            response: uri,
+            timeSpent,
+            timestamp: Date.now(),
+          },
+        ]);
+      } catch (error) {
+        console.error('Error uploading audio:', error);
+      }
+      
+/*
+      // mascot response animation 
+      setShowMascotResponse(true);
+      Animated.spring(responseAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+
+      setTimeout(() => {
+        setShowMascotResponse(false);
+        responseAnim.setValue(0);
+      }, 2000);
+
+      */
     }
-    setIsRecording(!isRecording);
-    // TODO: Add actual voice recording logic here
   };
 
+  /*
   // Handle submit answer
   const handleSubmit = () => {
     if (!isRecording) return;
@@ -274,6 +378,7 @@ const DescribeExercise = () => {
       responseAnim.setValue(0);
     }, 2000);
   };
+*/
 
   // Handle next question
   const handleNextQuestion = () => {
@@ -328,6 +433,18 @@ const DescribeExercise = () => {
           />
         </View>
       </View>
+       {/* Show GPT feedback TODO: Remove when testing is complete! */}
+       {gptFeedback && (
+        <Text style={{
+          textAlign: 'center', 
+          color: '#333', 
+          fontSize: 16,
+          marginTop: 10, 
+          marginHorizontal: 20, 
+        }}>
+          {gptFeedback}
+        </Text>
+       )}
 
       {/* Beach image */}
       <View style={styles.imageContainer}>
@@ -427,44 +544,25 @@ const DescribeExercise = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* Action buttons */}
-        <View style={styles.actionButtons}>
-          {/* Submit button */}
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              !isRecording && styles.submitButtonDisabled
-            ]}
-            onPress={handleSubmit}
-            disabled={!isRecording}
-          >
-            <Text style={[
-              styles.submitButtonText,
-              !isRecording && styles.submitButtonTextDisabled
-            ]}>
-              Submit
-            </Text>
-          </TouchableOpacity>
-
-          {/* Next question button */}
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !showMascotResponse && styles.nextButtonDisabled
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            !exerciseResponses.some(r => r.questionId === currentQ.id) && styles.nextButtonDisabled
             ]}
             onPress={handleNextQuestion}
-            disabled={!showMascotResponse}
+            disabled={!exerciseResponses.some(r => r.questionId === currentQ.id)}
           >
             <Text style={[
               styles.nextButtonText,
-              !showMascotResponse && styles.nextButtonTextDisabled
+              !exerciseResponses.some(r => r.questionId === currentQ.id) && styles.nextButtonTextDisabled
             ]}>
               {currentQuestion < questions.length - 1 ? "Next Question" : "Finish"}
             </Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
+
+
         </View>
       </View>
-    </View>
   );
 };
 
