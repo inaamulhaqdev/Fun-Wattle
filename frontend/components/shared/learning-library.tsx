@@ -10,6 +10,7 @@ import { useApp } from '../../context/AppContext';
 import { API_URL } from '@/config/api';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
+const session = useApp().session;
 
 const assignLearningUnit = async (
   learningUnitId: string,
@@ -17,10 +18,16 @@ const assignLearningUnit = async (
   userId: string,
   participationType: 'required' | 'recommended'
 ) => {
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
+
   const response = await fetch(`${API_URL}/api/assignments/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
     },
     body: JSON.stringify({
       learning_unit_id: learningUnitId,
@@ -42,10 +49,16 @@ const unassignLearningUnit = async (
   childId: string,
   userId: string
 ) => {
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
+
   const response = await fetch(`${API_URL}/api/assignments/`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
     },
     body: JSON.stringify({
       learning_unit_id: learningUnitId,

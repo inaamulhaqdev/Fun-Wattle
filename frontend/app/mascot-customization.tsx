@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { use, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { router } from 'expo-router';
 // import { useLocalSearchParams } from 'expo-router'; // Commented out - will be used with route params
@@ -6,17 +6,25 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-// import { API_URL } from '../config/api';
+//import { API_URL } from '../config/api';
+import { useApp } from '@/context/AppContext';
+
+const session = useApp().session;
 
 const MascotCustomization = () => {
   // const { currentBodyType, currentAccessoryId } = useLocalSearchParams();
 
   // const saveMascotData = async (mascotData: { bodyType: string; accessoryId?: number }) => {
+  //   if (!session?.access_token) {
+  //     Alert.alert('Error', 'You must be authorized to perform this action');
+  //     return;
+  //   }
   //   try {
   //     const response = await fetch(`${API_URL}/api/children/current/mascot`, { // not sure about endpoint
   //       method: 'PUT',
   //       headers: {
   //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${session.access_token}`,
   //       },
   //       body: JSON.stringify({
   //         mascot: {
@@ -35,7 +43,7 @@ const MascotCustomization = () => {
   //     console.error('Error saving mascot data:', error);
   //   }
   // };
-  
+
   // Local function to handle mascot data changes (can delete this when backend is used)
   const saveMascotData = (mascotData: { bodyType: string; accessoryId?: number }) => {
     console.log('Mascot data updated locally:', mascotData);
@@ -44,10 +52,15 @@ const MascotCustomization = () => {
   // Function to fetch child's coin balance from backend (currenty using hardocoded value)
   // const fetchCoinBalance = async () => {
   //   try {
+  //     if (!session?.access_token) {
+  //       Alert.alert('Error', 'You must be authorized to perform this action');
+  //       return;
+  //     }
   //     const response = await fetch(`${API_URL}/api/children/current/coins`, {
   //       method: 'GET',
   //       headers: {
   //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${session.access_token}`,
   //       },
   //     });
 
@@ -70,6 +83,7 @@ const MascotCustomization = () => {
   //       method: 'PUT',
   //       headers: {
   //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${session.access_token}`,
   //       },
   //       body: JSON.stringify({
   //         coins: newBalance
@@ -93,6 +107,7 @@ const MascotCustomization = () => {
   //       method: 'GET',
   //       headers: {
   //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${session.access_token}`,
   //       },
   //     });
 
@@ -115,9 +130,9 @@ const MascotCustomization = () => {
 
   const [selectedTab, setSelectedTab] = useState('Body');
   const [selectedAccessory, setSelectedAccessory] = useState<{
-    id: number, 
-    name: string, 
-    image: any, 
+    id: number,
+    name: string,
+    image: any,
     overlays: {koala: any, kangaroo: any},
     cost: number,
     unlocked: boolean
@@ -153,9 +168,9 @@ const MascotCustomization = () => {
   // Helper function to get the correct overlay image based on body type
   const getAccessoryOverlay = () => {
     if (!selectedAccessory) return null;
-    
+
     const bodyType = selectedBody.name.toLowerCase();
-    return selectedAccessory.overlays[bodyType as keyof typeof selectedAccessory.overlays] || 
+    return selectedAccessory.overlays[bodyType as keyof typeof selectedAccessory.overlays] ||
            selectedAccessory.overlays.koala;
   };
 
@@ -169,14 +184,14 @@ const MascotCustomization = () => {
       setCoinBalance(newBalance);
       setUnlockedAccessories([...unlockedAccessories, accessory.id]);
       setSelectedAccessory({...accessory, unlocked: true});
-      
+
       // Update coin balance in backend
       // updateCoinBalance(newBalance);
-      
+
       // Save mascot data with new accessory
-      saveMascotData({ 
-        bodyType: selectedBody.name.toLowerCase(), 
-        accessoryId: accessory.id 
+      saveMascotData({
+        bodyType: selectedBody.name.toLowerCase(),
+        accessoryId: accessory.id
       });
     }
   };
@@ -186,9 +201,9 @@ const MascotCustomization = () => {
     if (isAccessoryUnlocked(accessory.id)) {
       setSelectedAccessory({...accessory, unlocked: true});
       // Save mascot data with selected accessory
-      saveMascotData({ 
-        bodyType: selectedBody.name.toLowerCase(), 
-        accessoryId: accessory.id 
+      saveMascotData({
+        bodyType: selectedBody.name.toLowerCase(),
+        accessoryId: accessory.id
       });
     } else {
       // If locked, attempt to purchase
@@ -197,9 +212,9 @@ const MascotCustomization = () => {
   };
 
   const accessoryOptions = [
-    { 
-      id: 1, 
-      name: 'Shirt', 
+    {
+      id: 1,
+      name: 'Shirt',
       cost: 100,
       image: require('@/assets/images/shirt.png'),
       overlays: {
@@ -207,9 +222,9 @@ const MascotCustomization = () => {
         kangaroo: require('@/assets/images/shirt_roo.png'),
       }
     },
-    { 
-      id: 2, 
-      name: 'Sunglasses', 
+    {
+      id: 2,
+      name: 'Sunglasses',
       cost: 150,
       image: require('@/assets/images/sunglasses.png'),
       overlays: {
@@ -232,15 +247,15 @@ const MascotCustomization = () => {
 
       {/* Mascot Display Area */}
       <View style={styles.mascotDisplayArea}>
-        <Image 
+        <Image
           source={selectedBody.image}
           style={styles.mascotImage}
           resizeMode="contain"
         />
         {selectedAccessory && (
           <View style={styles.accessoryOverlay}>
-            <Image 
-              source={getAccessoryOverlay()} 
+            <Image
+              source={getAccessoryOverlay()}
               style={styles.accessoryImage}
               resizeMode="contain"
             />
@@ -250,7 +265,7 @@ const MascotCustomization = () => {
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.tab, selectedTab === 'Body' && styles.activeTab]}
           onPress={() => setSelectedTab('Body')}
         >
@@ -258,8 +273,8 @@ const MascotCustomization = () => {
             Body
           </Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.tab, selectedTab === 'Accessories' && styles.activeTab]}
           onPress={() => setSelectedTab('Accessories')}
         >
@@ -274,17 +289,17 @@ const MascotCustomization = () => {
         <View style={styles.optionsGrid}>
           {selectedTab === 'Body' ? (
             bodyOptions.map((option) => (
-              <TouchableOpacity 
-                key={option.id} 
+              <TouchableOpacity
+                key={option.id}
                 style={[
-                  styles.optionItem, 
+                  styles.optionItem,
                   selectedBody?.id === option.id && styles.selectedOption
                 ]}
                 onPress={() => {
                   setSelectedBody(option);
-                  saveMascotData({ 
-                    bodyType: option.name.toLowerCase(), 
-                    accessoryId: selectedAccessory?.id 
+                  saveMascotData({
+                    bodyType: option.name.toLowerCase(),
+                    accessoryId: selectedAccessory?.id
                   });
                 }}
               >
@@ -295,34 +310,34 @@ const MascotCustomization = () => {
           ) : (
             <>
               {/* Remove accessory option */}
-              <TouchableOpacity 
-                key="remove" 
+              <TouchableOpacity
+                key="remove"
                 style={[
-                  styles.optionItem, 
+                  styles.optionItem,
                   !selectedAccessory && styles.selectedOption // Selected when no accessory is chosen
                 ]}
                 onPress={() => {
                   setSelectedAccessory(null);
-                  saveMascotData({ 
-                    bodyType: selectedBody.name.toLowerCase(), 
-                    accessoryId: undefined 
+                  saveMascotData({
+                    bodyType: selectedBody.name.toLowerCase(),
+                    accessoryId: undefined
                   });
                 }}
               >
                 <MaterialIcons name="highlight-remove" size={24} color="black" />
                 <Text style={styles.optionName}>Remove</Text>
               </TouchableOpacity>
-              
+
               {/* Regular accessory options */}
               {accessoryOptions.map((option) => {
                 const isUnlocked = isAccessoryUnlocked(option.id);
                 const canAfford = coinBalance >= option.cost;
-                
+
                 return (
-                  <TouchableOpacity 
-                    key={option.id} 
+                  <TouchableOpacity
+                    key={option.id}
                     style={[
-                      styles.optionItem, 
+                      styles.optionItem,
                       selectedAccessory?.id === option.id && styles.selectedOption,
                       !isUnlocked && !canAfford && styles.lockedUnaffordableItem
                     ]}
@@ -330,7 +345,7 @@ const MascotCustomization = () => {
                   >
                     <View style={styles.accessoryItemContainer}>
                       <Image source={option.image} style={styles.optionImage} resizeMode="contain" />
-                      
+
                       {/* Lock overlay for locked items */}
                       {!isUnlocked && (
                         <View style={styles.lockOverlay}>
@@ -359,15 +374,15 @@ const MascotCustomization = () => {
         <TouchableOpacity style={styles.navButton} onPress={handleHome}>
           <FontAwesome6 name="house-chimney-window" size={40} color="white" />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.navButton} onPress={handleStats}>
           <FontAwesome5 name="trophy" size={40} color="white" />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.navButton}>
           <MaterialCommunityIcons name="koala" size={60} color="#FFD700" />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.navButton} onPress={handleSettings}>
           <FontAwesome5 name="cog" size={40} color="white" />
         </TouchableOpacity>
