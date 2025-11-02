@@ -46,10 +46,19 @@ const PinEntryPage = () => {
       if (pin.every(digit => digit !== '')) {
         const enteredPin = pin.join('');
 
+        const session = useApp().session;
+        if (!session?.access_token) {
+          Alert.alert('Error', 'You must be authorized to perform this action');
+          return;
+        }
+
         try {
           // Get the stored PIN hash from the backend
           const response = await fetch(`${API_URL}/api/profile/${profileId}/`, {
             method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`
+            }
           });
 
           if (!response.ok) {

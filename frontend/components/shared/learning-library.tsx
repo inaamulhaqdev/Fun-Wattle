@@ -150,20 +150,20 @@ export default function LearningLibrary({ data }: LibraryProps) {
         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
           {selectedItem.exercises?.map((exercise, index) => (
             <Card
-            key={index}
-            onPress={() =>
-              router.push({
-                pathname: '/exercise-screen',
-                params: { title: exercise.title, component: exercise.title?.replace(" ", "")},
-              })
-            }
+              key={index}
+              onPress={() =>
+                router.push({
+                  pathname: '/exercise-screen',
+                  params: { title: exercise.title, component: exercise.title?.replace(" ", "") },
+                })
+              }
             >
-            <Card.Title title={exercise.title}/>
-            <Card.Content>
-              <Text variant="bodyMedium" style={styles.description}>
-                {exercise.description}
-              </Text>
-            </Card.Content>
+              <Card.Title title={exercise.title} />
+              <Card.Content>
+                <Text variant="bodyMedium" style={styles.description}>
+                  {exercise.description}
+                </Text>
+              </Card.Content>
             </Card>
           ))}
         </ScrollView>
@@ -206,18 +206,18 @@ export default function LearningLibrary({ data }: LibraryProps) {
             }}
           />
 
-            <Snackbar
-              visible={snackbarVisible}
-              onDismiss={() => setSnackbarVisible(false)}
-              duration={3000}
-              action={{
-                label: '✓',
-                onPress: () => setSnackbarVisible(false),
-              }}
-            >
-              {snackbarMessage}
-            </Snackbar>
-          </View>
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={() => setSnackbarVisible(false)}
+            duration={3000}
+            action={{
+              label: '✓',
+              onPress: () => setSnackbarVisible(false),
+            }}
+          >
+            {snackbarMessage}
+          </Snackbar>
+        </View>
       </ScrollView>
     );
   }

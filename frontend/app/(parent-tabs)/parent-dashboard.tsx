@@ -25,7 +25,11 @@ export default function ParentDashboard() {
         }
 
         // Get parent profile
-        const parentProfileResponse = await fetch(`${API_URL}/api/profile/${profileId}/`);
+        const parentProfileResponse = await fetch(`${API_URL}/api/profile/${profileId}/`, {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
+        });
         if (!parentProfileResponse.ok) {
           throw new Error(`Failed to fetch parent profile (${parentProfileResponse.status})`);
         }
@@ -33,7 +37,11 @@ export default function ParentDashboard() {
         setParentName(parentProfileData.name);
 
         // Get selected child profile
-        const selectedChildResponse = await fetch(`${API_URL}/api/profile/${childId}/`);
+        const selectedChildResponse = await fetch(`${API_URL}/api/profile/${childId}/`, {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
+        });
         if (!selectedChildResponse.ok) {
           throw new Error(`Failed to fetch child profile (${selectedChildResponse.status})`);
         }
