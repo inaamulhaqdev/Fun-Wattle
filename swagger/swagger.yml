@@ -4,7 +4,7 @@ info:
   description: API for the Funwattle MVP app - a speech therapy assistance app
   version: 1.0.0
 servers:
-  - url: http://localhost:8000/api
+  - url: http://localhost:7000/api
     description: Backend Server
 
 paths:
