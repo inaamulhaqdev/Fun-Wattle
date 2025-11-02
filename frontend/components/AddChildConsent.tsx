@@ -26,7 +26,7 @@ export default function AddChildExtraQs() {
       return;
     }
 
-    const { data: { session }} = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       Alert.alert('No active session', 'Please log in again.');
       return;
@@ -41,6 +41,7 @@ export default function AddChildExtraQs() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
           user_id: user.id,
@@ -77,23 +78,23 @@ export default function AddChildExtraQs() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-        <View style={styles.headerRow}>
-          <IconButton
-            icon="arrow-left"
-            size={28}
-            onPress={handleBack}
-          />
-          <Text style={styles.title}>Consent Confirmation</Text>
-        </View>
+      <View style={styles.headerRow}>
+        <IconButton
+          icon="arrow-left"
+          size={28}
+          onPress={handleBack}
+        />
+        <Text style={styles.title}>Consent Confirmation</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.middleContainer}>
           <Text variant="bodyLarge" style={styles.centeredText}>{'\u2022 '}I give {childName} permission to use FunWattle on this device and on other linked devices.</Text>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.checkboxRow}
           onPress={() => setConsentChecked(!consentChecked)}
-        > 
+        >
           <Checkbox.Android
             status={consentChecked ? 'checked' : 'unchecked'}
             color="#FD902B"
@@ -102,15 +103,15 @@ export default function AddChildExtraQs() {
         </TouchableOpacity>
 
         <Button
-            mode="contained"
-            style={styles.nextButton}
-            onPress={handleNext}
-            contentStyle={{ paddingVertical: 8 }}
-            textColor="black"
-            disabled={!consentChecked || loading}
-          >
-            {loading ? 'Submitting...' : 'Agree & Continue'}
-          </Button>
+          mode="contained"
+          style={styles.nextButton}
+          onPress={handleNext}
+          contentStyle={{ paddingVertical: 8 }}
+          textColor="black"
+          disabled={!consentChecked || loading}
+        >
+          {loading ? 'Submitting...' : 'Agree & Continue'}
+        </Button>
       </ScrollView>
     </View>
   );

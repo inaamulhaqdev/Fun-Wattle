@@ -55,6 +55,9 @@ const AccountSelectionPage = () => {
 
         const response = await fetch(`${API_URL}/api/profiles/${user.id}/`, {
           method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
         });
         if (!response.ok) {
           throw new Error(`Failed to fetch profiles (${response.status})`);

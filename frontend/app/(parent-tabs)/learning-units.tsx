@@ -10,12 +10,21 @@ export default function LearningUnits() {
   const [data, setData] = useState<LearningUnit[]>([]);
   const { childId } = useApp();
 
+  const session = useApp().session;
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
+
   useFocusEffect(
     React.useCallback(() => {
       const fetchModules = async () => {
         try {
           const response = await fetch(`${API_URL}/api/learning_units?child_id=${childId}`, {
             method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`
+            }
           });
 
           if (!response.ok) {
