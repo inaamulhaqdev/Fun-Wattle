@@ -16,7 +16,7 @@ services:
    build: ./backend
    container_name: backend
    ports:
-     - "7000:7000"
+     - "7001:7000"
    env_file:
      - .env
    # This is a volume mapping - maps the local "backend" directory to "/app" in the container

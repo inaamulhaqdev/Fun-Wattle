@@ -17,10 +17,16 @@ const assignLearningUnit = async (
   userId: string,
   participationType: 'required' | 'recommended'
 ) => {
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
+
   const response = await fetch(`${API_URL}/api/assignments/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
     },
     body: JSON.stringify({
       learning_unit_id: learningUnitId,
@@ -42,10 +48,16 @@ const unassignLearningUnit = async (
   childId: string,
   userId: string
 ) => {
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
+
   const response = await fetch(`${API_URL}/api/assignments/`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
     },
     body: JSON.stringify({
       learning_unit_id: learningUnitId,
@@ -137,20 +149,20 @@ export default function LearningLibrary({ data }: LibraryProps) {
         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
           {selectedItem.exercises?.map((exercise, index) => (
             <Card
-            key={index}
-            onPress={() =>
-              router.push({
-                pathname: '/exercise-screen',
-                params: { title: exercise.title, component: exercise.title?.replace(" ", "")},
-              })
-            }
+              key={index}
+              onPress={() =>
+                router.push({
+                  pathname: '/exercise-screen',
+                  params: { title: exercise.title, component: exercise.title?.replace(" ", "") },
+                })
+              }
             >
-            <Card.Title title={exercise.title}/>
-            <Card.Content>
-              <Text variant="bodyMedium" style={styles.description}>
-                {exercise.description}
-              </Text>
-            </Card.Content>
+              <Card.Title title={exercise.title} />
+              <Card.Content>
+                <Text variant="bodyMedium" style={styles.description}>
+                  {exercise.description}
+                </Text>
+              </Card.Content>
             </Card>
           ))}
         </ScrollView>
@@ -193,18 +205,18 @@ export default function LearningLibrary({ data }: LibraryProps) {
             }}
           />
 
-            <Snackbar
-              visible={snackbarVisible}
-              onDismiss={() => setSnackbarVisible(false)}
-              duration={3000}
-              action={{
-                label: '✓',
-                onPress: () => setSnackbarVisible(false),
-              }}
-            >
-              {snackbarMessage}
-            </Snackbar>
-          </View>
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={() => setSnackbarVisible(false)}
+            duration={3000}
+            action={{
+              label: '✓',
+              onPress: () => setSnackbarVisible(false),
+            }}
+          >
+            {snackbarMessage}
+          </Snackbar>
+        </View>
       </ScrollView>
     );
   }
