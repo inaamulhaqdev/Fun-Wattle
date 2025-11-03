@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
-import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers'; 
+import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers';
 import { RecordingOptionsPresets } from 'expo-av/build/Audio';
 import { API_URL } from '../config/api';
 import { Platform } from 'react-native';
+import { useApp } from '@/context/AppContext';
 
-// Send the audio file as a POST request 
+// Send the audio file as a POST request
 // Questions data
 const questions = [
   {
@@ -54,7 +55,7 @@ const getMascotImages = (mascotData: MascotData) => {
       koala: require('@/assets/images/shirt_koala.png'),
       kangaroo: require('@/assets/images/shirt_roo.png'),
     },
-    2: { // Sunglasses  
+    2: { // Sunglasses
       koala: require('@/assets/images/sunglasses_koala.png'),
       kangaroo: require('@/assets/images/sunglasses_roo.png'),
     },
@@ -62,7 +63,7 @@ const getMascotImages = (mascotData: MascotData) => {
 
   const bodyType = mascotData.bodyType.toLowerCase();
   const bodyImage = bodyImages[bodyType as keyof typeof bodyImages] || bodyImages.koala;
-  
+
   let accessoryImage = null;
   if (mascotData.accessoryId && accessoryImages[mascotData.accessoryId as keyof typeof accessoryImages]) {
     const accessorySet = accessoryImages[mascotData.accessoryId as keyof typeof accessoryImages];
@@ -74,11 +75,16 @@ const getMascotImages = (mascotData: MascotData) => {
 
 // Fetch mascot data from backend
 // const fetchMascotData = async () => {
+//   if (!session?.access_token) {
+//     Alert.alert('Error', 'You must be authorized to perform this action');
+//     return;
+//   }
 //   try {
 //     const response = await fetch(`${API_URL}/api/children/current/mascot`, {
 //       method: 'GET',
 //       headers: {
 //          'Content-Type': 'application/json',
+//          'Authorization': `Bearer ${session.access_token}`,
 //       },
 //     });
 
@@ -104,6 +110,7 @@ const DescribeExercise = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
   const [sessionStartTime] = useState(Date.now()); // Used in commented backend submission
+  const { session } = useApp();
   const [exerciseResponses, setExerciseResponses] = useState<{ // Used in commented backend submission
     questionId: number;
     question: string;
@@ -114,9 +121,9 @@ const DescribeExercise = () => {
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [gptFeedback, setGptFeedback] = useState<string | null>(null);// Display GPT feedback on UI - only for dev testing TODO: remove this when testing complete
 
-  // Audio recorder set up 
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY); 
-  const recorderState = useAudioRecorderState(audioRecorder); 
+  // Audio recorder set up
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(audioRecorder);
 
   // Animation values
   const speechBubbleAnim = React.useRef(new Animated.Value(0)).current;
@@ -167,7 +174,7 @@ const DescribeExercise = () => {
         ])
       );
       pulseAnimation.start();
-      
+
       return () => {
         pulseAnimation.stop();
         pointerAnim.setValue(1);
@@ -178,7 +185,7 @@ const DescribeExercise = () => {
   // const submitExerciseResults = async () => {
   //   const sessionEndTime = Date.now();
   //   const totalSessionTime = sessionEndTime - sessionStartTime;
-  //   
+  //
   //   const exerciseSubmission = {
   //     exerciseType: 'describe',
   //     activityId: 9, // From learning unit data - "Describe Exercise"
@@ -192,47 +199,52 @@ const DescribeExercise = () => {
   //     completed: isCompleted,
   //     accuracy: 100,
   //   };
-
+  //
   //   try {
+  //     if (!session?.access_token) {
+  //       Alert.alert('Error', 'You must be authorized to perform this action');
+  //       return;
+  //     }
   //     const response = await fetch('/api/exercise-completions', {
   //       method: 'POST',
   //       headers: {
   //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${session.access_token}`,
   //       },
   //       body: JSON.stringify(exerciseSubmission)
   //     });
-  //     
+  //
   //     if (!response.ok) {
   //       throw new Error('Failed to submit exercise results');
   //     }
-  //     
+  //
   //     const result = await response.json();
   //     console.log('Exercise submitted successfully:', result);
-  //     
+  //
   //     // Navigate back to dashboard after successful submission
   //     router.push({
   //       pathname: '/child-dashboard' as any,
-  //       params: { 
+  //       params: {
   //         completedTaskId: taskId,
   //         bodyType: mascotData.bodyType,
   //         accessoryId: mascotData.accessoryId?.toString() || ''
   //       }
   //     });
-  //     
+  //
   //   } catch (error) {
   //     console.error('Error submitting exercise:', error);
-  //     
+  //
   //     // Store locally for retry later
   //     const failedSubmissions = JSON.parse(
   //       localStorage.getItem('pendingExerciseSubmissions') || '[]'
   //     );
   //     failedSubmissions.push(exerciseSubmission);
   //     localStorage.setItem('pendingExerciseSubmissions', JSON.stringify(failedSubmissions));
-  //     
+  //
   //     // Still allow navigation
   //     router.push({
   //       pathname: '/child-dashboard' as any,
-  //       params: { 
+  //       params: {
   //         completedTaskId: taskId,
   //         bodyType: mascotData.bodyType,
   //         accessoryId: mascotData.accessoryId?.toString() || ''
@@ -279,8 +291,15 @@ const DescribeExercise = () => {
         formData.append('questionId', currentQData.id.toString());
         formData.append('questionText', currentQData.question);
 
+        if (!session?.access_token) {
+          Alert.alert('Error', 'You must be authorized to perform this action');
+          return;
+        }
         const response = await fetch(`${API_URL}/api/assess/`, {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
           body: formData,
         });
 
@@ -292,8 +311,13 @@ const DescribeExercise = () => {
     type: 'audio/m4a',
   } as any);
 
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
+
   try {
-    const res = await fetch(`${API_URL}/api/assess/`, { method: 'POST', body: formData });
+    const res = await fetch(`${API_URL}/api/assess/`, { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` }, body: formData });
     console.log('Status:', res.status);
     console.log('Text:', await res.text());
   } catch (err) {
@@ -308,7 +332,7 @@ const DescribeExercise = () => {
         const data = await response.json();
         console.log('Audio successfully sent:', data);
         setGptFeedback(data.feedback); // TODO: Remove when testing is complete
-        
+
 
         setExerciseResponses(prev => [
           ...prev,
@@ -323,9 +347,9 @@ const DescribeExercise = () => {
       } catch (error) {
         console.error('Error uploading audio:', error);
       }
-      
+
 /*
-      // mascot response animation 
+      // mascot response animation
       setShowMascotResponse(true);
       Animated.spring(responseAnim, {
         toValue: 1,
@@ -347,10 +371,10 @@ const DescribeExercise = () => {
   // Handle submit answer
   const handleSubmit = () => {
     if (!isRecording) return;
-    
+
     const currentTime = Date.now();
     const timeSpent = currentTime - questionStartTime;
-    
+
     // Record the response (in real app, this would be transcribed audio)
     const responseData = {
       questionId: questions[currentQuestion].id,
@@ -359,11 +383,11 @@ const DescribeExercise = () => {
       timeSpent: timeSpent,
       timestamp: currentTime
     };
-    
+
     setExerciseResponses(prev => [...prev, responseData]);
     setIsRecording(false);
     setShowMascotResponse(true);
-    
+
     // Animate mascot response
     Animated.spring(responseAnim, {
       toValue: 1,
@@ -389,15 +413,15 @@ const DescribeExercise = () => {
     } else {
       // Exercise completed
       setIsCompleted(true);
-      
+
       // Submit exercise results to backend (commented out)
       // submitExerciseResults();
-      
+
       // Temporary navigation (remove when backend is ready)
       setTimeout(() => {
         router.push({
           pathname: '/child-dashboard' as any,
-          params: { 
+          params: {
             completedTaskId: taskId,
             bodyType: mascotData.bodyType,
             accessoryId: mascotData.accessoryId?.toString() || ''
@@ -425,22 +449,22 @@ const DescribeExercise = () => {
       <View style={styles.progressContainer}>
         <Text style={styles.progressText}>Question {currentQuestion + 1} of {questions.length}</Text>
         <View style={styles.progressBar}>
-          <View 
+          <View
             style={[
-              styles.progressFill, 
+              styles.progressFill,
               { width: `${((currentQuestion + 1) / questions.length) * 100}%` }
-            ]} 
+            ]}
           />
         </View>
       </View>
        {/* Show GPT feedback TODO: Remove when testing is complete! */}
        {gptFeedback && (
         <Text style={{
-          textAlign: 'center', 
-          color: '#333', 
+          textAlign: 'center',
+          color: '#333',
           fontSize: 16,
-          marginTop: 10, 
-          marginHorizontal: 20, 
+          marginTop: 10,
+          marginHorizontal: 20,
         }}>
           {gptFeedback}
         </Text>
@@ -453,12 +477,12 @@ const DescribeExercise = () => {
           style={styles.beachImage}
           resizeMode="cover"
         />
-        
+
         {/* Pointer for ocean question */}
         {currentQ.showPointer && currentQ.pointerPosition && (
-          <Animated.View 
+          <Animated.View
             style={[
-              styles.pointerContainer, 
+              styles.pointerContainer,
               currentQ.pointerPosition,
               { transform: [{ scale: pointerAnim }] }
             ]}
@@ -471,7 +495,7 @@ const DescribeExercise = () => {
       {/* Mascot with speech bubble */}
       <View style={styles.mascotContainer}>
         {/* Speech bubble from mascot */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.speechBubbleContainer,
             {
@@ -488,7 +512,7 @@ const DescribeExercise = () => {
 
         {/* Mascot response bubble */}
         {showMascotResponse && (
-          <Animated.View 
+          <Animated.View
             style={[
               styles.responseBubbleContainer,
               {
@@ -531,10 +555,10 @@ const DescribeExercise = () => {
           ]}
           onPress={handleMicPress}
         >
-          <FontAwesome 
-            name={isRecording ? "microphone" : "microphone-slash"} 
-            size={30} 
-            color={isRecording ? "#FF6B35" : "#666"} 
+          <FontAwesome
+            name={isRecording ? "microphone" : "microphone-slash"}
+            size={30}
+            color={isRecording ? "#FF6B35" : "#666"}
           />
           <Text style={[
             styles.micButtonText,

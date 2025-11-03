@@ -8,7 +8,12 @@ import { useApp } from '../../context/AppContext';
 
 export default function LearningUnits() {
   const [data, setData] = useState<LearningUnit[]>([]);
-  const { childId } = useApp();
+  const { session, childId } = useApp();
+
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
 
   useFocusEffect(
     React.useCallback(() => {
@@ -16,6 +21,9 @@ export default function LearningUnits() {
         try {
           const response = await fetch(`${API_URL}/api/learning_units?child_id=${childId}`, {
             method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`
+            }
           });
 
           if (!response.ok) {
@@ -23,6 +31,7 @@ export default function LearningUnits() {
           }
 
           const json_resp = await response.json();
+          console.log('Fetched learning units:', json_resp);
 
           // Transform backend data to Learning_Unit
           const learningUnits: LearningUnit[] = json_resp.map((unit: any) => ({
@@ -30,11 +39,13 @@ export default function LearningUnits() {
             title: unit.title,
             category: unit.category,
             description: unit.description,
-            exercises: unit.exercises.map((exercise: any) => ({
-              title: exercise.title,
-              description: exercise.description,
-            })),
-            status: unit.status
+            // NOTE: If you need this, please let Lachie or Sam know, this route only returns learning unit info, not exercise or status info
+            // We can write a new route to retrieve all this in one call if needed
+            // exercises: unit.exercises.map((exercise: any) => ({
+            //   title: exercise.title,
+            //   description: exercise.description,
+            // })),
+            // status: unit.status
           }));
 
           setData(learningUnits);
