@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
+import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers';
+import { RecordingOptionsPresets } from 'expo-av/build/Audio';
+import { API_URL } from '../config/api';
+import { Platform } from 'react-native';
+import { useApp } from '@/context/AppContext';
 
+// Send the audio file as a POST request
 // Questions data
 const questions = [
   {
@@ -48,7 +55,7 @@ const getMascotImages = (mascotData: MascotData) => {
       koala: require('@/assets/images/shirt_koala.png'),
       kangaroo: require('@/assets/images/shirt_roo.png'),
     },
-    2: { // Sunglasses  
+    2: { // Sunglasses
       koala: require('@/assets/images/sunglasses_koala.png'),
       kangaroo: require('@/assets/images/sunglasses_roo.png'),
     },
@@ -56,7 +63,7 @@ const getMascotImages = (mascotData: MascotData) => {
 
   const bodyType = mascotData.bodyType.toLowerCase();
   const bodyImage = bodyImages[bodyType as keyof typeof bodyImages] || bodyImages.koala;
-  
+
   let accessoryImage = null;
   if (mascotData.accessoryId && accessoryImages[mascotData.accessoryId as keyof typeof accessoryImages]) {
     const accessorySet = accessoryImages[mascotData.accessoryId as keyof typeof accessoryImages];
@@ -68,11 +75,16 @@ const getMascotImages = (mascotData: MascotData) => {
 
 // Fetch mascot data from backend
 // const fetchMascotData = async () => {
+//   if (!session?.access_token) {
+//     Alert.alert('Error', 'You must be authorized to perform this action');
+//     return;
+//   }
 //   try {
 //     const response = await fetch(`${API_URL}/api/children/current/mascot`, {
 //       method: 'GET',
 //       headers: {
 //          'Content-Type': 'application/json',
+//          'Authorization': `Bearer ${session.access_token}`,
 //       },
 //     });
 
@@ -98,6 +110,7 @@ const DescribeExercise = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
   const [sessionStartTime] = useState(Date.now()); // Used in commented backend submission
+  const { session } = useApp();
   const [exerciseResponses, setExerciseResponses] = useState<{ // Used in commented backend submission
     questionId: number;
     question: string;
@@ -106,7 +119,12 @@ const DescribeExercise = () => {
     timestamp: number;
   }[]>([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  
+  const [gptFeedback, setGptFeedback] = useState<string | null>(null);// Display GPT feedback on UI - only for dev testing TODO: remove this when testing complete
+
+  // Audio recorder set up
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(audioRecorder);
+
   // Animation values
   const speechBubbleAnim = React.useRef(new Animated.Value(0)).current;
   const responseAnim = React.useRef(new Animated.Value(0)).current;
@@ -156,7 +174,7 @@ const DescribeExercise = () => {
         ])
       );
       pulseAnimation.start();
-      
+
       return () => {
         pulseAnimation.stop();
         pointerAnim.setValue(1);
@@ -167,7 +185,7 @@ const DescribeExercise = () => {
   // const submitExerciseResults = async () => {
   //   const sessionEndTime = Date.now();
   //   const totalSessionTime = sessionEndTime - sessionStartTime;
-  //   
+  //
   //   const exerciseSubmission = {
   //     exerciseType: 'describe',
   //     activityId: 9, // From learning unit data - "Describe Exercise"
@@ -181,47 +199,52 @@ const DescribeExercise = () => {
   //     completed: isCompleted,
   //     accuracy: 100,
   //   };
-
+  //
   //   try {
+  //     if (!session?.access_token) {
+  //       Alert.alert('Error', 'You must be authorized to perform this action');
+  //       return;
+  //     }
   //     const response = await fetch('/api/exercise-completions', {
   //       method: 'POST',
   //       headers: {
   //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${session.access_token}`,
   //       },
   //       body: JSON.stringify(exerciseSubmission)
   //     });
-  //     
+  //
   //     if (!response.ok) {
   //       throw new Error('Failed to submit exercise results');
   //     }
-  //     
+  //
   //     const result = await response.json();
   //     console.log('Exercise submitted successfully:', result);
-  //     
+  //
   //     // Navigate back to dashboard after successful submission
   //     router.push({
   //       pathname: '/child-dashboard' as any,
-  //       params: { 
+  //       params: {
   //         completedTaskId: taskId,
   //         bodyType: mascotData.bodyType,
   //         accessoryId: mascotData.accessoryId?.toString() || ''
   //       }
   //     });
-  //     
+  //
   //   } catch (error) {
   //     console.error('Error submitting exercise:', error);
-  //     
+  //
   //     // Store locally for retry later
   //     const failedSubmissions = JSON.parse(
   //       localStorage.getItem('pendingExerciseSubmissions') || '[]'
   //     );
   //     failedSubmissions.push(exerciseSubmission);
   //     localStorage.setItem('pendingExerciseSubmissions', JSON.stringify(failedSubmissions));
-  //     
+  //
   //     // Still allow navigation
   //     router.push({
   //       pathname: '/child-dashboard' as any,
-  //       params: { 
+  //       params: {
   //         completedTaskId: taskId,
   //         bodyType: mascotData.bodyType,
   //         accessoryId: mascotData.accessoryId?.toString() || ''
@@ -231,22 +254,127 @@ const DescribeExercise = () => {
   // };
 
   // Handle mic button press
-  const handleMicPress = () => {
+  const handleMicPress = async () => {
     if (!isRecording) {
-      // Starting to record - reset question timer
+      const hasPermission = await requestAudioPermissions();
+      if (!hasPermission) return;
+
       setQuestionStartTime(Date.now());
+      const started = await startRecording(audioRecorder);
+      if (started) setIsRecording(true);
+    } else {
+      const uri = await stopRecording(audioRecorder);
+      setIsRecording(false);
+
+      if (!uri) return;
+
+      const timeSpent = Date.now() - questionStartTime;
+      const currentQData = questions[currentQuestion];
+
+      try {
+        const formData = new FormData();
+
+        if (Platform.OS === 'web') {
+          const blob = await fetch(uri).then(res => res.blob());
+          const file = new File([blob], `question_${currentQData.id}.m4a`, {
+            type: 'audio/m4a',
+          });
+          formData.append('file', file);
+        } else {
+          formData.append('file', {
+            uri,
+            name: `question_${currentQData.id}.m4a`,
+            type: 'audio/m4a',
+          } as any);
+        }
+
+        formData.append('questionId', currentQData.id.toString());
+        formData.append('questionText', currentQData.question);
+
+        if (!session?.access_token) {
+          Alert.alert('Error', 'You must be authorized to perform this action');
+          return;
+        }
+        const response = await fetch(`${API_URL}/api/assess/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: formData,
+        });
+
+        const testUpload = async (uri: string) => {
+  const formData = new FormData();
+  formData.append('file', {
+    uri,
+    name: 'test.m4a',
+    type: 'audio/m4a',
+  } as any);
+
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/api/assess/`, { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` }, body: formData });
+    console.log('Status:', res.status);
+    console.log('Text:', await res.text());
+  } catch (err) {
+    console.error('Test upload failed:', err);
+  }
+};
+
+        if (!response.ok) {
+          throw new Error('Failed to upload audio');
+        }
+
+        const data = await response.json();
+        console.log('Audio successfully sent:', data);
+        setGptFeedback(data.feedback); // TODO: Remove when testing is complete
+
+
+        setExerciseResponses(prev => [
+          ...prev,
+          {
+            questionId: currentQData.id,
+            question: currentQData.question,
+            response: uri,
+            timeSpent,
+            timestamp: Date.now(),
+          },
+        ]);
+      } catch (error) {
+        console.error('Error uploading audio:', error);
+      }
+
+/*
+      // mascot response animation
+      setShowMascotResponse(true);
+      Animated.spring(responseAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+
+      setTimeout(() => {
+        setShowMascotResponse(false);
+        responseAnim.setValue(0);
+      }, 2000);
+
+      */
     }
-    setIsRecording(!isRecording);
-    // TODO: Add actual voice recording logic here
   };
 
+  /*
   // Handle submit answer
   const handleSubmit = () => {
     if (!isRecording) return;
-    
+
     const currentTime = Date.now();
     const timeSpent = currentTime - questionStartTime;
-    
+
     // Record the response (in real app, this would be transcribed audio)
     const responseData = {
       questionId: questions[currentQuestion].id,
@@ -255,11 +383,11 @@ const DescribeExercise = () => {
       timeSpent: timeSpent,
       timestamp: currentTime
     };
-    
+
     setExerciseResponses(prev => [...prev, responseData]);
     setIsRecording(false);
     setShowMascotResponse(true);
-    
+
     // Animate mascot response
     Animated.spring(responseAnim, {
       toValue: 1,
@@ -274,6 +402,7 @@ const DescribeExercise = () => {
       responseAnim.setValue(0);
     }, 2000);
   };
+*/
 
   // Handle next question
   const handleNextQuestion = () => {
@@ -284,15 +413,15 @@ const DescribeExercise = () => {
     } else {
       // Exercise completed
       setIsCompleted(true);
-      
+
       // Submit exercise results to backend (commented out)
       // submitExerciseResults();
-      
+
       // Temporary navigation (remove when backend is ready)
       setTimeout(() => {
         router.push({
           pathname: '/child-dashboard' as any,
-          params: { 
+          params: {
             completedTaskId: taskId,
             bodyType: mascotData.bodyType,
             accessoryId: mascotData.accessoryId?.toString() || ''
@@ -320,14 +449,26 @@ const DescribeExercise = () => {
       <View style={styles.progressContainer}>
         <Text style={styles.progressText}>Question {currentQuestion + 1} of {questions.length}</Text>
         <View style={styles.progressBar}>
-          <View 
+          <View
             style={[
-              styles.progressFill, 
+              styles.progressFill,
               { width: `${((currentQuestion + 1) / questions.length) * 100}%` }
-            ]} 
+            ]}
           />
         </View>
       </View>
+       {/* Show GPT feedback TODO: Remove when testing is complete! */}
+       {gptFeedback && (
+        <Text style={{
+          textAlign: 'center',
+          color: '#333',
+          fontSize: 16,
+          marginTop: 10,
+          marginHorizontal: 20,
+        }}>
+          {gptFeedback}
+        </Text>
+       )}
 
       {/* Beach image */}
       <View style={styles.imageContainer}>
@@ -336,12 +477,12 @@ const DescribeExercise = () => {
           style={styles.beachImage}
           resizeMode="cover"
         />
-        
+
         {/* Pointer for ocean question */}
         {currentQ.showPointer && currentQ.pointerPosition && (
-          <Animated.View 
+          <Animated.View
             style={[
-              styles.pointerContainer, 
+              styles.pointerContainer,
               currentQ.pointerPosition,
               { transform: [{ scale: pointerAnim }] }
             ]}
@@ -354,7 +495,7 @@ const DescribeExercise = () => {
       {/* Mascot with speech bubble */}
       <View style={styles.mascotContainer}>
         {/* Speech bubble from mascot */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.speechBubbleContainer,
             {
@@ -371,7 +512,7 @@ const DescribeExercise = () => {
 
         {/* Mascot response bubble */}
         {showMascotResponse && (
-          <Animated.View 
+          <Animated.View
             style={[
               styles.responseBubbleContainer,
               {
@@ -414,10 +555,10 @@ const DescribeExercise = () => {
           ]}
           onPress={handleMicPress}
         >
-          <FontAwesome 
-            name={isRecording ? "microphone" : "microphone-slash"} 
-            size={30} 
-            color={isRecording ? "#FF6B35" : "#666"} 
+          <FontAwesome
+            name={isRecording ? "microphone" : "microphone-slash"}
+            size={30}
+            color={isRecording ? "#FF6B35" : "#666"}
           />
           <Text style={[
             styles.micButtonText,
@@ -427,44 +568,25 @@ const DescribeExercise = () => {
           </Text>
         </TouchableOpacity>
 
-        {/* Action buttons */}
-        <View style={styles.actionButtons}>
-          {/* Submit button */}
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              !isRecording && styles.submitButtonDisabled
-            ]}
-            onPress={handleSubmit}
-            disabled={!isRecording}
-          >
-            <Text style={[
-              styles.submitButtonText,
-              !isRecording && styles.submitButtonTextDisabled
-            ]}>
-              Submit
-            </Text>
-          </TouchableOpacity>
-
-          {/* Next question button */}
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !showMascotResponse && styles.nextButtonDisabled
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            !exerciseResponses.some(r => r.questionId === currentQ.id) && styles.nextButtonDisabled
             ]}
             onPress={handleNextQuestion}
-            disabled={!showMascotResponse}
+            disabled={!exerciseResponses.some(r => r.questionId === currentQ.id)}
           >
             <Text style={[
               styles.nextButtonText,
-              !showMascotResponse && styles.nextButtonTextDisabled
+              !exerciseResponses.some(r => r.questionId === currentQ.id) && styles.nextButtonTextDisabled
             ]}>
               {currentQuestion < questions.length - 1 ? "Next Question" : "Finish"}
             </Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
+
+
         </View>
       </View>
-    </View>
   );
 };
 

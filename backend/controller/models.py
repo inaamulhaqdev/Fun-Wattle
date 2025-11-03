@@ -1,4 +1,5 @@
 from django.db import models
+from pgvector.django import VectorField
 import uuid
 
 ######################### USER MODELS #########################
@@ -117,6 +118,8 @@ class Exercise_Result(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='exercise_results')
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='exercise_results')
     time_spent = models.IntegerField(null=True, blank=True)
+    num_correct = models.IntegerField(null=True, blank=True)
+    num_incorrect = models.IntegerField(null=True, blank=True)
     accuracy = models.FloatField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
@@ -127,5 +130,60 @@ class Exercise_Result(models.Model):
         return f"learning_unit={self.assignment.learning_unit.title}, exercise={self.exercise.title}, child={self.assignment.assigned_to.name}"
 
 
+class Question_Result(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    exercise_result = models.ForeignKey(Exercise_Result, on_delete=models.CASCADE, related_name='question_results')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='question_results')
+    num_attempts = models.IntegerField(null=True, blank=True)
+    correct = models.BooleanField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'Question_Result'
+
+    def __str__(self):
+        return f"exercise_result_id={self.exercise_result.id}, question_id={self.question.id}"
 
 
+class Child_Embedding(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    child_profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='embeddings')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='child_embeddings')
+    child_input_text = models.TextField()
+    embedding = VectorField(dimensions=1536)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Child_Embedding'
+
+    def __str__(self):
+        return f"child_profile={self.child_profile.name}, embedding_id={self.id}"
+
+
+class Question_Embedding(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='question_embeddings')
+    expected_answer_text = models.TextField()
+    embedding = VectorField(dimensions=1536)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Question_Embedding'
+
+    def __str__(self):
+        return f"question_id={self.question.id}, embedding_id={self.id}"
+
+
+class Rag_Context(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source_name = models.TextField()
+    source_url = models.TextField()
+    content_chunk = models.TextField()
+    embedding = VectorField(dimensions=1536)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Rag_Context'
+
+    def __str__(self):
+        return f"source_name={self.source_name}, context_id={self.id}"

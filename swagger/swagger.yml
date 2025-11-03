@@ -4,7 +4,7 @@ info:
   description: API for the Funwattle MVP app - a speech therapy assistance app
   version: 1.0.0
 servers:
-  - url: http://localhost:8000/api
+  - url: http://localhost:7000/api
     description: Backend Server
 
 paths:
@@ -474,6 +474,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         profile_type:
           type: string
           enum: [parent, therapist, child]
@@ -495,10 +496,13 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         user:
-          $ref: '#/components/schemas/User'
+          type: string
+          format: uuid
         profile:
-          $ref: '#/components/schemas/Profile'
+          type: string
+          format: uuid
         created_at:
           type: string
           format: date-time
@@ -526,7 +530,8 @@ components:
         id:
           type: string
         learning_unit:
-          $ref: '#/components/schemas/LearningUnit'
+          type: string
+          format: uuid
         title:
           type: string
         description:
@@ -546,7 +551,8 @@ components:
         id:
           type: string
         exercise:
-          $ref: '#/components/schemas/Exercise'
+          type: string
+          format: uuid
         order:
           type: integer
         exercise_type:
@@ -563,11 +569,14 @@ components:
         id:
           type: string
         learning_unit:
-          $ref: '#/components/schemas/LearningUnit'
+          type: string
+          format: uuid
         assigned_to:
-          $ref: '#/components/schemas/Profile'
+          type: string
+          format: uuid
         assigned_by:
-          $ref: '#/components/schemas/User'
+          type: string
+          format: uuid
         participation_type:
           type: string
           enum: [required, recommended]
@@ -589,9 +598,11 @@ components:
         id:
           type: string
         assignment:
-          $ref: '#/components/schemas/Assignment'
+          type: string
+          format: uuid
         exercise:
-          $ref: '#/components/schemas/Exercise'
+          type: string
+          format: uuid
         time_spent:
           type: integer
         accuracy:

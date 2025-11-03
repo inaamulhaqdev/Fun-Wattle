@@ -26,6 +26,7 @@ urlpatterns = [
     path('assignments/<str:child_id>/learning_unit/<str:learning_unit_id>/', unassign_learning_unit, name='unassign_learning_unit'), # DELETE
     path('results/<str:child_id>/', get_exercise_results, name='get_exercise_results'), # GET
     path('results/<str:child_id>/exercise/<str:exercise_id>/', results_for_exercise, name='results_for_exercise'), # POST, GET
+    path("assess/", assess_speech, name="assess_speech"), # POST
 
     # Parent Dashboard Routes
     # path('dashboard/parent/<str:child_id>/', get_child_dashboard, name='get_child_dashboard'),

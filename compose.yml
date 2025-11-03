@@ -5,10 +5,10 @@ services:
   ports:
     - "8080:8080"
   environment:
-    - SWAGGER_JSON=/swagger/swagger.yml
+    - SWAGGER_JSON=/usr/share/nginx/html/docs/swagger.yml
     - BASE_URL=/swagger
   volumes:
-    - ./swagger.yml:/swagger/swagger.yml
+    - ./swagger:/usr/share/nginx/html/docs
   depends_on:
     - backend
 
@@ -16,7 +16,7 @@ services:
    build: ./backend
    container_name: backend
    ports:
-     - "8000:8000"
+     - "7001:7000"
    env_file:
      - .env
    # This is a volume mapping - maps the local "backend" directory to "/app" in the container
@@ -27,11 +27,18 @@ services:
      - ./backend:/app
    working_dir: /app
 
-
-# IPv6 is REQUIRED for Supabase DB connection (their DB host is IPv6-only)
-# Please check that:
-# 1.) Docker is running with IPv6 enabled in network settings
-# 2.) Windows Network Adapter → Properties → "Internet Protocol Version 6 (TCP/IPv6)" is checked
-networks:
-  default:
-    enable_ipv6: true
+ frontend:
+   build: ./frontend
+   container_name: frontend
+   depends_on:
+     - backend
+   ports:
+     - "19000:19000" # Expo go port
+     - "19001:19001" # WebSocket debugger port
+     - "8081:8081" # Metro bundler port
+     - "8000:8000"
+   working_dir: /
+   tty: true
+   stdin_open: true
+   extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -8,6 +8,8 @@ import { LearningUnit, Exercise } from '../../types/learningUnitTypes';
 import { API_URL } from '@/config/api';
 import { useApp } from '../../context/AppContext';
 
+const { session } = useApp();
+
 type DetailProps = {
   selectedItem: LearningUnit;
   assignedUnitIds: Set<string>;
@@ -21,30 +23,60 @@ const assignLearningUnit = async (
   userId: string,
   participationType: 'required' | 'recommended'
 ) => {
-  const response = await fetch(`${API_URL}/api/assignments/${childId}`, {
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
+
+  const response = await fetch(`${API_URL}/api/assignments/`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      learning_unit_id: learningUnitId, 
-      user_id: userId, 
-      participation_type: participationType
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
+    },
+    body: JSON.stringify({
+      learning_unit_id: learningUnitId,
+      child_id: childId,
+      user_id: userId,
+      participation_type: participationType,
     }),
   });
 
-  if (!response.ok) throw new Error(`Failed to assign learning unit (${response.status})`);
+  if (!response.ok) {
+    throw new Error(`Failed to assign learning unit (${response.status})`);
+  }
 
-  return response.json();
+  return await response.json();
 };
 
-const unassignLearningUnit = async (learningUnitId: string, childId: string) => {
-  const response = await fetch(`${API_URL}/api/assignments/${childId}/learning_unit/${learningUnitId}/`, {
+const unassignLearningUnit = async (
+  learningUnitId: string,
+  childId: string,
+  userId: string
+) => {
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
+
+  const response = await fetch(`${API_URL}/api/assignments/`, {
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
+    },
+    body: JSON.stringify({
+      learning_unit_id: learningUnitId,
+      child_id: childId,
+      user_id: userId,
+    }),
   });
 
-  if (!response.ok) throw new Error(`Failed to unassign learning unit (${response.status})`);
+  if (!response.ok) {
+    throw new Error(`Failed to unassign learning unit (${response.status})`);
+  }
 
-  return response.json();
+  return await response.json();
 };
 
 export default function DetailView({
@@ -126,7 +158,7 @@ export default function DetailView({
               }
 
               if (newStatus === 'Unassigned') {
-                await unassignLearningUnit(selectedItem.id, childId);
+                await unassignLearningUnit(selectedItem.id, childId, userId);
                 setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
               } else if (newStatus === 'Assigned as Required') {
                 await assignLearningUnit(selectedItem.id, childId, userId, 'required');

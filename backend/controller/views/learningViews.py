@@ -2,6 +2,14 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from ..models import *
 from ..serializers import *
+import os
+import tempfile
+import json
+from pydub import AudioSegment
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+import azure.cognitiveservices.speech as speechsdk
+from openai import AzureOpenAI
 
 
 @api_view(['GET'])
@@ -168,3 +176,102 @@ def results_for_exercise(request, child_id, exercise_id):
         )
         serializer = ExerciseResultSerializer(result)
         return Response(serializer.data, status=201 if created else 200)
+
+AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY")
+AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "australiaeast")
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
+@api_view(['POST'])
+def assess_speech(request):
+    audio_file = request.FILES.get('file')
+
+    if not audio_file:
+        return Response({'error': 'audio file is required'}, status=400)
+
+    temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".m4a")
+    for chunk in audio_file.chunks():
+        temp_input.write(chunk)
+    temp_input.close()
+
+    temp_output_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
+    try:
+        sound = AudioSegment.from_file(temp_input.name)
+        sound.export(temp_output_path, format="wav")
+
+        # Azure Speech config
+        speech_config = speechsdk.SpeechConfig(
+            subscription=AZURE_SPEECH_KEY,
+            region=AZURE_SPEECH_REGION
+        )
+        audio_input = speechsdk.AudioConfig(filename=temp_output_path)
+        recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
+
+        result = recognizer.recognize_once()
+        if result.reason != speechsdk.ResultReason.RecognizedSpeech:
+            return Response({'error': 'Speech recognition failed'}, status=400)
+
+        ###
+        ### response = client.embeddings.create(
+        ###     input = result.text,
+        ###     model= "text-embedding-3-small"
+        ### )
+
+        # Pronunciation assessment
+        pron_config = speechsdk.PronunciationAssessmentConfig(
+            reference_text=result.text,
+            grading_system=speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
+            granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
+            enable_miscue=True
+        )
+        audio_input = speechsdk.AudioConfig(filename=temp_output_path)
+        recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
+        pron_config.apply_to(recognizer)
+        pron_result_raw = recognizer.recognize_once()
+
+        pron_result = speechsdk.PronunciationAssessmentResult(pron_result_raw)
+        pron_data = {
+            "recognized_text": pron_result_raw.text,
+            "accuracy_score": pron_result.accuracy_score,
+            "fluency_score": pron_result.fluency_score,
+            "completeness_score": pron_result.completeness_score,
+            "pronunciation_score": pron_result.pronunciation_score,
+        }
+
+        # GPT Feedback
+        client = AzureOpenAI(
+            api_version="2024-12-01-preview",
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            api_key=AZURE_OPENAI_KEY,
+        )
+
+        system_prompt = "You are a friendly speech therapist helping children practice pronunciation."
+        user_prompt = f"""
+        Child's speech: "{result.text}"
+        Pronunciation Assessment Results: {json.dumps(pron_data, indent=2)}
+        Give:
+        1. A short encouraging summary
+        2. One area to improve
+        3. A fun motivational line
+        """
+
+        response_gpt = client.chat.completions.create(
+            model="feedback-gpt4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=300,
+            temperature=0.8,
+        )
+
+        feedback_text = response_gpt.choices[0].message.content
+
+        return Response({
+            "transcript": result.text,
+            "pronunciation": pron_data,
+            "feedback": feedback_text
+        }, status=200)
+
+    finally:
+        os.remove(temp_input.name)
+        os.remove(temp_output_path)

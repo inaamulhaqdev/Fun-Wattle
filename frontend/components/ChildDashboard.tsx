@@ -33,11 +33,16 @@ interface MascotData {
 
 // Function to fetch child's coin balance from backend (currenty using hardocoded value)
 // const fetchCoinBalance = async () => {
+//       if (!session?.access_token) {
+//         Alert.alert('Error', 'You must be authorized to perform this action');
+//         return;
+//       }
 //   try {
 //     const response = await fetch(`${API_URL}/api/children/current/coins`, {
 //       method: 'GET',
 //       headers: {
 //         'Content-Type': 'application/json',
+// 'Authorization': `Bearer ${session?.access_token}`
 //       },
 //     });
 
@@ -55,11 +60,16 @@ interface MascotData {
 
 // Function to fetch child's streak count from backend (currenty using hardocoded value)
 // const fetchStreakCount = async () => {
+//       if (!session?.access_token) {
+//         Alert.alert('Error', 'You must be authorized to perform this action');
+//         return;
+//       }
 //   try {
 //     const response = await fetch(`${API_URL}/api/children/current/streak`, {
 //       method: 'GET',
 //       headers: {
 //         'Content-Type': 'application/json',
+// 'Authorization': `Bearer ${session?.access_token}`
 //       },
 //     });
 
@@ -194,7 +204,7 @@ const IncompleteTaskSVG = ({ size = 200, isAfterNext = false }) => {
 };
 
 // Animated Navigation Button Component
-const AnimatedNavButton: React.FC<{ children: React.ReactNode; style?: any; onPress?: () => void }> = ({ children, style, onPress = () => {} }) => {
+const AnimatedNavButton: React.FC<{ children: React.ReactNode; style?: any; onPress?: () => void }> = ({ children, style, onPress = () => { } }) => {
   const scaleAnim = new Animated.Value(1);
 
   const handlePressIn = () => {
@@ -238,7 +248,7 @@ const getMascotImages = (mascotData: MascotData) => {
       koala: require('@/assets/images/shirt_koala.png'),
       kangaroo: require('@/assets/images/shirt_roo.png'),
     },
-    2: { // Sunglasses  
+    2: { // Sunglasses
       koala: require('@/assets/images/sunglasses_koala.png'),
       kangaroo: require('@/assets/images/sunglasses_roo.png'),
     },
@@ -246,7 +256,7 @@ const getMascotImages = (mascotData: MascotData) => {
 
   const bodyType = mascotData.bodyType.toLowerCase();
   const bodyImage = bodyImages[bodyType as keyof typeof bodyImages] || bodyImages.koala;
-  
+
   let accessoryImage = null;
   if (mascotData.accessoryId && accessoryImages[mascotData.accessoryId as keyof typeof accessoryImages]) {
     const accessorySet = accessoryImages[mascotData.accessoryId as keyof typeof accessoryImages];
@@ -276,12 +286,16 @@ const ChildDashboard = () => {
   }, [tasks]);
 
   // Fetch mascot data from backend
-  // const fetchMascotData = async () => {
+  // if (!session?.access_token) {
+  //   Alert.alert('Error', 'You must be authorized to perform this action');
+  //   return;
+  // }
   //   try {
   //     const response = await fetch(`${API_URL}/api/children/current/mascot`, {
   //       method: 'GET',
   //       headers: {
   //          'Content-Type': 'application/json',
+  // 'Authorization': `Bearer ${session?.access_token}`
   //       },
   //     });
 
@@ -466,20 +480,24 @@ const ChildDashboard = () => {
         accessoryId: mascotData.accessoryId?.toString() || '',
       }
     });
-    
+    // REMEMEBER TO ADD IN AUTHORIZATION
     // try {
     //   const moduleId = 'some-module-id'; // TODO: Get actual module ID from props/context
+    //       if (!session?.access_token) {
+    //         Alert.alert('Error', 'You must be authorized to perform this action');
+    //         return;
+    //       }
     //   const res = await fetch(`${API_URL}/api/modules/${moduleId}/activities`);
     //   if (!res.ok) throw new Error('Failed to fetch activities');
 
     //   const assignedActivities = await res.json();
     //   const currentTask = assignedActivities.find((a: any) => a.activity.id === task.id);
-    //   
+    //
     //   if (currentTask) {
     //     router.push({
     //       pathname: `/${task.name}` as any,
-    //       params: { 
-    //         taskId: task.id, 
+    //       params: {
+    //         taskId: task.id,
     //         taskName: task.name,
     //         bodyType: mascotData.bodyType,
     //         accessoryId: mascotData.accessoryId?.toString() || '',
@@ -585,7 +603,7 @@ const ChildDashboard = () => {
           />
         </Svg>
 
-{tasks.map((task, index) => {
+        {tasks.map((task, index) => {
           // Calculate position of tasks on sine wave
           const amplitude = screenWidth * 0.25;
           const frequency = 1.5;

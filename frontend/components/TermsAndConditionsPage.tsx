@@ -5,10 +5,12 @@ import Feather from '@expo/vector-icons/Feather';
 import { supabase } from '../config/supabase';
 import { useRegistration } from '../context/RegistrationContext';
 import { API_URL } from '../config/api';
+import { useApp } from '@/context/AppContext';
 
 const TermsAndConditionsPage = () => {
   const { email, password, userType, signedPrivacyPolicy, setSignedPrivacyPolicy } = useRegistration();
   const [loading, setLoading] = useState(false);
+  const { session } = useApp();
 
   useEffect(() => {
     setSignedPrivacyPolicy(false);
@@ -41,11 +43,18 @@ const TermsAndConditionsPage = () => {
       }
 
       const user = data.user;
+      if (!session?.access_token) {
+        Alert.alert('Error', 'You must be authorized to perform this action');
+        return;
+      }
 
       // Save user information to postgres via backend API
       await fetch(`${API_URL}/api/create/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({
           id: user.id,
           email: user.email,

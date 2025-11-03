@@ -8,7 +8,12 @@ import { useApp } from '../../context/AppContext';
 
 export default function LearningUnits() {
   const [data, setData] = useState<LearningUnit[]>([]);
-  const { childId } = useApp();
+  const { session, childId } = useApp();
+
+  if (!session?.access_token) {
+    Alert.alert('Error', 'You must be authorized to perform this action');
+    return;
+  }
 
   useFocusEffect(
     React.useCallback(() => {
@@ -16,6 +21,9 @@ export default function LearningUnits() {
         try {
           const response = await fetch(`${API_URL}/api/learning_units/`, {
             method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`
+            }
           });
 
           if (!response.ok) {
@@ -23,6 +31,7 @@ export default function LearningUnits() {
           }
 
           const json_resp = await response.json();
+          console.log('Fetched learning units:', json_resp);
 
           // Transform backend data to LearningUnit
           const learningUnits: LearningUnit[] = json_resp.map((unit: any) => ({

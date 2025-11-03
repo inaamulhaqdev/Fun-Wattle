@@ -10,7 +10,7 @@ const MembershipPage = () => {
 
   const handleSubscription = async (type: 'free_trial' | 'paid') => {
     try {
-      const { data: { session }} = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         Alert.alert('No active session', 'Please log in again.');
         return;
@@ -22,7 +22,7 @@ const MembershipPage = () => {
         // Save membership type (free), start (now) and end date (7 days from now)
         const response = await fetch(`${API_URL}/api/subscribe/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
           body: JSON.stringify({
             id: user.id,
             subscription_type: 'free_trial',
@@ -40,7 +40,7 @@ const MembershipPage = () => {
         // Save membership type (paid) and start date (now)
         const response = await fetch(`${API_URL}/api/subscribe/`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
           body: JSON.stringify({
             id: user.id,
             subscription_type: 'paid',

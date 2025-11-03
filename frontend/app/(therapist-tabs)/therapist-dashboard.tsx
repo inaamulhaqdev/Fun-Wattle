@@ -40,7 +40,11 @@ export default function TherapistDashboard() {
         }
 
         const user = session.user;
-        const response = await fetch(`${API_URL}/api/profiles/${user.id}/`);
+        const response = await fetch(`${API_URL}/api/profiles/${user.id}/`, {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
+        });
         if (!response.ok) throw new Error(`Failed to fetch profiles (${response.status})`);
 
         const data = await response.json();
@@ -139,7 +143,7 @@ export default function TherapistDashboard() {
     );
   }
 
-   return (
+  return (
     <PaperProvider theme={DefaultTheme}>
       <SafeAreaView style={styles.container}>
         {/* Header */}
@@ -149,42 +153,42 @@ export default function TherapistDashboard() {
           </View>
         </View>
 
-        <View style={styles.body}> 
-        <View style={styles.subtitleRow}>
-          {childList.length > 0 ? (
-            <>
-            <Menu
-              visible={menuVisible}
-              onDismiss={() => setMenuVisible(false)}
-              anchor={
-                  <TouchableOpacity style={styles.childButton} onPress={() => setMenuVisible(true)}>
-                  <Text style={styles.childText}>{selectedChild}</Text>
-                </TouchableOpacity>
-              }
-              style={styles.menuContainer}
-            >
-            {childList.map((child) => (
-              <Menu.Item
-                key={child}
-                onPress={() => {
-                  setSelectedChild(child);
-                  setMenuVisible(false);
-                }}
-                title={child}
-                titleStyle={{ color: "#000000ff", fontWeight: "500" }}
-                style={{ backgroundColor: "#f7f7f7", borderRadius: 10}}
-              />
-            ))} 
-          </Menu>
+        <View style={styles.body}>
+          <View style={styles.subtitleRow}>
+            {childList.length > 0 ? (
+              <>
+                <Menu
+                  visible={menuVisible}
+                  onDismiss={() => setMenuVisible(false)}
+                  anchor={
+                    <TouchableOpacity style={styles.childButton} onPress={() => setMenuVisible(true)}>
+                      <Text style={styles.childText}>{selectedChild}</Text>
+                    </TouchableOpacity>
+                  }
+                  style={styles.menuContainer}
+                >
+                  {childList.map((child) => (
+                    <Menu.Item
+                      key={child}
+                      onPress={() => {
+                        setSelectedChild(child);
+                        setMenuVisible(false);
+                      }}
+                      title={child}
+                      titleStyle={{ color: "#000000ff", fontWeight: "500" }}
+                      style={{ backgroundColor: "#f7f7f7", borderRadius: 10 }}
+                    />
+                  ))}
+                </Menu>
 
-        <Text variant="bodyMedium" style={styles.subtitle}>&apos;s progress this week.</Text>
-        </>
-        ) : (
-          <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
-        )}
+                <Text variant="bodyMedium" style={styles.subtitle}>&apos;s progress this week.</Text>
+              </>
+            ) : (
+              <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
+            )}
+          </View>
+          {childList.length > 0 && <Filters assignedUnits = { data } />}
         </View>
-        {childList.length > 0 && <Filters assignedUnits = { data } />}
-      </View>
       </SafeAreaView>
     </PaperProvider>
   );
@@ -196,11 +200,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffff",
   },
   loading: {
-    flex: 1, 
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
- 
+
   subtitleRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -221,11 +225,11 @@ const styles = StyleSheet.create({
   subtitle: {
     fontWeight: "400",
     color: "black",
-  }, 
-  menuContainer: { 
+  },
+  menuContainer: {
     backgroundColor: "#fff",
-    borderRadius: 12, 
-  },  
+    borderRadius: 12,
+  },
   header: {
     backgroundColor: '#FF6B35',
     paddingHorizontal: 20,
@@ -244,7 +248,7 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    paddingHorizontal: 20, 
+    paddingHorizontal: 20,
     paddingTop: 20,
   }
 });
