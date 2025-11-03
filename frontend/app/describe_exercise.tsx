@@ -112,6 +112,7 @@ const DescribeExercise = () => {
     timestamp: number;
   }[]>([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [gptFeedback, setGptFeedback] = useState<string | null>(null);// Display GPT feedback on UI - only for dev testing TODO: remove this when testing complete
 
   // Audio recorder set up 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY); 
@@ -283,12 +284,31 @@ const DescribeExercise = () => {
           body: formData,
         });
 
+        const testUpload = async (uri: string) => {
+  const formData = new FormData();
+  formData.append('file', {
+    uri,
+    name: 'test.m4a',
+    type: 'audio/m4a',
+  } as any);
+
+  try {
+    const res = await fetch(`${API_URL}/api/assess/`, { method: 'POST', body: formData });
+    console.log('Status:', res.status);
+    console.log('Text:', await res.text());
+  } catch (err) {
+    console.error('Test upload failed:', err);
+  }
+};
+
         if (!response.ok) {
           throw new Error('Failed to upload audio');
         }
 
         const data = await response.json();
         console.log('Audio successfully sent:', data);
+        setGptFeedback(data.feedback); // TODO: Remove when testing is complete
+        
 
         setExerciseResponses(prev => [
           ...prev,
@@ -413,6 +433,18 @@ const DescribeExercise = () => {
           />
         </View>
       </View>
+       {/* Show GPT feedback TODO: Remove when testing is complete! */}
+       {gptFeedback && (
+        <Text style={{
+          textAlign: 'center', 
+          color: '#333', 
+          fontSize: 16,
+          marginTop: 10, 
+          marginHorizontal: 20, 
+        }}>
+          {gptFeedback}
+        </Text>
+       )}
 
       {/* Beach image */}
       <View style={styles.imageContainer}>
