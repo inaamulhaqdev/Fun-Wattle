@@ -5,6 +5,7 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useApp } from '@/context/AppContext';
 // import { API_URL } from '../config/api'; // Commented out - using route params instead
 
 
@@ -32,7 +33,6 @@ const sampleTasks: Task[] = [
 
 // Function to fetch child's coin balance from backend (currenty using hardocoded value)
 // const fetchCoinBalance = async () => {
-// const session = useApp().session;
 //       if (!session?.access_token) {
 //         Alert.alert('Error', 'You must be authorized to perform this action');
 //         return;
@@ -60,7 +60,6 @@ const sampleTasks: Task[] = [
 
 // Function to fetch child's streak count from backend (currenty using hardocoded value)
 // const fetchStreakCount = async () => {
-// const session = useApp().session;
 //       if (!session?.access_token) {
 //         Alert.alert('Error', 'You must be authorized to perform this action');
 //         return;
@@ -249,7 +248,7 @@ const getMascotImages = (mascotData: MascotData) => {
       koala: require('@/assets/images/shirt_koala.png'),
       kangaroo: require('@/assets/images/shirt_roo.png'),
     },
-    2: { // Sunglasses  
+    2: { // Sunglasses
       koala: require('@/assets/images/sunglasses_koala.png'),
       kangaroo: require('@/assets/images/sunglasses_roo.png'),
     },
@@ -277,6 +276,7 @@ const ChildDashboard = () => {
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
   const tasksRef = React.useRef<Task[]>(sampleTasks);
+  const { session } = useApp();
 
   // Keep tasksRef in sync with tasks state
   React.useEffect(() => {
@@ -284,7 +284,6 @@ const ChildDashboard = () => {
   }, [tasks]);
 
   // Fetch mascot data from backend
-  // const const session = useApp().session;
   // if (!session?.access_token) {
   //   Alert.alert('Error', 'You must be authorized to perform this action');
   //   return;
@@ -428,7 +427,6 @@ const ChildDashboard = () => {
     // REMEMEBER TO ADD IN AUTHORIZATION
     // try {
     //   const moduleId = 'some-module-id'; // TODO: Get actual module ID from props/context
-    // const session = useApp().session; 
     //       if (!session?.access_token) {
     //         Alert.alert('Error', 'You must be authorized to perform this action');
     //         return;
@@ -438,12 +436,12 @@ const ChildDashboard = () => {
 
     //   const assignedActivities = await res.json();
     //   const currentTask = assignedActivities.find((a: any) => a.activity.id === task.id);
-    //   
+    //
     //   if (currentTask) {
     //     router.push({
     //       pathname: `/${task.name}` as any,
-    //       params: { 
-    //         taskId: task.id, 
+    //       params: {
+    //         taskId: task.id,
     //         taskName: task.name,
     //         bodyType: mascotData.bodyType,
     //         accessoryId: mascotData.accessoryId?.toString() || '',

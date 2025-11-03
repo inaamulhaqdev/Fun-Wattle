@@ -13,7 +13,6 @@ import { useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 
 const { width, height } = Dimensions.get('window');
-const session = useApp().session;
 
 interface Exercise {
   id: number;
@@ -235,6 +234,7 @@ export default function OppositesExercise() {
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const { session } = useApp();
 
   // Track all exercise data for submission at the end
   const [exerciseResults, setExerciseResults] = useState<{

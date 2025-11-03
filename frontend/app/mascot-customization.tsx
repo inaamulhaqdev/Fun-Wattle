@@ -9,9 +9,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 //import { API_URL } from '../config/api';
 import { useApp } from '@/context/AppContext';
 
-const session = useApp().session;
-
 const MascotCustomization = () => {
+  const { session } = useApp();
   // const { currentBodyType, currentAccessoryId } = useLocalSearchParams();
 
   // const saveMascotData = async (mascotData: { bodyType: string; accessoryId?: number }) => {

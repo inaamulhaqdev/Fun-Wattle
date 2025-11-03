@@ -8,9 +8,8 @@ import { useApp } from '../../context/AppContext';
 
 export default function LearningUnits() {
   const [data, setData] = useState<LearningUnit[]>([]);
-  const { childId } = useApp();
+  const { session, childId } = useApp();
 
-  const session = useApp().session;
   if (!session?.access_token) {
     Alert.alert('Error', 'You must be authorized to perform this action');
     return;

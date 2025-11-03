@@ -38,8 +38,6 @@ const questions = [
   }
 ];
 
-const session = useApp().session;
-
 // Mascot data interface
 interface MascotData {
   bodyType: string;
@@ -112,6 +110,7 @@ const DescribeExercise = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
   const [sessionStartTime] = useState(Date.now()); // Used in commented backend submission
+  const { session } = useApp();
   const [exerciseResponses, setExerciseResponses] = useState<{ // Used in commented backend submission
     questionId: number;
     question: string;

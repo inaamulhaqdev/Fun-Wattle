@@ -2,13 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { API_URL } from '../config/api';
-import { useApp } from '../context/AppContext';
+import { useApp } from '@/context/AppContext';
 import { verifyPin } from '../utils/pinUtils';
 
 const PinEntryPage = () => {
   const { profileId } = useApp();
   const [pin, setPin] = useState(['', '', '', '']);
   const pinInputRefs = useRef<(TextInput | null)[]>([null, null, null, null]);
+  const { session } = useApp();
 
   const handlePinChange = (index: number, value: string) => {
     // Only allow single digits
@@ -46,7 +47,6 @@ const PinEntryPage = () => {
       if (pin.every(digit => digit !== '')) {
         const enteredPin = pin.join('');
 
-        const session = useApp().session;
         if (!session?.access_token) {
           Alert.alert('Error', 'You must be authorized to perform this action');
           return;

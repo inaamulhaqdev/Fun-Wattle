@@ -10,6 +10,7 @@ import { useApp } from '@/context/AppContext';
 const TermsAndConditionsPage = () => {
   const { email, password, userType, signedPrivacyPolicy, setSignedPrivacyPolicy } = useRegistration();
   const [loading, setLoading] = useState(false);
+  const { session } = useApp();
 
   useEffect(() => {
     setSignedPrivacyPolicy(false);
@@ -42,7 +43,6 @@ const TermsAndConditionsPage = () => {
       }
 
       const user = data.user;
-      const session = useApp().session;
       if (!session?.access_token) {
         Alert.alert('Error', 'You must be authorized to perform this action');
         return;

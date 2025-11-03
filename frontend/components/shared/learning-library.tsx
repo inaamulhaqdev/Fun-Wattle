@@ -10,7 +10,6 @@ import { useApp } from '../../context/AppContext';
 import { API_URL } from '@/config/api';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
-const session = useApp().session;
 
 const assignLearningUnit = async (
   learningUnitId: string,
