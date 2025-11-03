@@ -11,9 +11,11 @@ interface Exercise {
   id: string;
   title: string;
   order: number;
-  time_spent?: number;
-  completed_at?: string | null;
+  time_spent: number;
+  completed_at: string | null;
   accuracy: number;
+  // num_correct: number;
+  // num_incorrect: number;
 }
 
 const calculateAccuracy = (exercises: Exercise[]) => {
@@ -60,7 +62,7 @@ export default function LearningUnitDetails() {
         const results = await Promise.all(
           sorted.map(async (ex) => {
             const resResp = await fetch(`${API_URL}/api/results/${childId}/exercise/${ex.id}/`);
-            if (!resResp.ok) return { time_spent: 0, completed_at: null, accuracy: 0 };
+            if (!resResp.ok) return { time_spent: 0, completed_at: null, accuracy: 0, /* num_correct: 0, num_incorrect: 0 */ };
 
             const resJson = await resResp.json();
             if (Array.isArray(resJson) && resJson.length > 0) {
@@ -68,10 +70,12 @@ export default function LearningUnitDetails() {
               return {
                 time_spent: first.time_spent || 0,
                 completed_at: first.completed_at || null,
-                accuracy: first.accuracy ?? 0,
+                accuracy: first.accuracy,
+                /* num_correct: first.num_correct,
+                num_incorrect: first.num_incorrect */
               };
             }
-            return { time_spent: 0, completed_at: null, accuracy: 0 };
+            return { time_spent: 0, completed_at: null, accuracy: 0, /* num_correct: 0, num_incorrect: 0 */ };
           })
         );
 
@@ -128,8 +132,8 @@ export default function LearningUnitDetails() {
                 key={exercise.id}
                 title={exercise.title}
                 completed={exercise.completed_at ? "Completed" : "Not started"}
-                correct={0}
-                incorrect={0}
+                correct={0}/* {exercise.num_correct} */
+                incorrect={0}/* {exercise.num_incorrect} */
                 accuracy={exercise.accuracy != null ? `${(exercise.accuracy * 100).toFixed(0)}%` : ""}
               />
             ))}
