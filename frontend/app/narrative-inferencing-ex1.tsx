@@ -1,93 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Image, Alert } from "react-native";
-import { Text, Provider as PaperProvider } from "react-native-paper";
+import { Text, Provider as PaperProvider, ActivityIndicator } from "react-native-paper";
 import { OptionCard } from "@/components/ui/OptionCard";
 import { FeedbackIndicator } from "@/components/ui/ExerciseFeedback";
-import { router, useRouter } from "expo-router";
+import { router } from "expo-router";
+import { API_URL } from "@/config/api"; 
 
 export const NarrativeInferencingEx1 = () => {
-  const questions = [
-    {
-      id: 1,
-      question: "Why is the boy happy?",
-      image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1.png"),
-      options: [
-        {
-          id: "A",
-          text: "He likes stories",
-          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1a.png"),
-          correct: false,
-        },
-        {
-          id: "B",
-          text: "He likes ice cream",
-          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1b.png"),
-          correct: true,
-        },
-        {
-          id: "C",
-          text: "It is Monday",
-          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q1c.png"),
-          correct: false,
-        },
-      ],
-    },
-    {
-      id: 2,
-      question: "Why is she using an umbrella?",
-      image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2.jpg"),
-      options: [
-        {
-          id: "A",
-          text: "It is cold",
-          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2a.png"),
-          correct: false,
-        },
-        {
-          id: "B",
-          text: "It is raining",
-          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2b.png"),
-          correct: true,
-        },
-        {
-          id: "C",
-          text: "It is sunny",
-          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q2c.png"),
-          correct: false,
-        },
-      ],
-    },
-    {
-      id: 3,
-      question: "Why is the girl scared?",
-      image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3.png"),
-      options: [
-        {
-          id: "A",
-          text: "She is scared of storms",
-          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3a.png"),
-          correct: false,
-        },
-        {
-          id: "B",
-          text: "She is getting an injection",
-          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3b.png"),
-          correct: true,
-        },
-        {
-          id: "C",
-          text: "She is scared of spiders",
-          image: require("../assets/images/narrative-inferencing/ex1/narrative-inferencing-ex1-q3c.png"),
-          correct: false,
-        },
-      ],
-    },
-  ];
-
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currIndex, setCurrIndex] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
   const [retryCount, setRetryCount] = useState(0); // adding in "a child can try a question up to two times" functionality 
-  const currentQuestion = questions[currIndex];
+
+  // Fetch learning unit 
+  useEffect(() => {
+    const fetchExercise = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/learning-units/narrative-inferencing/ex1/`); 
+        if (!response.ok) {
+          throw new Error(`Failed to fetch exercise (${response.status})`); 
+        }
+        const data = await response.json(); 
+        console.log("Fetched data:", data);
+
+        const formatted = data.map((q: any) => ({
+          id: q.id,
+          question: q.question_text,
+          image: { uri: q.image_url },
+          options: q.options.map((opt: any) => ({
+            id: opt.id,
+            text: opt.text,
+            image: { uri: opt.image_url },
+            correct: opt.is_correct,
+          })),
+        }));
+
+        setQuestions(formatted); 
+      } catch (error:any) {
+        Alert.alert("Error", error.message);
+      } finally {
+        setLoading(false);
+      }
+    }; 
+    fetchExercise(); 
+  }, []);
+
+  const currentQuestion = questions[currIndex] || {};
 
   const goToNextQuestion = () => {
     setRetryCount(0); 
@@ -124,6 +83,26 @@ export const NarrativeInferencingEx1 = () => {
     }
   }
  };
+
+ if (loading) {
+  return (
+    <PaperProvider>
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color='#FD902B'/>
+      </View>
+    </PaperProvider>
+  )
+ }
+
+ if (!questions.length) {
+  return (
+    <PaperProvider>
+      <View style={styles.container}>
+        <Text>No questions available for this exercise</Text>
+      </View>
+    </PaperProvider>
+  )
+ }
 
   return (
     <PaperProvider>
