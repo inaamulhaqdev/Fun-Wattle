@@ -44,7 +44,7 @@ const ProfileCreationPage = () => {
       return;
     }
 
-    const { data: { session }} = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       Alert.alert('No active session', 'Please log in again.');
       return;
@@ -59,6 +59,7 @@ const ProfileCreationPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorisation': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
           user_id: user.id,

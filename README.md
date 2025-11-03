@@ -4,42 +4,43 @@ Funwattle is an AI-powered speech therapy application designed to help children 
 
 ## Quick Start to Run Application
 
-### 1. Clone the Repository
+### 1. Clone the Repository on Your Local Machine
 ```
 git clone https://github.com/unsw-cse-comp99-3900/capstone-project-25t3-3900-h09a-banana.git
 cd capstone-project-25t3-3900-h09a-banana
 ```
 
-### 2. Set up Docker and Build Backend
-Before continuing, make sure docker and docker compose are installed and running on your system.
- - To install docker: https://www.docker.com/get-started
+### 2. Install Expo Go on Your Mobile Device
+To run the frontend application, you need to install the Expo Go app on your mobile device. You can download it from:
+- [iOS App Store](https://apps.apple.com/us/app/expo-go/id982107779)
+- [Google Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=en_AU&pli=1)
 
-Then, build the backend containers from the project root directory:
+
+### 3. Set up Docker and Build Backend
+Before continuing, make sure docker is installed and running on your system. You can download it from:
+ - [Docker Get Started](https://www.docker.com/get-started)
+
+### 4. Build and Start up the Application
+To build and start up the application, run the following command from the root directory of the repository:
 ```
-docker compose build backend
+docker compose up --build
 ```
 
-### 3. Install Front-end Dependencies
-```
-cd frontend
-npm install
-```
+For the first time running the application, this command may take some time as it builds the docker images for both the frontend and backend services. Once complete, this starts the entire application (frontend and backend).
 
-### 4. Start the Backend
-First, we will start up the backend from the project root directory:
-```
-docker compose up -d
-```
-This starts the backend and it will keep running in the background. To stop these containers when you're finished, run:
+Since the frontend is run through Expo, you will see a QR code in the terminal once the application is ready to use. You can scan this QR code on your mobile device, which will open the Expo Go app and launch the application.
+
+### 5. Stop the Application
+To stop the application, press `CTRL + C` in the terminal where the application is running. You should see messages indicating that the docker containers are stopping.
+
+Then, run the following command to ensure all containers are properly stopped and removed:
 ```
 docker compose down
 ```
 
-### 5. Start the Frontend
-Open a new terminal window and run:
-```
-cd frontend
-npx expo start
-```
-This starts the Expo development server. You can scan the QR code with the Expo Go app on your phone to launch the app.
+## Other Development Information
+
+### Swagger - Backend API Documentation
+The backend is currently documented through swagger, which allows for testing of routes to ensure they work and can communicate properly. In order to access this and test different routes, visit the following URL in your web browser once the backend is running:
+- [Swagger UI](http://localhost:8080/swagger/)
 
