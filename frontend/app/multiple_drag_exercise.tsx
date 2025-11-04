@@ -6,8 +6,8 @@ import {
   PanResponder,
   Animated,
   Dimensions,
-  Alert,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
@@ -311,6 +311,11 @@ export default function MultipleDragExercise() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [showRetryModal, setShowRetryModal] = useState(false);
+  const [showCorrectAnswerModal, setShowCorrectAnswerModal] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [showProgressExitModal, setShowProgressExitModal] = useState(false);
+  const [showCompletionScreen, setShowCompletionScreen] = useState(false);
   
   const [sessionStartTime] = useState(Date.now());
 
@@ -346,6 +351,32 @@ export default function MultipleDragExercise() {
   // Safe access to current question
   const question = currentExercise?.questions?.[currentQuestion] || null;
 
+  // Calculate final accuracy for completion screen
+  const finalAccuracy = currentExercise ? (score / 10) / currentExercise.questions.length : 0;
+
+  // Get completion message and styling based on accuracy
+  const getCompletionData = () => {
+    if (finalAccuracy >= 0.9) {
+      return {
+        message: "Excellent!",
+        backgroundColor: '#4CAF50', // Green
+        showTryAgain: false
+      };
+    } else if (finalAccuracy >= 0.6) {
+      return {
+        message: "Good Work!",
+        backgroundColor: '#4CAF50', // Green
+        showTryAgain: false
+      };
+    } else {
+      return {
+        message: "Almost There!",
+        backgroundColor: '#2196F3', // Blue
+        showTryAgain: true
+      };
+    }
+  };
+
   // Initialize session and handle cleanup
   useEffect(() => {
     const loadExerciseData = async () => {
@@ -379,12 +410,25 @@ export default function MultipleDragExercise() {
     loadExerciseData();
   }, [childId, exerciseId, fallbackExercise]);
   const handleDrop = (isCorrect: boolean) => {
+    console.log('=== HANDLE DROP ===');
+    console.log('isCorrect:', isCorrect);
+    console.log('answered:', answered);
+    console.log('question:', question);
+    console.log('retryCount:', retryCount);
+    
     if (answered) return;
+    
+    // Safety check for question
+    if (!question) {
+      console.error('Question is null or undefined');
+      return;
+    }
     
     const droppedOption = question.options.find(opt => 
       isCorrect ? opt === question.correctAnswer : opt !== question.correctAnswer
     );
 
+    console.log('droppedOption:', droppedOption);
     setSelectedOption(droppedOption || null);
     setAnswered(true);
     
@@ -397,37 +441,18 @@ export default function MultipleDragExercise() {
         handleNextQuestion();
       }, 2500);
     } else {
+      console.log('Wrong answer - checking retry count');
       // Check retry count for wrong answer
       if (retryCount < 2) {
-        // Allow retry
-        setTimeout(() => {
-          Alert.alert(
-            "Try Again!",
-            `That's not quite right. You have ${2 - retryCount} more attempt${2 - retryCount > 1 ? 's' : ''}.`,
-            [{
-              text: "Try Again",
-              onPress: () => {
-                setAnswered(false);
-                setSelectedOption(null);
-                setRetryCount(retryCount + 1);
-              }
-            }]
-          );
-        }, 1000);
+        console.log(`Allowing retry - attempt ${retryCount + 1} of 3`);
+        // Show retry modal
+        setShowRetryModal(true);
+      
       } else {
-        // Show correct answer after 2 failed attempts
-        setTimeout(() => {
-          Alert.alert(
-            "Correct Answer",
-            `The correct answer is "${question.correctAnswer}". Let's move to the next question!`,
-            [{
-              text: "Next Question",
-              onPress: () => {
-                handleNextQuestion();
-              }
-            }]
-          );
-        }, 1000);
+        console.log('Max retries reached - showing correct answer');
+        // Show correct answer modal after 2 failed attempts
+        setShowCorrectAnswerModal(true);
+        
       }
     }
   };
@@ -449,24 +474,41 @@ export default function MultipleDragExercise() {
     const sessionEndTime = Date.now();
     const totalSessionTime = sessionEndTime - sessionStartTime;
 
+    // Calculate correct answers from score (score is 10 points per correct answer)
+    const correctAnswers = score / 10;
+    const totalQuestions = currentExercise.questions.length;
+    
+    const accuracy = Math.max(0, Math.min(1, correctAnswers / totalQuestions));
+    const timeSpent = Math.max(0, Math.round(totalSessionTime / 60000));
+    
     const exerciseSubmission = {
-      score: score,
-      totalQuestions: currentExercise.questions.length,
-      correctAnswers: score,
-      incorrectAnswers: currentExercise.questions.length - score,
-      accuracy: Math.round((score / currentExercise.questions.length) * 100),
-      sessionTime: totalSessionTime
+      accuracy: accuracy,
+      time_spent: timeSpent,
     };
+
+    console.log('Submitting exercise results:', exerciseSubmission);
+    console.log('Child ID:', childId);
+    console.log('Exercise ID:', exerciseId);
+    console.log('API URL:', `${API_URL}/api/results/${childId}/exercise/${exerciseId}/`);
+    
+    // Validate IDs are not null/undefined
+    if (!childId || !exerciseId) {
+      console.error('Missing required IDs:', { childId, exerciseId });
+      throw new Error('Child ID and Exercise ID are required');
+    }
 
     // *** Remove this navigation after backend is complete. ***
     // temporary navigation to simulate completion
+    /*
     router.push({
       pathname: '/child-dashboard',
       params: { completedTaskId: 2 }
     });
+    */
 
+    // Submit to backend
     try {
-      const response = await fetch(`${API_URL}/api/profile/${childId}/exercise`, {
+      const response = await fetch(`${API_URL}/api/results/${childId}/exercise/${exerciseId}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -475,7 +517,9 @@ export default function MultipleDragExercise() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to submit exercise results');
+        const errorText = await response.text();
+        console.error('Backend error response:', errorText);
+        throw new Error(`Failed to submit exercise results: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
@@ -491,7 +535,61 @@ export default function MultipleDragExercise() {
   };
 
   const completeActivity = () => {
-    submitExerciseResults();
+    setShowCompletionScreen(true);
+  };
+
+  const handleTryAgain = () => {
+    console.log('Try Again pressed');
+    setAnswered(false);
+    setSelectedOption(null);
+    setRetryCount(retryCount + 1);
+    setShowRetryModal(false);
+  };
+
+  const handleShowCorrectAnswer = () => {
+    console.log('Next Question pressed');
+    setShowCorrectAnswerModal(false);
+    handleNextQuestion();
+  };
+
+  const handleCancelExit = () => {
+    setShowExitModal(false);
+  };
+
+  const handleConfirmExit = () => {
+    setShowExitModal(false);
+    router.back();
+  };
+
+  const handleCancelProgressExit = () => {
+    console.log('Cancel progress exit pressed');
+    setShowProgressExitModal(false);
+  };
+
+  const handleConfirmProgressExit = () => {
+    console.log('Confirm progress exit pressed');
+    setShowProgressExitModal(false);
+    router.back();
+  };
+
+  const handleTryAgainFromCompletion = () => {
+    // Reset the entire exercise
+    setCurrentQuestion(0);
+    setScore(0);
+    setAnswered(false);
+    setSelectedOption(null);
+    setRetryCount(0);
+    setShowCompletionScreen(false);
+  };
+
+  const handleContinueFromCompletion = async () => {
+    setShowCompletionScreen(false);
+    await submitExerciseResults();
+  };
+
+  const handleGoBackFromCompletion = () => {
+    setShowCompletionScreen(false);
+    router.push('/child-dashboard');
   };
 
   // Show loading state while fetching questions
@@ -517,21 +615,8 @@ export default function MultipleDragExercise() {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => {
-              Alert.alert(
-                "Exit Exercise?",
-                "Are you sure you want to return to the dashboard?",
-                [
-                  { 
-                    text: "Cancel", 
-                    style: "cancel" 
-                  },
-                  {
-                    text: "Exit",
-                    style: "destructive",
-                    onPress: () => router.back()
-                  }
-                ]
-              );
+              console.log('Back to Dashboard pressed');
+              setShowExitModal(true);
             }}
           >
             <Text style={styles.backButtonText}>← Back to Dashboard</Text>
@@ -548,21 +633,8 @@ export default function MultipleDragExercise() {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => {
-            Alert.alert(
-              "Exit Exercise?",
-              "Your progress will be lost if you exit now. Are you sure you want to leave?",
-              [
-                { 
-                  text: "Cancel", 
-                  style: "cancel" 
-                },
-                {
-                  text: "Exit",
-                  style: "destructive",
-                  onPress: () => router.back()
-                }
-              ]
-            );
+            console.log('Main back button pressed');
+            setShowProgressExitModal(true);
           }}
         >
           <Text style={styles.backButtonText}>← Back</Text>
@@ -626,6 +698,133 @@ export default function MultipleDragExercise() {
           />
         ))}
       </View>
+
+      {/* Progress Exit Confirmation Modal */}
+      {showProgressExitModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Exit Exercise?</Text>
+            <Text style={styles.modalText}>
+              Your progress will be lost if you exit now. Are you sure you want to leave?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalCancelButton} onPress={handleCancelProgressExit}>
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalExitButton} onPress={handleConfirmProgressExit}>
+                <Text style={styles.modalExitButtonText}>Exit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Exit Confirmation Modal */}
+      {showExitModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Exit Exercise?</Text>
+            <Text style={styles.modalText}>
+              Are you sure you want to return to the dashboard?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalCancelButton} onPress={handleCancelExit}>
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalExitButton} onPress={handleConfirmExit}>
+                <Text style={styles.modalExitButtonText}>Exit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Retry Modal */}
+      {showRetryModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Try Again!</Text>
+            <Text style={styles.modalText}>
+              That&apos;s not quite right. You have {2 - retryCount} more attempt{2 - retryCount > 1 ? 's' : ''}.
+            </Text>
+            <TouchableOpacity style={styles.modalButton} onPress={handleTryAgain}>
+              <Text style={styles.modalButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Correct Answer Modal */}
+      {showCorrectAnswerModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Correct Answer</Text>
+            <Text style={styles.modalText}>
+              The correct answer is &quot;{question?.correctAnswer}&quot;. Let&apos;s move to the next question!
+            </Text>
+            <TouchableOpacity style={styles.modalButton} onPress={handleShowCorrectAnswer}>
+              <Text style={styles.modalButtonText}>Next Question</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Completion Screen */}
+      {showCompletionScreen && (
+        <View style={[styles.completionOverlay, { backgroundColor: getCompletionData().backgroundColor }]}>
+          <View style={styles.completionContent}>
+            {/* Mascot Koala */}
+            <View style={styles.mascotContainer}>
+              <Image 
+                source={require('@/assets/images/koala.png')} 
+                style={styles.mascotImage}
+                resizeMode="contain"
+              />
+            </View>
+            
+            {/* Completion Message */}
+            <Text style={styles.completionMessage}>{getCompletionData().message}</Text>
+            
+            {/* Score Display */}
+            <View style={styles.scoreDisplay}>
+              <Text style={styles.scoreLabel}>Your Score</Text>
+              <Text style={styles.scoreFinal}>{score} points</Text>
+              <Text style={styles.accuracyText}>
+                {Math.round(finalAccuracy * 100)}% accuracy
+              </Text>
+            </View>
+
+            {/* Buttons */}
+            <View style={styles.completionButtons}>
+              {getCompletionData().showTryAgain ? (
+                // Almost There - show Try Again and Go Back
+                <>
+                  <TouchableOpacity 
+                    style={[styles.completionButton, styles.tryAgainButton]} 
+                    onPress={handleTryAgainFromCompletion}
+                  >
+                    <Text style={styles.tryAgainButtonText}>Try Again</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.completionButton, styles.goBackButton]} 
+                    onPress={handleGoBackFromCompletion}
+                  >
+                    <Text style={styles.goBackButtonText}>Go Back</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                // Good Work / Excellent - show Continue
+                <TouchableOpacity 
+                  style={[styles.completionButton, styles.continueButton]} 
+                  onPress={handleContinueFromCompletion}
+                >
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Celebration Overlay */}
       {showCelebration && (
@@ -895,5 +1094,186 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 16,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 30,
+    borderRadius: 20,
+    marginHorizontal: 40,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalText: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  modalButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 12,
+    minWidth: 120,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalCancelButton: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flex: 1,
+  },
+  modalCancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  modalExitButton: {
+    backgroundColor: '#ff4444',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flex: 1,
+  },
+  modalExitButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  // Completion Screen Styles
+  completionOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  completionContent: {
+    backgroundColor: 'white',
+    borderRadius: 24,
+    padding: 40,
+    alignItems: 'center',
+    maxWidth: 320,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  mascotContainer: {
+    marginBottom: 20,
+  },
+  mascotImage: {
+    width: 120,
+    height: 120,
+  },
+  completionEmoji: {
+    fontSize: 48,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  completionMessage: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  scoreDisplay: {
+    alignItems: 'center',
+    marginBottom: 32,
+    backgroundColor: '#f8f9fa',
+    padding: 20,
+    borderRadius: 16,
+    width: '100%',
+  },
+  scoreLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 8,
+  },
+  scoreFinal: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  accuracyText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  completionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  completionButton: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  continueButton: {
+    backgroundColor: '#4CAF50',
+  },
+  continueButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  tryAgainButton: {
+    backgroundColor: '#2196F3',
+  },
+  tryAgainButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  goBackButton: {
+    backgroundColor: '#f0f0f0',
+  },
+  goBackButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
