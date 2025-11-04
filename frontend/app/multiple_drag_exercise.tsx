@@ -475,22 +475,6 @@ export default function MultipleDragExercise() {
     submitExerciseResults();
   };
 
-  const skipQuestion = () => {
-    Alert.alert(
-      "Skip this question?",
-      "You can move to the next question, but you won't get points for this one.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Skip",
-          onPress: () => {
-            handleNextQuestion();
-          }
-        }
-      ]
-    );
-  };
-
   // Show loading state while fetching questions
   if (isLoading) {
     return (
@@ -513,7 +497,23 @@ export default function MultipleDragExercise() {
           </Text>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => {
+              Alert.alert(
+                "Exit Exercise?",
+                "Are you sure you want to return to the dashboard?",
+                [
+                  { 
+                    text: "Cancel", 
+                    style: "cancel" 
+                  },
+                  {
+                    text: "Exit",
+                    style: "destructive",
+                    onPress: () => router.back()
+                  }
+                ]
+              );
+            }}
           >
             <Text style={styles.backButtonText}>← Back to Dashboard</Text>
           </TouchableOpacity>
@@ -528,7 +528,23 @@ export default function MultipleDragExercise() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={() => {
+            Alert.alert(
+              "Exit Exercise?",
+              "Your progress will be lost if you exit now. Are you sure you want to leave?",
+              [
+                { 
+                  text: "Cancel", 
+                  style: "cancel" 
+                },
+                {
+                  text: "Exit",
+                  style: "destructive",
+                  onPress: () => router.back()
+                }
+              ]
+            );
+          }}
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
@@ -591,16 +607,6 @@ export default function MultipleDragExercise() {
           />
         ))}
       </View>
-
-      {/* Skip Button */}
-      {!answered && (
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={skipQuestion}
-        >
-          <Text style={styles.skipButtonText}>Skip Question</Text>
-        </TouchableOpacity>
-      )}
 
       {/* Celebration Overlay */}
       {showCelebration && (
@@ -801,20 +807,6 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     marginTop: 4,
     fontWeight: 'bold',
-  },
-  skipButton: {
-    marginHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 20,
-    padding: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  skipButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
   },
   celebrationOverlay: {
     position: 'absolute',
