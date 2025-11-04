@@ -6,11 +6,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
-<<<<<<< HEAD
 import { API_URL } from '@/config/api';
-=======
-// import { API_URL } from '../config/api'; // Commented out - using route params instead
->>>>>>> origin/main
 
 
 // Task data structure
@@ -28,14 +24,13 @@ interface MascotData {
 
 // Default tasks (fallback if API fails)
 const defaultTasks: Task[] = [
-  { id: '1', name: 'activity1', completed: false },
-  { id: '2', name: 'describe_exercise', completed: false },
-  { id: '3', name: 'multiple_drag_exercise', completed: false },
+  { id: '1', name: 'activity1', completed: true },
+  { id: '2', name: 'multiple_drag_exercise', completed: false },
+  { id: '3', name: 'describe_exercise', completed: false },
   { id: '4', name: 'activity4', completed: false },
   { id: '5', name: 'activity5', completed: false },
 ];
 
-<<<<<<< HEAD
 // Function to fetch child's coin balance from backend
 const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: number) => void) => {
   try {
@@ -45,22 +40,6 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
         'Content-Type': 'application/json',
       },
     });
-=======
-// Function to fetch child's coin balance from backend (currenty using hardocoded value)
-// const fetchCoinBalance = async () => {
-//       if (!session?.access_token) {
-//         Alert.alert('Error', 'You must be authorized to perform this action');
-//         return;
-//       }
-//   try {
-//     const response = await fetch(`${API_URL}/api/children/current/coins`, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-// 'Authorization': `Bearer ${session?.access_token}`
-//       },
-//     });
->>>>>>> origin/main
 
     if (response.ok) {
       const data = await response.json();
@@ -79,15 +58,21 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
 // Function to fetch assigned activities from backend
 const fetchAssignedActivities = async (childId: string, setTasks: (tasks: Task[]) => void) => {
   try {
-    const response = await fetch(`${API_URL}/api/profile/${childId}/activities`, {
+    const url = `${API_URL}/api/assignments/${childId}`;
+    console.log('Fetching from URL:', url);
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
     });
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
 
     if (response.ok) {
       const data = await response.json();
+      console.log('Assigned activities data received:', data);
       if (data.assignedActivities && Array.isArray(data.assignedActivities)) {
         // Transform backend data to Task format
         const transformedTasks: Task[] = data.assignedActivities.map((item: any) => ({
@@ -102,17 +87,27 @@ const fetchAssignedActivities = async (childId: string, setTasks: (tasks: Task[]
         setTasks(defaultTasks);
       }
     } else {
-      console.warn('Failed to fetch assigned activities:', response.status);
+      console.error('Failed to fetch assigned activities:', response.status, response.statusText);
+      
+      // Try to get error details from response body
+      try {
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+      } catch (bodyError) {
+        console.error('Could not read error response body:', bodyError);
+      }
+      
+      console.log('Using default tasks due to API error');
       setTasks(defaultTasks);
     }
   } catch (error) {
-    console.error('Error fetching assigned activities:', error);
+    console.error('Network error fetching assigned activities:', error);
+    console.log('Using default tasks due to network error');
     setTasks(defaultTasks);
   }
 };
 
 // Function to fetch child's streak count from backend (currenty using hardocoded value)
-<<<<<<< HEAD
 const fetchStreakCount = async (childId: string, setStreakCount: (count: number) => void) => {
   try {
     const response = await fetch(`${API_URL}/api/profile/${childId}/streak`, {
@@ -121,33 +116,6 @@ const fetchStreakCount = async (childId: string, setStreakCount: (count: number)
         'Content-Type': 'application/json',
       },
     });
-=======
-// const fetchStreakCount = async () => {
-//       if (!session?.access_token) {
-//         Alert.alert('Error', 'You must be authorized to perform this action');
-//         return;
-//       }
-//   try {
-//     const response = await fetch(`${API_URL}/api/children/current/streak`, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-// 'Authorization': `Bearer ${session?.access_token}`
-//       },
-//     });
-
-//     if (response.ok) {
-//       const data = await response.json();
-//       setStreakCount(data.streak || 0);
-//       console.log('Streak count fetched successfully:', data.streak);
-//     } else {
-//       console.warn('Failed to fetch streak count:', response.status);
-//     }
-//   } catch (error) {
-//     console.error('Error fetching streak count:', error);
-//   }
-// };
->>>>>>> origin/main
 
     if (response.ok) {
       const data = await response.json();
@@ -343,7 +311,17 @@ const getMascotImages = (mascotData: MascotData) => {
 
 const ChildDashboard = () => {
   const { completedTaskId, bodyType, accessoryId } = useLocalSearchParams();
-  const { childId } = useApp();
+  const { childId: contextChildId } = useApp();
+  
+  // Fallback childId for testing if context doesn't provide one (must be a valid UUID)
+  const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; // Valid UUID format for testing
+  const childId = contextChildId || fallbackChildId;
+  
+  console.log('=== CHILDDASHBOARD COMPONENT LOADED ===');
+  console.log('Context childId:', contextChildId);
+  console.log('Fallback childId:', fallbackChildId);
+  console.log('Final childId being used:', childId);
+  
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
@@ -351,19 +329,13 @@ const ChildDashboard = () => {
   const [coinBalance, setCoinBalance] = useState(0);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
-<<<<<<< HEAD
   const tasksRef = React.useRef<Task[]>(defaultTasks);
-=======
-  const tasksRef = React.useRef<Task[]>(sampleTasks);
-  const { session } = useApp();
->>>>>>> origin/main
 
   // Keep tasksRef in sync with tasks state
   React.useEffect(() => {
     tasksRef.current = tasks;
   }, [tasks]);
 
-<<<<<<< HEAD
   //Fetch mascot data from backend
   const fetchMascotData = async () => {
     try {
@@ -373,21 +345,6 @@ const ChildDashboard = () => {
           'Content-Type': 'application/json',
         },
       });
-=======
-  // Fetch mascot data from backend
-  // if (!session?.access_token) {
-  //   Alert.alert('Error', 'You must be authorized to perform this action');
-  //   return;
-  // }
-  //   try {
-  //     const response = await fetch(`${API_URL}/api/children/current/mascot`, {
-  //       method: 'GET',
-  //       headers: {
-  //          'Content-Type': 'application/json',
-  // 'Authorization': `Bearer ${session?.access_token}`
-  //       },
-  //     });
->>>>>>> origin/main
 
       if (response.ok) {
         const data = await response.json();
@@ -418,12 +375,18 @@ const ChildDashboard = () => {
 
   // Load assigned activities, coin balance, and streak count on component mount
   useEffect(() => {
-    if (childId) {
-      fetchAssignedActivities(childId, setTasks);
-      fetchCoinBalance(childId, setCoinBalance);
-      fetchStreakCount(childId, setStreakCount);
-    }
-  }, [childId]);
+    console.log('=== CHILD DASHBOARD USEEFFECT TRIGGERED ===');
+    console.log('childId value:', childId);
+    console.log('childId type:', typeof childId);
+    console.log('Context childId:', contextChildId);
+    console.log('Using fallback?', !contextChildId);
+    
+    // Now childId will always have a value (either from context or fallback)
+    console.log('Calling fetchAssignedActivities with childId:', childId);
+    fetchAssignedActivities(childId, setTasks);
+    fetchCoinBalance(childId, setCoinBalance);
+    fetchStreakCount(childId, setStreakCount);
+  }, [childId, contextChildId]);
 
   // Handle task completion from activity page with blooming animation
   useEffect(() => {
@@ -510,13 +473,8 @@ const ChildDashboard = () => {
 
   const handleTaskPress = async (task: Task) => {
     if (task.completed) return;
-<<<<<<< HEAD
     
     // Navigate to the task with mascot data and activity data
-=======
-
-    // Navigate directly to the task with mascot data
->>>>>>> origin/main
     router.push({
       pathname: `/${task.name}` as any,
       params: {
@@ -527,37 +485,6 @@ const ChildDashboard = () => {
         activityData: task.activityData ? JSON.stringify(task.activityData) : ''
       }
     });
-<<<<<<< HEAD
-=======
-    // REMEMEBER TO ADD IN AUTHORIZATION
-    // try {
-    //   const moduleId = 'some-module-id'; // TODO: Get actual module ID from props/context
-    //       if (!session?.access_token) {
-    //         Alert.alert('Error', 'You must be authorized to perform this action');
-    //         return;
-    //       }
-    //   const res = await fetch(`${API_URL}/api/modules/${moduleId}/activities`);
-    //   if (!res.ok) throw new Error('Failed to fetch activities');
-
-    //   const assignedActivities = await res.json();
-    //   const currentTask = assignedActivities.find((a: any) => a.activity.id === task.id);
-    //
-    //   if (currentTask) {
-    //     router.push({
-    //       pathname: `/${task.name}` as any,
-    //       params: {
-    //         taskId: task.id,
-    //         taskName: task.name,
-    //         bodyType: mascotData.bodyType,
-    //         accessoryId: mascotData.accessoryId?.toString() || '',
-    //         activityData: JSON.stringify(currentTask)
-    //       }
-    //     });
-    //   }
-    // } catch (err) {
-    //   console.error('Failed to fetch task data:', err);
-    // }
->>>>>>> origin/main
   };
 
   const handleMascotCustomization = () => {
