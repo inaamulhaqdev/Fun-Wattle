@@ -310,6 +310,7 @@ export default function MultipleDragExercise() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
   
   const [sessionStartTime] = useState(Date.now());
 
@@ -396,20 +397,38 @@ export default function MultipleDragExercise() {
         handleNextQuestion();
       }, 2500);
     } else {
-      // Show feedback for wrong answer
-      setTimeout(() => {
-        Alert.alert(
-          "Try Again!",
-          "That's not quite right. Give it another try!",
-          [{
-            text: "Try Again",
-            onPress: () => {
-              setAnswered(false);
-              setSelectedOption(null);
-            }
-          }]
-        );
-      }, 1000);
+      // Check retry count for wrong answer
+      if (retryCount < 2) {
+        // Allow retry
+        setTimeout(() => {
+          Alert.alert(
+            "Try Again!",
+            `That's not quite right. You have ${2 - retryCount} more attempt${2 - retryCount > 1 ? 's' : ''}.`,
+            [{
+              text: "Try Again",
+              onPress: () => {
+                setAnswered(false);
+                setSelectedOption(null);
+                setRetryCount(retryCount + 1);
+              }
+            }]
+          );
+        }, 1000);
+      } else {
+        // Show correct answer after 2 failed attempts
+        setTimeout(() => {
+          Alert.alert(
+            "Correct Answer",
+            `The correct answer is "${question.correctAnswer}". Let's move to the next question!`,
+            [{
+              text: "Next Question",
+              onPress: () => {
+                handleNextQuestion();
+              }
+            }]
+          );
+        }, 1000);
+      }
     }
   };
 
@@ -418,7 +437,7 @@ export default function MultipleDragExercise() {
       setCurrentQuestion(currentQuestion + 1);
       setAnswered(false);
       setSelectedOption(null);
-
+      setRetryCount(0); // Reset retry count for new question
 
     } else {
       completeActivity();
