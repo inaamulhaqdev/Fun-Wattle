@@ -8,75 +8,11 @@ import { LearningUnit, Exercise } from '../../types/learningUnitTypes';
 import { API_URL } from '@/config/api';
 import { useApp } from '../../context/AppContext';
 
-const { session } = useApp();
-
 type DetailProps = {
   selectedItem: LearningUnit;
   assignedUnitIds: Set<string>;
   setAssignedUnitIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   onBack: () => void;
-};
-
-const assignLearningUnit = async (
-  learningUnitId: string,
-  childId: string,
-  userId: string,
-  participationType: 'required' | 'recommended'
-) => {
-  if (!session?.access_token) {
-    Alert.alert('Error', 'You must be authorized to perform this action');
-    return;
-  }
-
-  const response = await fetch(`${API_URL}/api/assignments/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session?.access_token}`,
-    },
-    body: JSON.stringify({
-      learning_unit_id: learningUnitId,
-      child_id: childId,
-      user_id: userId,
-      participation_type: participationType,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to assign learning unit (${response.status})`);
-  }
-
-  return await response.json();
-};
-
-const unassignLearningUnit = async (
-  learningUnitId: string,
-  childId: string,
-  userId: string
-) => {
-  if (!session?.access_token) {
-    Alert.alert('Error', 'You must be authorized to perform this action');
-    return;
-  }
-
-  const response = await fetch(`${API_URL}/api/assignments/`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session?.access_token}`,
-    },
-    body: JSON.stringify({
-      learning_unit_id: learningUnitId,
-      child_id: childId,
-      user_id: userId,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to unassign learning unit (${response.status})`);
-  }
-
-  return await response.json();
 };
 
 export default function DetailView({
@@ -90,6 +26,63 @@ export default function DetailView({
 
   const { childId, session } = useApp();
   const userId = session.user.id;
+
+  const assignLearningUnit = async (
+    learningUnitId: string,
+    childId: string,
+    userId: string,
+    participationType: 'required' | 'recommended',
+  ) => {
+    if (!session?.access_token) {
+      Alert.alert('Error', 'You must be authorized to perform this action');
+      return;
+    }
+
+    const response = await fetch(`${API_URL}/api/assignments/${childId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify({
+        learning_unit_id: learningUnitId,
+        // child_id: childId,
+        user_id: userId,
+        participation_type: participationType,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to assign learning unit (${response.status})`);
+    }
+
+    return await response.json();
+  };
+
+  const unassignLearningUnit = async (
+    learningUnitId: string,
+    childId: string,
+    // userId: string
+  ) => {
+    if (!session?.access_token) {
+      Alert.alert('Error', 'You must be authorized to perform this action');
+      return;
+    }
+
+    const response = await fetch(`${API_URL}/api/assignments/${childId}/learning_unit/${learningUnitId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to unassign learning unit (${response.status})`);
+    }
+
+    return await response.json();
+  };
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -158,7 +151,7 @@ export default function DetailView({
               }
 
               if (newStatus === 'Unassigned') {
-                await unassignLearningUnit(selectedItem.id, childId, userId);
+                await unassignLearningUnit(selectedItem.id, childId);
                 setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
               } else if (newStatus === 'Assigned as Required') {
                 await assignLearningUnit(selectedItem.id, childId, userId, 'required');

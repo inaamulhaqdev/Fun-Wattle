@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Animated, Alert } from 'react-native';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -12,6 +12,7 @@ import { useApp } from "@/context/AppContext";
 // Task data structure
 interface Task {
   id: string;
+  assignmentId: string;
   name: string;
   completed: boolean;
 }
@@ -362,8 +363,10 @@ const ChildDashboard = () => {
           const unit = unitMap[assignment.learning_unit];
           return {
             id: unit.id,
+            assignmentId: assignment.id,
             name: unit.title,
             completed: assignment.completed_at !== null,
+            // type: unit.exercise_type
           };
         });
 
@@ -469,17 +472,40 @@ const ChildDashboard = () => {
     };
 
     const exercise = slugify(task.name);
-    
+
     // Navigate directly to the task with mascot data
-    router.push({
-      pathname: `/${exercise}` as any,
-      params: { 
-        taskId: task.id, 
-        taskName: task.name,
-        bodyType: mascotData.bodyType,
-        accessoryId: mascotData.accessoryId?.toString() || '',
+      router.push({
+        pathname: `/${exercise}` as any,
+        params: { 
+          taskId: task.id, 
+          // exerciseId: firstExercise.id,
+          assignmentId: task.assignmentId,
+          taskName: task.name,
+          bodyType: mascotData.bodyType,
+          accessoryId: mascotData.accessoryId?.toString() || '',
+        }
+      });
+
+    /* try {
+      const response = await fetch(`${API_URL}/api/exercises/${task.id}/`, { method: 'GET' });
+      if (!response.ok) throw new Error(`Failed to fetch exercises (${response.status})`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch exercises (${response.status})`);
       }
-    });
+
+      const exercises = await response.json();
+
+      // ✅ Find first exercise (order === 1)
+      const firstExercise = exercises.find((ex: any) => ex.order === 1);
+
+      
+      
+    } catch (err) {
+      console.error('Error fetching assignments:', err);
+    } */
+    
+    
     // REMEMEBER TO ADD IN AUTHORIZATION
     // try {
     //   const moduleId = 'some-module-id'; // TODO: Get actual module ID from props/context

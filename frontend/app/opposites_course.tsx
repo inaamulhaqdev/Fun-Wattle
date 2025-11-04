@@ -10,7 +10,9 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useLocalSearchParams } from "expo-router";
 import { useApp } from '@/context/AppContext';
+import { API_URL } from '@/config/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -231,10 +233,14 @@ export default function OppositesExercise() {
   const router = useRouter();
   const [currentExercise, setCurrentExercise] = useState(0);
   const [score, setScore] = useState(0);
+  // const [num_correct, setCorrect] = useState(0);
+  // const [num_incorrect, setIncorrect] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-  const { session } = useApp();
+  const { childId, session } = useApp();
+
+  const { taskId, exerciseId } = useLocalSearchParams();
 
   // Track all exercise data for submission at the end
   const [exerciseResults, setExerciseResults] = useState<{
@@ -351,6 +357,8 @@ export default function OppositesExercise() {
     setExerciseResults(prev => [...prev, resultEntry]);
 
     if (isCorrect) {
+      // setCorrect(num_correct + 1);
+      // console.log("Correct count:", num_correct);
       setScore(score + 10);
       setShowCelebration(true);
 
@@ -359,6 +367,8 @@ export default function OppositesExercise() {
         handleNextExercise();
       }, 2500);
     } else {
+      // setIncorrect(num_incorrect + 1);
+      // console.log("Incorrect count:", num_incorrect);
       // Show feedback for wrong answer
       setTimeout(() => {
         Alert.alert(
@@ -396,19 +406,26 @@ export default function OppositesExercise() {
     const sessionEndTime = Date.now();
     const totalSessionTime = sessionEndTime - sessionStartTime;
 
+    const totalNumQuestions = OPPOSITES_EXERCISES.exercises.length;
+
+    const num_correct = exerciseResults.filter(r => r.isCorrect).length;
+    const num_incorrect = totalNumQuestions - num_correct;
+
+    console.log("totalNumQuestions:", totalNumQuestions);
+    console.log("Child", childId);
+    console.log("Exercise", exerciseId);
+
     const exerciseSubmission = {
-      exerciseType: 'opposites',
-      activityId: 8, // From learning unit data - "Find the Opposite"
-      childId: 'current-child-id', // Would come from auth/context
-      sessionStartTime: sessionStartTime,
-      sessionEndTime: sessionEndTime,
-      totalTimeSpent: totalSessionTime,
-      totalQuestions: OPPOSITES_EXERCISES.exercises.length,
-      correctAnswers: score,
-      incorrectAnswers: OPPOSITES_EXERCISES.exercises.length - score,
-      accuracy: Math.round((score / OPPOSITES_EXERCISES.exercises.length) * 100),
-      individualResults: exerciseResults,
-      completed: true
+      // exerciseType: taskType,
+      // exerciseId: taskId, // From learning unit data - "Find the Opposite"
+      // assignmentId: assignmentId,
+      // childId: childId, // Would come from auth/context
+      time_spent: totalSessionTime,
+      // totalQuestions: OPPOSITES_EXERCISES.exercises.length,
+      // num_correct: num_correct,
+      // num_incorrect: num_incorrect,
+      accuracy: +(num_correct / totalNumQuestions).toFixed(2),
+      // individualResults: exerciseResults,
     };
 
     // *** Remove this navigation after backend is complete. ***
@@ -418,15 +435,16 @@ export default function OppositesExercise() {
       params: { completedTaskId: 2 }
     });
 
-    // Submit all exercise data to backend after completion
-    /*
+    console.log("RESULTS?!?!?!", JSON.stringify(exerciseSubmission));
 
-    if (!session?.access_token) {
+    // Submit all exercise data to backend after completion
+
+    /* if (!session?.access_token) {
       Alert.alert('Error', 'You must be authorized to perform this action');
       return;
     }
     try {
-      const response = await fetch('/api/exercise-completions', {
+      const response = await fetch(`${API_URL}/api/results/${childId}/exercise/${exerciseId}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -446,9 +464,9 @@ export default function OppositesExercise() {
       router.push('/child-dashboard');
 
     } catch (error) {
-      console.error('Error submitting exercise:', error);
+      console.error('Error submitting exercise:', error); */
 
-      // Store locally for retry later
+      /* // Store locally for retry later
       const failedSubmissions = JSON.parse(
         localStorage.getItem('pendingExerciseSubmissions') || '[]'
       );
@@ -460,9 +478,7 @@ export default function OppositesExercise() {
         'Exercise Completed!',
         'Your progress has been saved locally and will sync when connection is restored.',
         [{ text: 'OK', onPress: () => router.push('/child-dashboard') }]
-      );
-    }
-    */
+      ); */
   };
 
   const completeActivity = () => {
@@ -496,6 +512,8 @@ export default function OppositesExercise() {
             };
 
             setExerciseResults(prev => [...prev, resultEntry]);
+
+            console.log("Pushing resultEntry:", resultEntry);
 
             handleNextExercise();
           }
