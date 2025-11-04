@@ -83,15 +83,23 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
       .sort((a: ApiQuestion, b: ApiQuestion) => a.order - b.order) // Sort by order
       .map((apiQuestion: ApiQuestion, index: number) => {
         try {
-          const questionData = JSON.parse(apiQuestion.question_data);
+          // Handle both string and object cases for question_data
+          let questionData;
+          if (typeof apiQuestion.question_data === 'string') {
+            questionData = JSON.parse(apiQuestion.question_data);
+          } else {
+            questionData = apiQuestion.question_data;
+          }
           console.log(`Question ${index + 1} data:`, questionData);
           
           // Extract options text from the nested structure
           const optionTexts = questionData.options?.map((option: any) => option.text) || [];
+          console.log(`Question ${index + 1} option texts:`, optionTexts);
           
           // Find the correct answer from the options
           const correctOption = questionData.options?.find((option: any) => option.correct === true);
           const correctAnswer = correctOption?.text || optionTexts[0] || 'No answer';
+          console.log(`Question ${index + 1} correct answer:`, correctAnswer);
           
           return {
             id: index + 1,
@@ -124,47 +132,6 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
     return null;
   }
 };
-
-
-
-// Static exercise data for opposites
-/*
-const OPPOSITES_EXERCISES: Exercise = {
-  title: "Opposite Words",
-  questions: [
-    {
-      id: 1,
-      question: "What is the opposite of 'hot'?",
-      correctAnswer: "cold",
-      options: ["warm", "cold", "cool", "fire"]
-    },
-    {
-      id: 2,
-      question: "What is the opposite of 'big'?",
-      correctAnswer: "small",
-      options: ["huge", "large", "small", "tiny"]
-    },
-    {
-      id: 3,
-      question: "What is the opposite of 'happy'?",
-      correctAnswer: "sad",
-      options: ["sad", "young", "sweet", "bright"]
-    },
-    {
-      id: 4,
-      question: "What is the opposite of 'up'?",
-      correctAnswer: "down",
-      options: ["top", "high", "down", "above"]
-    },
-    {
-      id: 5,
-      question: "What is the opposite of 'light'?",
-      correctAnswer: "dark",
-      options: ["bright", "shine", "dark", "glow"]
-    }
-  ]
-};
-*/
 
 interface DraggableOptionProps {
   text: string;
