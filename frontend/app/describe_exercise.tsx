@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
 import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers';
-import { RecordingOptionsPresets } from 'expo-av/build/Audio';
 import { API_URL } from '../config/api';
-import { Platform } from 'react-native';
 import { useApp } from '@/context/AppContext';
 
 // Send the audio file as a POST request

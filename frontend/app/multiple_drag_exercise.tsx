@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
+import { API_URL } from '@/config/api';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,29 +29,100 @@ interface Exercise {
   questions: Question[];
 }
 
-const { childId } = useApp();
-
 //Fetch exercise data from backend
-const fetchExerciseData = async () => {
+const fetchExerciseData = async (childId: string) => {
   try {
-    const response = await fetch(`${API_URL}/api/profile/${childId}/exercise`, {
+    const response = await fetch(`${API_URL}/api/assignments/${childId}`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json',
       },
     });
-
     if (response.ok) {
-      const data = await response.json();
-      if (data.exercise) {
-        setQuestionData(data.exercise);
+      const assignments = await response.json();
+      if (Array.isArray(assignments) && assignments.length > 0) {
+        const firstAssignment = assignments[0];        
+        const mockExercise = {
+          id: firstAssignment.learning_unit,
+          title: "Multiple Drag Exercise",
+          questions: [
+            {
+              id: 1,
+              question: "What is the opposite of 'hot'?",
+              correctAnswer: "cold",
+              options: ["warm", "cold", "cool", "fire"]
+            },
+            {
+              id: 2,
+              question: "What is the opposite of 'big'?",
+              correctAnswer: "small",
+              options: ["huge", "large", "small", "tiny"]
+            },
+            {
+              id: 3,
+              question: "What is the opposite of 'happy'?",
+              correctAnswer: "sad",
+              options: ["sad", "young", "sweet", "bright"]
+            }
+          ]
+        };        
+        setQuestionData(mockExercise);
+      } else {
+        setFallbackExerciseData();
       }
     } else {
-      console.warn('Failed to fetch question data:', response.status);
+      const errorText = await response.text();
+      console.error('Error response body:', errorText);
+      setFallbackExerciseData();
     }
   } catch (error) {
     console.error('Error fetching question data:', error);
+    console.log('Using fallback exercise data due to network error');
+    setFallbackExerciseData();
   }
+};
+
+// Fallback exercise data function
+const setFallbackExerciseData = () => {
+  const fallbackExercise = {
+    id: 1,
+    title: "Opposite Words (Fallback)",
+    questions: [
+      {
+        id: 1,
+        question: "What is the opposite of 'hot'?",
+        correctAnswer: "cold",
+        options: ["warm", "cold", "cool", "fire"]
+      },
+      {
+        id: 2,
+        question: "What is the opposite of 'big'?",
+        correctAnswer: "small",
+        options: ["huge", "large", "small", "tiny"]
+      },
+      {
+        id: 3,
+        question: "What is the opposite of 'happy'?",
+        correctAnswer: "sad",
+        options: ["sad", "young", "sweet", "bright"]
+      },
+      {
+        id: 4,
+        question: "What is the opposite of 'up'?",
+        correctAnswer: "down",
+        options: ["top", "high", "down", "above"]
+      },
+      {
+        id: 5,
+        question: "What is the opposite of 'light'?",
+        correctAnswer: "dark",
+        options: ["bright", "shine", "dark", "glow"]
+      }
+    ]
+  };
+  
+  console.log('Setting fallback exercise data:', fallbackExercise);
+  setQuestionData(fallbackExercise);
 };
 
 const OPPOSITES_EXERCISES : Exercise = {
@@ -267,27 +340,15 @@ const DraggableOption: React.FC<DraggableOptionProps> = ({
   );
 };
 
-export default function OppositesExercise() {
+export default function MultipleDragExercise() {
   const router = useRouter();
+  const { childId } = useApp();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-  const { session } = useApp();
-
-  // Track all exercise data for submission at the end
-  const [exerciseResults, setExerciseResults] = useState<{
-    questionId: number;
-    question: string;
-    correctAnswer: string;
-    answerGiven: string | null;
-    isCorrect: boolean;
-    timeSpent: number;
-    startTime: number;
-    skipped?: boolean;
-  }[]>([]);
-
+  
   const [sessionStartTime] = useState(Date.now());
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
 
@@ -295,101 +356,29 @@ export default function OppositesExercise() {
 
   // Initialize session and handle cleanup
   useEffect(() => {
+    console.log('🔄 useEffect running - childId:', childId);
     // Initialize question timer
     setQuestionStartTime(Date.now());
-
-    // Try to retry any failed submissions from previous sessions
-    retryFailedSubmissions();
-
-    return () => {
-      // Cleanup: Save current progress if user exits mid-exercise
-      if (exerciseResults.length > 0 && exerciseResults.length < OPPOSITES_EXERCISES.exercises.length) {
-        const partialSubmission = {
-          exerciseType: 'opposites',
-          activityId: 8,
-          childId: 'current-child-id',
-          partialResults: exerciseResults,
-          completed: false,
-          exitedAt: Date.now()
-        };
-
-        const partialSubmissions = JSON.parse(
-          localStorage.getItem('partialExerciseSubmissions') || '[]'
-        );
-        partialSubmissions.push(partialSubmission);
-        localStorage.setItem('partialExerciseSubmissions', JSON.stringify(partialSubmissions));
-      }
-    };
-  }, []);
-
-  // Retry mechanism for failed submissions
-  const retryFailedSubmissions = async () => {
-    const failedSubmissions = JSON.parse(
-      localStorage.getItem('pendingExerciseSubmissions') || '[]'
-    );
-
-    if (failedSubmissions.length === 0) return;
-
-    const successfulRetries: number[] = [];
-    const userToken = 'dummy-token'; // Would come from auth context
-
-    for (let i = 0; i < failedSubmissions.length; i++) {
-      try {
-        if (!session?.access_token) {
-          Alert.alert('Error', 'You must be authorized to perform this action');
-          return;
-        }
-        const response = await fetch('/api/exercise-completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify(failedSubmissions[i])
-        });
-
-        if (response.ok) {
-          successfulRetries.push(i);
-          console.log(`Successfully retried submission ${i}`);
-        }
-      } catch (error) {
-        console.log(`Retry ${i} failed, will try again later`);
-      }
+    // Fetch exercise data when component mounts
+    if (childId) {
+      console.log('✅ childId exists, calling fetchExerciseData');
+      fetchExerciseData(childId);
+    } else {
+      console.log('❌ No childId available, using fallback');
+      // Fallback for testing - replace 'test-child-123' with a valid ID
+      fetchExerciseData('test-child-123');
     }
-
-    // Remove successful retries from pending list
-    const remainingSubmissions = failedSubmissions.filter((_: any, index: number) =>
-      !successfulRetries.includes(index)
-    );
-    localStorage.setItem('pendingExerciseSubmissions', JSON.stringify(remainingSubmissions));
-  };
-
+  }, [childId]);
   const handleDrop = (isCorrect: boolean) => {
     if (answered) return;
-
-    const droppedOption = exercise.options.find(opt =>
-      isCorrect ? opt === exercise.correctAnswer : opt !== exercise.correctAnswer
+    
+    const droppedOption = question.options.find(opt => 
+      isCorrect ? opt === question.correctAnswer : opt !== question.correctAnswer
     );
 
     setSelectedOption(droppedOption || null);
     setAnswered(true);
-
-    // Record this answer for later submission
-    const questionEndTime = Date.now();
-    const timeSpent = questionEndTime - questionStartTime;
-
-    const resultEntry = {
-      questionId: exercise.id,
-      question: exercise.question,
-      correctAnswer: exercise.correctAnswer,
-      answerGiven: droppedOption || null,
-      isCorrect: isCorrect,
-      timeSpent: timeSpent,
-      startTime: questionStartTime
-    };
-
-    setExerciseResults(prev => [...prev, resultEntry]);
-
+    
     if (isCorrect) {
       setScore(score + 10);
       setShowCelebration(true);
@@ -455,19 +444,11 @@ export default function OppositesExercise() {
       params: { completedTaskId: 2 }
     });
 
-    // Submit all exercise data to backend after completion
-    /*
-
-    if (!session?.access_token) {
-      Alert.alert('Error', 'You must be authorized to perform this action');
-      return;
-    }
     try {
-      const response = await fetch('/api/exercise-completions', {
+      const response = await fetch(`${API_URL}/api/profile/${childId}/exercise`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify(exerciseSubmission)
       });
@@ -484,20 +465,6 @@ export default function OppositesExercise() {
 
     } catch (error) {
       console.error('Error submitting exercise:', error);
-
-      // Store locally for retry later
-      const failedSubmissions = JSON.parse(
-        localStorage.getItem('pendingExerciseSubmissions') || '[]'
-      );
-      failedSubmissions.push(exerciseSubmission);
-      localStorage.setItem('pendingExerciseSubmissions', JSON.stringify(failedSubmissions));
-
-      // Still allow navigation but show retry option
-      Alert.alert(
-        'Exercise Completed!',
-        'Your progress has been saved locally and will sync when connection is restored.',
-        [{ text: 'OK', onPress: () => router.push('/child-dashboard') }]
-      );
     }
     
   };
@@ -515,24 +482,7 @@ export default function OppositesExercise() {
         {
           text: "Skip",
           onPress: () => {
-            // Record skip as incorrect answer
-            const questionEndTime = Date.now();
-            const timeSpent = questionEndTime - questionStartTime;
-
-            const resultEntry = {
-              questionId: exercise.id,
-              question: exercise.question,
-              correctAnswer: exercise.correctAnswer,
-              answerGiven: null,
-              isCorrect: false,
-              timeSpent: timeSpent,
-              startTime: questionStartTime,
-              skipped: true
-            };
-
-            setExerciseResults(prev => [...prev, resultEntry]);
-
-            handleNextExercise();
+            handleNextQuestion();
           }
         }
       ]
@@ -557,9 +507,9 @@ export default function OppositesExercise() {
           <View style={styles.progressBar}>
             <View
               style={[
-                styles.progressFill,
-                { width: `${((currentExercise + 1) / OPPOSITES_EXERCISES.exercises.length) * 100}%` }
-              ]}
+                styles.progressFill, 
+                { width: `${((currentQuestion + 1) / OPPOSITES_EXERCISES.questions.length) * 100}%` }
+              ]} 
             />
           </View>
         </View>
