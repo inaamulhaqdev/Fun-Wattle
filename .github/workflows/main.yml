@@ -1,4 +1,4 @@
-# .github/workflows/ci.yml
+# .github/workflows/main.yml
 
 on:
   pull_request:
