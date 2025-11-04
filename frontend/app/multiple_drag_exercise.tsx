@@ -497,9 +497,6 @@ export default function MultipleDragExercise() {
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading Exercise...</Text>
-          <Text style={styles.loadingSubText}>
-            {exerciseId ? `Fetching questions for exercise ${exerciseId}` : 'Preparing questions'}
-          </Text>
         </View>
       </View>
     );
