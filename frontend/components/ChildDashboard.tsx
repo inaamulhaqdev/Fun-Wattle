@@ -14,6 +14,9 @@ interface Task {
   id: string;
   name: string;
   completed: boolean;
+  exerciseType?: string; // For routing to correct exercise component
+  exerciseId?: string;   // For passing to exercise component
+  description?: string;  // Exercise description
 }
 
 // Mascot data structure
@@ -32,9 +35,10 @@ const defaultTasks: Task[] = [
 ];
 
 // Function to fetch child's coin balance from backend
+/*
 const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: number) => void) => {
   try {
-    const response = await fetch(`${API_URL}/api/profile/${childId}/coins`, {
+    const response = await fetch(`${API_URL}/api/coins/${childId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -54,12 +58,13 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
     setCoinBalance(0);
   }
 };
+*/
 
-// Function to fetch assigned activities from backend
-const fetchAssignedActivities = async (childId: string, setTasks: (tasks: Task[]) => void) => {
+// Function to fetch exercises for a learning unit
+const fetchExercisesForLearningUnit = async (learningUnitId: string): Promise<any[]> => {
   try {
-    const url = `${API_URL}/api/assignments/${childId}`;
-    console.log('Fetching from URL:', url);
+    const url = `${API_URL}/api/exercises/${learningUnitId}/`;
+    console.log('Fetching exercises from URL:', url);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -67,50 +72,97 @@ const fetchAssignedActivities = async (childId: string, setTasks: (tasks: Task[]
         'Content-Type': 'application/json',
       },
     });
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
 
     if (response.ok) {
-      const data = await response.json();
-      console.log('Assigned activities data received:', data);
-      if (data.assignedActivities && Array.isArray(data.assignedActivities)) {
-        // Transform backend data to Task format
-        const transformedTasks: Task[] = data.assignedActivities.map((item: any) => ({
-          id: item.activityId || item.id,
-          name: item.activity?.name || item.name || 'unknown_activity',
-          completed: item.completed || false
-        }));
-        setTasks(transformedTasks);
-        console.log('Assigned activities fetched successfully:', transformedTasks);
-      } else {
-        console.warn('No assigned activities found, using default tasks');
-        setTasks(defaultTasks);
-      }
+      const exercises = await response.json();
+      console.log('Exercises fetched for learning unit', learningUnitId, ':', exercises);
+      return exercises;
     } else {
-      console.error('Failed to fetch assigned activities:', response.status, response.statusText);
-      
-      // Try to get error details from response body
-      try {
-        const errorText = await response.text();
-        console.error('Error response body:', errorText);
-      } catch (bodyError) {
-        console.error('Could not read error response body:', bodyError);
-      }
-      
-      console.log('Using default tasks due to API error');
-      setTasks(defaultTasks);
+      console.error('Failed to fetch exercises for learning unit', learningUnitId, ':', response.status);
+      return [];
     }
+  } catch (error) {
+    console.error('Error fetching exercises for learning unit', learningUnitId, ':', error);
+    return [];
+  }
+};
+
+// Function to fetch assigned learning units from backend
+const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task[]) => void) => {
+  console.log('fetching assigned learning units for childId:', childId); 
+  console.log('API_URL:', API_URL);
+  
+  try {
+    const assignmentsResponse = await fetch(`${API_URL}/api/assignments/${childId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Assignments response status:', assignmentsResponse.status);
+    console.log('Assignments response ok:', assignmentsResponse.ok);
+
+    if (!assignmentsResponse.ok) {
+      console.error('Failed to fetch assignments:', assignmentsResponse.status, assignmentsResponse.statusText);
+      try {
+        const errorText = await assignmentsResponse.text();
+        console.error('Assignments error response body:', errorText);
+      } catch (bodyError) {
+        console.error('Could not read assignments error response body:', bodyError);
+      }
+      console.log('Using default tasks due to assignments API error');
+      return;
+    }
+    const assignmentsData = await assignmentsResponse.json();
+    console.log('Assignments data received:', assignmentsData);
+
+    if (!Array.isArray(assignmentsData) || assignmentsData.length === 0) {
+      console.warn('No assignments found, using default tasks');
+      return;
+    }
+
+    // Extract unique learning unit IDs from assignments
+    const learningUnitIds = [...new Set(assignmentsData.map((assignment: any) => assignment.learning_unit))];
+    console.log('Learning unit IDs found:', learningUnitIds);
+
+    // Fetch exercises for each learning unit
+    const allExercises: any[] = [];
+    for (const learningUnitId of learningUnitIds) {
+      const exercises = await fetchExercisesForLearningUnit(learningUnitId);
+      allExercises.push(...exercises);
+    }
+
+    console.log('All exercises fetched:', allExercises);
+
+    // Transform exercises to Task format
+    if (allExercises.length > 0) {
+      const transformedTasks: Task[] = allExercises.map((exercise: any, index: number) => ({
+        id: exercise.id || `exercise-${index}`,
+        name: exercise.title || 'Untitled Exercise',
+        completed: false,
+        exerciseType: exercise.exercise_type || 'multiple_drag',
+        exerciseId: exercise.id,
+        description: exercise.description || ''
+      }));
+      
+      setTasks(transformedTasks);
+      console.log('Exercises transformed to tasks successfully:', transformedTasks);
+    } else {
+      console.warn('No exercises found for assigned learning units, using default tasks');
+    }
+
   } catch (error) {
     console.error('Network error fetching assigned activities:', error);
     console.log('Using default tasks due to network error');
-    setTasks(defaultTasks);
   }
 };
 
 // Function to fetch child's streak count from backend (currenty using hardocoded value)
+/*
 const fetchStreakCount = async (childId: string, setStreakCount: (count: number) => void) => {
   try {
-    const response = await fetch(`${API_URL}/api/profile/${childId}/streak`, {
+    const response = await fetch(`${API_URL}/api/streak/${childId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -128,6 +180,7 @@ const fetchStreakCount = async (childId: string, setStreakCount: (count: number)
     console.error('Error fetching streak count:', error);
   }
 };
+*/
 
 // Completed Task Image with shape-aware shadow and blooming animation
 const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
@@ -337,9 +390,10 @@ const ChildDashboard = () => {
   }, [tasks]);
 
   //Fetch mascot data from backend
+  /*
   const fetchMascotData = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/profile/${childId}/mascot`, {
+      const response = await fetch(`${API_URL}/api/mascot/${childId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -358,6 +412,7 @@ const ChildDashboard = () => {
       console.error('Error fetching mascot data:', error);
     }
   };
+  */
 
   // Load mascot data from route parameters
   useEffect(() => {
@@ -382,10 +437,10 @@ const ChildDashboard = () => {
     console.log('Using fallback?', !contextChildId);
     
     // Now childId will always have a value (either from context or fallback)
-    console.log('Calling fetchAssignedActivities with childId:', childId);
-    fetchAssignedActivities(childId, setTasks);
-    fetchCoinBalance(childId, setCoinBalance);
-    fetchStreakCount(childId, setStreakCount);
+    console.log('Calling fetchAssignedLearningUnit with childId:', childId);
+    fetchAssignedLearningUnit(childId, setTasks);
+    //fetchCoinBalance(childId, setCoinBalance);
+    //fetchStreakCount(childId, setStreakCount);
   }, [childId, contextChildId]);
 
   // Handle task completion from activity page with blooming animation
@@ -393,8 +448,6 @@ const ChildDashboard = () => {
     console.log('=== COMPLETION EFFECT TRIGGERED ===');
     console.log('completedTaskId received:', completedTaskId);
     console.log('Current tasks state:', tasksRef.current);
-
-    // UPDATE STREAK COUNTER IF TODAY's STREAK NOT YET UPDATED
 
     if (completedTaskId && typeof completedTaskId === 'string') {
       console.log('Processing completion for task ID:', completedTaskId);
@@ -474,15 +527,42 @@ const ChildDashboard = () => {
   const handleTaskPress = async (task: Task) => {
     if (task.completed) return;
     
-    // Navigate to the task with mascot data and activity data
+    console.log('=== TASK PRESSED ===');
+    console.log('Task:', task);
+    console.log('Exercise type:', task.exerciseType);
+    console.log('Exercise ID:', task.exerciseId);
+    
+    // Determine the route based on exercise type
+    let routePath = '/multiple_drag_exercise'; // default
+    if (task.exerciseType) {
+      switch (task.exerciseType) {
+        case 'multiple_drag':
+          routePath = '/multiple_drag_exercise';
+          break;
+        case 'multiple_select':
+          routePath = '/multiple_select_exercise';
+          break;
+        case 'speaking':
+          routePath = '/describe_exercise';
+          break;
+        case 'ordered_drag':
+          routePath = '/narrative-inferencing-ex2';
+          break;
+        default:
+          console.warn('Unknown exercise type:', task.exerciseType, 'using default route');
+          routePath = '/multiple_drag_exercise';
+      }
+    }
+    console.log('Navigating to:', routePath);
+    // Navigate to the exercise with exercise ID and mascot data
     router.push({
-      pathname: `/${task.name}` as any,
+      pathname: routePath as any,
       params: {
+        exerciseId: task.exerciseId || task.id,
         taskId: task.id,
         taskName: task.name,
         bodyType: mascotData.bodyType,
-        accessoryId: mascotData.accessoryId?.toString() || '',
-        activityData: task.activityData ? JSON.stringify(task.activityData) : ''
+        accessoryId: mascotData.accessoryId?.toString() || ''
       }
     });
   };

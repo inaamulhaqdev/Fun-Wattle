@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
 
@@ -23,119 +23,109 @@ interface Question {
   options: string[];
 }
 
+interface ApiQuestion {
+  id: string;
+  exercise: string;
+  order: number;
+  exercise_type: string;
+  question_data: string; // JSON string containing the question data
+}
+
 interface Exercise {
   id: number;
   title: string;
   questions: Question[];
 }
 
-//Fetch exercise data from backend
-const fetchExerciseData = async (childId: string) => {
+//Fetch questions for a specific exercise by ID
+const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise | null> => {
+  console.log('=== FETCHING QUESTIONS BY EXERCISE ID ===');
+  console.log('Exercise ID:', exerciseId);
+  console.log('API_URL:', API_URL);
+  
   try {
-    const response = await fetch(`${API_URL}/api/assignments/${childId}`, {
+    const url = `${API_URL}/api/questions/${exerciseId}/`;
+    console.log('Fetching questions from URL:', url);
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
-          'Content-Type': 'application/json',
+        'Content-Type': 'application/json',
       },
     });
-    if (response.ok) {
-      const assignments = await response.json();
-      if (Array.isArray(assignments) && assignments.length > 0) {
-        const firstAssignment = assignments[0];        
-        const mockExercise = {
-          id: firstAssignment.learning_unit,
-          title: "Multiple Drag Exercise",
-          questions: [
-            {
-              id: 1,
-              question: "What is the opposite of 'hot'?",
-              correctAnswer: "cold",
-              options: ["warm", "cold", "cool", "fire"]
-            },
-            {
-              id: 2,
-              question: "What is the opposite of 'big'?",
-              correctAnswer: "small",
-              options: ["huge", "large", "small", "tiny"]
-            },
-            {
-              id: 3,
-              question: "What is the opposite of 'happy'?",
-              correctAnswer: "sad",
-              options: ["sad", "young", "sweet", "bright"]
-            }
-          ]
-        };        
-        setQuestionData(mockExercise);
-      } else {
-        setFallbackExerciseData();
+
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+
+    if (!response.ok) {
+      console.error('Failed to fetch questions:', response.status, response.statusText);
+      
+      try {
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+      } catch (bodyError) {
+        console.error('Could not read error response body:', bodyError);
       }
-    } else {
-      const errorText = await response.text();
-      console.error('Error response body:', errorText);
-      setFallbackExerciseData();
+      
+      return null;
     }
+
+    const questionsData = await response.json();
+    console.log('Questions data received:', questionsData);
+
+    if (!Array.isArray(questionsData) || questionsData.length === 0) {
+      console.warn('No questions found for exercise:', exerciseId);
+      return null;
+    }
+
+    // Transform API questions to our Question format
+    const transformedQuestions: Question[] = questionsData
+      .sort((a: ApiQuestion, b: ApiQuestion) => a.order - b.order) // Sort by order
+      .map((apiQuestion: ApiQuestion, index: number) => {
+        try {
+          const questionData = JSON.parse(apiQuestion.question_data);
+          console.log(`Question ${index + 1} data:`, questionData);
+          
+          // Extract options text from the nested structure
+          const optionTexts = questionData.options?.map((option: any) => option.text) || [];
+          
+          // Find the correct answer from the options
+          const correctOption = questionData.options?.find((option: any) => option.correct === true);
+          const correctAnswer = correctOption?.text || optionTexts[0] || 'No answer';
+          
+          return {
+            id: index + 1,
+            question: questionData.question || 'Question not available',
+            correctAnswer: correctAnswer,
+            options: optionTexts
+          };
+        } catch (parseError) {
+          console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
+          return {
+            id: index + 1,
+            question: 'Error loading question',
+            correctAnswer: 'Error',
+            options: ['Error', 'Loading', 'Question']
+          };
+        }
+      });
+
+    const exercise: Exercise = {
+      id: parseInt(exerciseId) || 1,
+      title: 'Multiple Drag Exercise',
+      questions: transformedQuestions
+    };
+
+    console.log('Transformed exercise:', exercise);
+    return exercise;
+
   } catch (error) {
-    console.error('Error fetching question data:', error);
-    console.log('Using fallback exercise data due to network error');
-    setFallbackExerciseData();
+    console.error('Network error fetching questions:', error);
+    return null;
   }
 };
 
-// Fallback exercise data function
-const setFallbackExerciseData = () => {
-  const fallbackExercise = {
-    id: 1,
-    title: "Opposite Words (Fallback)",
-    questions: [
-      {
-        id: 1,
-        question: "What is the opposite of 'hot'?",
-        correctAnswer: "cold",
-        options: ["warm", "cold", "cool", "fire"]
-      },
-      {
-        id: 2,
-        question: "What is the opposite of 'big'?",
-        correctAnswer: "small",
-        options: ["huge", "large", "small", "tiny"]
-      },
-      {
-        id: 3,
-        question: "What is the opposite of 'happy'?",
-        correctAnswer: "sad",
-        options: ["sad", "young", "sweet", "bright"]
-      },
-      {
-        id: 4,
-        question: "What is the opposite of 'up'?",
-        correctAnswer: "down",
-        options: ["top", "high", "down", "above"]
-      },
-      {
-        id: 5,
-        question: "What is the opposite of 'light'?",
-        correctAnswer: "dark",
-        options: ["bright", "shine", "dark", "glow"]
-      }
-    ]
-  };
-  
-  console.log('Setting fallback exercise data:', fallbackExercise);
-  setQuestionData(fallbackExercise);
-};
 
-const OPPOSITES_EXERCISES : Exercise = {
-  id: 0,
-  title: "",
-  questions: []
-};
-const setQuestionData = (exercise: Exercise) => {
-  console.log('Fetched Questions:', exercise);
-  OPPOSITES_EXERCISES.title = exercise.title;
-  OPPOSITES_EXERCISES.id = exercise.id;
-  OPPOSITES_EXERCISES.questions = exercise.questions;
-}
 
 // Static exercise data for opposites
 /*
@@ -343,32 +333,83 @@ const DraggableOption: React.FC<DraggableOptionProps> = ({
 export default function MultipleDragExercise() {
   const router = useRouter();
   const { childId } = useApp();
+  const params = useLocalSearchParams();
+  const exerciseId = params.exerciseId as string;
+  
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [exercise, setExercise] = useState<Exercise | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [sessionStartTime] = useState(Date.now());
-  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
 
-  const question = OPPOSITES_EXERCISES.questions[currentQuestion];
+  // Fallback exercise data
+  const fallbackExercise: Exercise = useMemo(() => ({
+    id: 1,
+    title: "Opposite Words (Fallback)",
+    questions: [
+      {
+        id: 1,
+        question: "What is the opposite of 'hot'?",
+        correctAnswer: "cold",
+        options: ["warm", "cold", "cool", "fire"]
+      },
+      {
+        id: 2,
+        question: "What is the opposite of 'big'?",
+        correctAnswer: "small",
+        options: ["huge", "large", "small", "tiny"]
+      },
+      {
+        id: 3,
+        question: "What is the opposite of 'happy'?",
+        correctAnswer: "sad",
+        options: ["sad", "young", "sweet", "bright"]
+      }
+    ]
+  }), []);
+
+  // Use dynamic exercise data or fallback to static data
+  const currentExercise = exercise || fallbackExercise;
+  
+  // Safe access to current question
+  const question = currentExercise?.questions?.[currentQuestion] || null;
 
   // Initialize session and handle cleanup
   useEffect(() => {
-    console.log('🔄 useEffect running - childId:', childId);
-    // Initialize question timer
-    setQuestionStartTime(Date.now());
-    // Fetch exercise data when component mounts
-    if (childId) {
-      console.log('✅ childId exists, calling fetchExerciseData');
-      fetchExerciseData(childId);
-    } else {
-      console.log('❌ No childId available, using fallback');
-      // Fallback for testing - replace 'test-child-123' with a valid ID
-      fetchExerciseData('test-child-123');
-    }
-  }, [childId]);
+    const loadExerciseData = async () => {
+      console.log('useEffect running - exerciseId:', exerciseId);
+      console.log('useEffect running - childId:', childId);
+      
+      setIsLoading(true);
+      
+      // Try to fetch questions by exerciseId first
+      if (exerciseId) {
+        console.log('exerciseId exists, fetching questions by exercise ID:', exerciseId);
+        const fetchedExercise = await fetchQuestionsByExerciseId(exerciseId);
+        
+        if (fetchedExercise) {
+          console.log('Successfully loaded exercise data:', fetchedExercise);
+          setExercise(fetchedExercise);
+          setIsLoading(false);
+          return;
+        } else {
+          console.warn('Failed to load exercise data, trying fallback method');
+        }
+      }
+      
+      // Use fallback data if API fetch failed
+      console.log('Using fallback exercise data');
+      setExercise(fallbackExercise);
+      
+      setIsLoading(false);
+    };
+
+    loadExerciseData();
+  }, [childId, exerciseId, fallbackExercise]);
   const handleDrop = (isCorrect: boolean) => {
     if (answered) return;
     
@@ -406,13 +447,12 @@ export default function MultipleDragExercise() {
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestion < OPPOSITES_EXERCISES.questions.length - 1) {
+    if (currentQuestion < currentExercise.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setAnswered(false);
       setSelectedOption(null);
 
-      //Reset question timer for next question
-      setQuestionStartTime(Date.now());
+
     } else {
       completeActivity();
     }
@@ -424,17 +464,12 @@ export default function MultipleDragExercise() {
     const totalSessionTime = sessionEndTime - sessionStartTime;
 
     const exerciseSubmission = {
-      exerciseType: 'opposites',
-      activityId: OPPOSITES_EXERCISES.id, 
-      childId: childId,
-      sessionStartTime: sessionStartTime,
-      sessionEndTime: sessionEndTime,
-      totalTimeSpent: totalSessionTime,
-      totalQuestions: OPPOSITES_EXERCISES.questions.length,
+      score: score,
+      totalQuestions: currentExercise.questions.length,
       correctAnswers: score,
-      incorrectAnswers: OPPOSITES_EXERCISES.questions.length - score,
-      accuracy: Math.round((score / OPPOSITES_EXERCISES.questions.length) * 100),
-      completed: true
+      incorrectAnswers: currentExercise.questions.length - score,
+      accuracy: Math.round((score / currentExercise.questions.length) * 100),
+      sessionTime: totalSessionTime
     };
 
     // *** Remove this navigation after backend is complete. ***
@@ -489,6 +524,40 @@ export default function MultipleDragExercise() {
     );
   };
 
+  // Show loading state while fetching questions
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading Exercise...</Text>
+          <Text style={styles.loadingSubText}>
+            {exerciseId ? `Fetching questions for exercise ${exerciseId}` : 'Preparing questions'}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Show error state if no questions available
+  if (!question || !currentExercise?.questions?.length) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>No Questions Available</Text>
+          <Text style={styles.errorSubText}>
+            Unable to load questions for this exercise.
+          </Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>← Back to Dashboard</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -502,13 +571,13 @@ export default function MultipleDragExercise() {
 
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
-            Question {currentQuestion + 1} of {OPPOSITES_EXERCISES.questions.length}
+            Question {currentQuestion + 1} of {currentExercise.questions.length}
           </Text>
           <View style={styles.progressBar}>
             <View
               style={[
                 styles.progressFill, 
-                { width: `${((currentQuestion + 1) / OPPOSITES_EXERCISES.questions.length) * 100}%` }
+                { width: `${((currentQuestion + 1) / currentExercise.questions.length) * 100}%` }
               ]} 
             />
           </View>
@@ -814,6 +883,42 @@ const styles = StyleSheet.create({
   celebrationSubtext: {
     fontSize: 18,
     color: '#666',
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  loadingText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  loadingSubText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  errorText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  errorSubText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16,
     textAlign: 'center',
   },
 });
