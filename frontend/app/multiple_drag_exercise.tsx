@@ -533,7 +533,10 @@ export default function MultipleDragExercise() {
 
 
     // Navigate back to dashboard after submission (regardless of API success for now)
-    router.push('/child-dashboard');
+    router.push({
+      pathname: '/child-dashboard',
+      params: { completedTaskId: exerciseId }
+    });
     
   };
 

@@ -61,7 +61,7 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
 */
 
 // Function to fetch exercises for a learning unit
-const fetchExercisesForLearningUnit = async (learningUnitId: string): Promise<any[]> => {
+const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: string): Promise<any[]> => {
   try {
     const url = `${API_URL}/api/exercises/${learningUnitId}/`;
     console.log('Fetching exercises from URL:', url);
@@ -76,7 +76,47 @@ const fetchExercisesForLearningUnit = async (learningUnitId: string): Promise<an
     if (response.ok) {
       const exercises = await response.json();
       console.log('Exercises fetched for learning unit', learningUnitId, ':', exercises);
-      return exercises;
+      
+      // For each exercise, check if it has results (meaning it's completed)
+      const exercisesWithCompletionStatus = await Promise.all(
+        exercises.map(async (exercise: any) => {
+          try {
+            const resultsUrl = `${API_URL}/api/results/${childId}/exercise/${exercise.id}/`;
+            console.log('Checking completion status for exercise:', exercise.id, 'at URL:', resultsUrl);
+            
+            const resultsResponse = await fetch(resultsUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            let isCompleted = false;
+            if (resultsResponse.ok) {
+              const results = await resultsResponse.json();
+              // If there are any results, the exercise is completed
+              isCompleted = Array.isArray(results) && results.length > 0;
+              console.log('Exercise', exercise.id, 'completion status:', isCompleted, 'Results:', results);
+            } else {
+              console.log('No results found for exercise', exercise.id, '- treating as incomplete');
+            }
+
+            return {
+              ...exercise,
+              completed: isCompleted
+            };
+          } catch (error) {
+            console.error('Error checking completion status for exercise', exercise.id, ':', error);
+            return {
+              ...exercise,
+              completed: false
+            };
+          }
+        })
+      );
+      
+      console.log('Exercises with completion status:', exercisesWithCompletionStatus);
+      return exercisesWithCompletionStatus;
     } else {
       console.error('Failed to fetch exercises for learning unit', learningUnitId, ':', response.status);
       return [];
@@ -129,7 +169,7 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
     // Fetch exercises for each learning unit
     const allExercises: any[] = [];
     for (const learningUnitId of learningUnitIds) {
-      const exercises = await fetchExercisesForLearningUnit(learningUnitId);
+      const exercises = await fetchExercisesForLearningUnit(learningUnitId, childId);
       allExercises.push(...exercises);
     }
 
@@ -140,7 +180,7 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
       const transformedTasks: Task[] = allExercises.map((exercise: any, index: number) => ({
         id: exercise.id || `exercise-${index}`,
         name: exercise.title || 'Untitled Exercise',
-        completed: false,
+        completed: exercise.completed || false,
         exerciseType: exercise.exercise_type || 'multiple_drag',
         exerciseId: exercise.id,
         description: exercise.description || ''
