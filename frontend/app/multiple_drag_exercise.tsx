@@ -503,6 +503,7 @@ export default function MultipleDragExercise() {
     }
 
     // Submit to backend
+    /*
     try {
       const response = await fetch(`${API_URL}/api/results/${childId}/exercise/${exerciseId}/`, {
         method: 'POST',
@@ -528,6 +529,11 @@ export default function MultipleDragExercise() {
     } catch (error) {
       console.error('Error submitting exercise:', error);
     }
+    */
+
+
+    // Navigate back to dashboard after submission (regardless of API success for now)
+    router.push('/child-dashboard');
     
   };
 
