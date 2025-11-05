@@ -494,9 +494,9 @@ const ChildDashboard = () => {
     //fetchStreakCount(childId, setStreakCount);
   }, [childId, contextChildId]);
 
-  // Auto-scroll to center the next incomplete task when dashboard loads
+  // Auto-scroll to center the next incomplete task when dashboard loads (NOT during completion)
   useEffect(() => {
-    if (!isLoading && tasks.length > 0) {
+    if (!isLoading && tasks.length > 0 && !completedTaskId && !bloomingTaskId) {
       // Find the next incomplete task
       const nextIncompleteIndex = tasks.findIndex(t => !t.completed);
       console.log('Dashboard loaded - auto centering next incomplete task at index:', nextIncompleteIndex);
@@ -504,9 +504,9 @@ const ChildDashboard = () => {
       if (scrollViewRef.current && nextIncompleteIndex !== -1) {
         // Add a delay to ensure UI is fully rendered before scrolling
         const autoScrollTimeout = setTimeout(() => {
-          const nextTaskPosition = nextIncompleteIndex * 200;
+          const nextTaskPosition = nextIncompleteIndex * 400;
           const centerOffset = nextTaskPosition - (screenHeight / 2) + 100 + 20; // Account for content top offset
-          console.log('Auto-centering to position:', centerOffset, 'for task index:', nextIncompleteIndex);
+          console.log('Initial auto-centering to position:', centerOffset, 'for task index:', nextIncompleteIndex);
           console.log('Task position:', nextTaskPosition, 'Screen height:', screenHeight);
           
           scrollViewRef.current?.scrollTo({
@@ -518,7 +518,7 @@ const ChildDashboard = () => {
         return () => clearTimeout(autoScrollTimeout);
       }
     }
-  }, [isLoading, tasks, screenHeight]);
+  }, [isLoading, tasks, screenHeight, completedTaskId, bloomingTaskId]);
 
   // Handle task completion from activity page with blooming animation
   useEffect(() => {
