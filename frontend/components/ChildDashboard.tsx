@@ -5,8 +5,8 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Svg, { Path } from 'react-native-svg';
 import { router, useLocalSearchParams } from 'expo-router';
-import { API_URL } from '../config/api'; // Commented out - using route params instead
-import { useApp } from "@/context/AppContext";
+import { useApp } from '@/context/AppContext';
+import { API_URL } from '@/config/api';
 
 
 // Task data structure
@@ -15,6 +15,9 @@ interface Task {
   assignmentId: string;
   name: string;
   completed: boolean;
+  exerciseType?: string; // For routing to correct exercise component
+  exerciseId?: string;   // For passing to exercise component
+  description?: string;  // Exercise description
 }
 
 // Mascot data structure
@@ -23,69 +26,206 @@ interface MascotData {
   accessoryId?: number;
 }
 
-// Sample tasks -
-/* const sampleTasks: Task[] = [
+// Default tasks (fallback if API fails)
+const defaultTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
-  { id: '2', name: 'describe_exercise', completed: false },
-  { id: '3', name: 'opposites_exercise', completed: false },
+  { id: '2', name: 'multiple_drag_exercise', completed: false },
+  { id: '3', name: 'describe_exercise', completed: false },
   { id: '4', name: 'activity4', completed: false },
   { id: '5', name: 'activity5', completed: false },
 ]; */
 
-// Function to fetch child's coin balance from backend (currenty using hardocoded value)
-// const fetchCoinBalance = async () => {
-//       if (!session?.access_token) {
-//         Alert.alert('Error', 'You must be authorized to perform this action');
-//         return;
-//       }
-//   try {
-//     const response = await fetch(`${API_URL}/api/children/current/coins`, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-// 'Authorization': `Bearer ${session?.access_token}`
-//       },
-//     });
+// Function to fetch child's coin balance from backend
+/*
+const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: number) => void) => {
+  try {
+    const response = await fetch(`${API_URL}/api/coins/${childId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-//     if (response.ok) {
-//       const data = await response.json();
-//       setCoinBalance(data.coins || 0);
-//       console.log('Coin balance fetched successfully:', data.coins);
-//     } else {
-//       console.warn('Failed to fetch coin balance:', response.status);
-//     }
-//   } catch (error) {
-//     console.error('Error fetching coin balance:', error);
-//   }
-// };
+    if (response.ok) {
+      const data = await response.json();
+      setCoinBalance(data.coins || 0);
+      console.log('Coin balance fetched successfully:', data.coins);
+    } else {
+      console.warn('Failed to fetch coin balance:', response.status);
+      setCoinBalance(0);
+    }
+  } catch (error) {
+    console.error('Error fetching coin balance:', error);
+    setCoinBalance(0);
+  }
+};
+*/
+
+// Function to fetch exercises for a learning unit
+const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: string): Promise<any[]> => {
+  try {
+    const url = `${API_URL}/api/exercises/${learningUnitId}/`;
+    console.log('Fetching exercises from URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const exercises = await response.json();
+      console.log('Exercises fetched for learning unit', learningUnitId, ':', exercises);
+      
+      // For each exercise, check if it has results (meaning it's completed)
+      const exercisesWithCompletionStatus = await Promise.all(
+        exercises.map(async (exercise: any) => {
+          try {
+            const resultsUrl = `${API_URL}/api/results/${childId}/exercise/${exercise.id}/`;
+            console.log('Checking completion status for exercise:', exercise.id, 'at URL:', resultsUrl);
+            
+            const resultsResponse = await fetch(resultsUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            let isCompleted = false;
+            if (resultsResponse.ok) {
+              const results = await resultsResponse.json();
+              // If there are any results, the exercise is completed
+              isCompleted = Array.isArray(results) && results.length > 0;
+              console.log('Exercise', exercise.id, 'completion status:', isCompleted, 'Results:', results);
+            } else {
+              console.log('No results found for exercise', exercise.id, '- treating as incomplete');
+            }
+
+            return {
+              ...exercise,
+              completed: isCompleted
+            };
+          } catch (error) {
+            console.error('Error checking completion status for exercise', exercise.id, ':', error);
+            return {
+              ...exercise,
+              completed: false
+            };
+          }
+        })
+      );
+      
+      console.log('Exercises with completion status:', exercisesWithCompletionStatus);
+      return exercisesWithCompletionStatus;
+    } else {
+      console.error('Failed to fetch exercises for learning unit', learningUnitId, ':', response.status);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching exercises for learning unit', learningUnitId, ':', error);
+    return [];
+  }
+};
+
+// Function to fetch assigned learning units from backend
+const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task[]) => void, setIsDataLoaded: (loaded: boolean) => void) => {
+  console.log('fetching assigned learning units for childId:', childId); 
+  console.log('API_URL:', API_URL);
+  
+  try {
+    const assignmentsResponse = await fetch(`${API_URL}/api/assignments/${childId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Assignments response status:', assignmentsResponse.status);
+    console.log('Assignments response ok:', assignmentsResponse.ok);
+
+    if (!assignmentsResponse.ok) {
+      console.error('Failed to fetch assignments:', assignmentsResponse.status, assignmentsResponse.statusText);
+      try {
+        const errorText = await assignmentsResponse.text();
+        console.error('Assignments error response body:', errorText);
+      } catch (bodyError) {
+        console.error('Could not read assignments error response body:', bodyError);
+      }
+      console.log('Using default tasks due to assignments API error');
+      return;
+    }
+    const assignmentsData = await assignmentsResponse.json();
+    console.log('Assignments data received:', assignmentsData);
+
+    if (!Array.isArray(assignmentsData) || assignmentsData.length === 0) {
+      console.warn('No assignments found, using default tasks');
+      return;
+    }
+
+    // Extract unique learning unit IDs from assignments
+    const learningUnitIds = [...new Set(assignmentsData.map((assignment: any) => assignment.learning_unit))];
+    console.log('Learning unit IDs found:', learningUnitIds);
+
+    // Fetch exercises for each learning unit
+    const allExercises: any[] = [];
+    for (const learningUnitId of learningUnitIds) {
+      const exercises = await fetchExercisesForLearningUnit(learningUnitId, childId);
+      allExercises.push(...exercises);
+    }
+
+    console.log('All exercises fetched:', allExercises);
+
+    // Transform exercises to Task format
+    if (allExercises.length > 0) {
+      const transformedTasks: Task[] = allExercises.map((exercise: any, index: number) => ({
+        id: exercise.id || `exercise-${index}`,
+        name: exercise.title || 'Untitled Exercise',
+        completed: exercise.completed || false,
+        exerciseType: exercise.exercise_type || 'multiple_drag',
+        exerciseId: exercise.id,
+        description: exercise.description || ''
+      }));
+      
+      setTasks(transformedTasks);
+      console.log('Exercises transformed to tasks successfully:', transformedTasks);
+    } else {
+      console.warn('No exercises found for assigned learning units, using default tasks');
+    }
+
+  } catch (error) {
+    console.error('Network error fetching assigned activities:', error);
+    console.log('Using default tasks due to network error');
+  } finally {
+    // Set data loaded to true when data fetching is complete
+    setIsDataLoaded(true);
+    console.log('Data loading completed');
+  }
+};
 
 // Function to fetch child's streak count from backend (currenty using hardocoded value)
-// const fetchStreakCount = async () => {
-//       if (!session?.access_token) {
-//         Alert.alert('Error', 'You must be authorized to perform this action');
-//         return;
-//       }
-//   try {
-//     const response = await fetch(`${API_URL}/api/children/current/streak`, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-// 'Authorization': `Bearer ${session?.access_token}`
-//       },
-//     });
+/*
+const fetchStreakCount = async (childId: string, setStreakCount: (count: number) => void) => {
+  try {
+    const response = await fetch(`${API_URL}/api/streak/${childId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-//     if (response.ok) {
-//       const data = await response.json();
-//       setStreakCount(data.streak || 0);
-//       console.log('Streak count fetched successfully:', data.streak);
-//     } else {
-//       console.warn('Failed to fetch streak count:', response.status);
-//     }
-//   } catch (error) {
-//     console.error('Error fetching streak count:', error);
-//   }
-// };
-
+    if (response.ok) {
+      const data = await response.json();
+      setStreakCount(data.streak || 0);
+      console.log('Streak count fetched successfully:', data.streak);
+    } else {
+      console.warn('Failed to fetch streak count:', response.status);
+    }
+  } catch (error) {
+    console.error('Error fetching streak count:', error);
+  }
+};
+*/
 
 // Completed Task Image with shape-aware shadow and blooming animation
 const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
@@ -269,50 +409,62 @@ const getMascotImages = (mascotData: MascotData) => {
 
 const ChildDashboard = () => {
   const { completedTaskId, bodyType, accessoryId } = useLocalSearchParams();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { childId: contextChildId } = useApp();
+  
+  // Fallback childId for testing if context doesn't provide one (must be a valid UUID)
+  const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; // Valid UUID format for testing
+  const childId = contextChildId || fallbackChildId;
+  
+  console.log('=== CHILDDASHBOARD COMPONENT LOADED ===');
+  console.log('Context childId:', contextChildId);
+  console.log('Fallback childId:', fallbackChildId);
+  console.log('Final childId being used:', childId);
+  
+  const [tasks, setTasks] = useState<Task[]>(defaultTasks);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
-  const [streakCount, setStreakCount] = useState(12); // HARDCODED - setStreakCount used in commented fetchStreakCount function
-  const [coinBalance, setCoinBalance] = useState(120); // HARDCODED - setCoinBalance used in commented fetchCoinBalance function
+  const [streakCount, setStreakCount] = useState(0);
+  const [coinBalance, setCoinBalance] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [isUIReady, setIsUIReady] = useState(false);
+  const [pendingBloomTaskId, setPendingBloomTaskId] = useState<string | null>(null);
+  const [loadedImagesCount, setLoadedImagesCount] = useState(0);
+  const [loadingStartTime] = useState(Date.now());
+  const [contentLayoutComplete, setContentLayoutComplete] = useState(false);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const tasksRef = React.useRef<Task[]>([]);
-
-  const { childId } = useApp();
-  console.log('Fetching assigned tasks for childId:', childId);
+  const tasksRef = React.useRef<Task[]>(defaultTasks);
 
   // Keep tasksRef in sync with tasks state
   React.useEffect(() => {
     tasksRef.current = tasks;
   }, [tasks]);
 
-  // Fetch mascot data from backend
-  // if (!session?.access_token) {
-  //   Alert.alert('Error', 'You must be authorized to perform this action');
-  //   return;
-  // }
-  //   try {
-  //     const response = await fetch(`${API_URL}/api/children/current/mascot`, {
-  //       method: 'GET',
-  //       headers: {
-  //          'Content-Type': 'application/json',
-  // 'Authorization': `Bearer ${session?.access_token}`
-  //       },
-  //     });
+  //Fetch mascot data from backend
+  /*
+  const fetchMascotData = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/mascot/${childId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       if (data.mascot) {
-  //         setMascotData(data.mascot);
-  //       }
-  //     } else {
-  //       console.warn('Failed to fetch mascot data:', response.status);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching mascot data:', error);
-  //     // Keep default mascot on error
-  //   }
-  // };
+      if (response.ok) {
+        const data = await response.json();
+        if (data.mascot) {
+          setMascotData(data.mascot);
+        }
+      } else {
+        console.warn('Failed to fetch mascot data:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching mascot data:', error);
+    }
+  };
+  */
 
   // Load mascot data from route parameters
   useEffect(() => {
@@ -328,62 +480,26 @@ const ChildDashboard = () => {
     }
   }, [bodyType, accessoryId]);
 
-  // Load streak count on component mount (COMMENTED OUT - using hardcoded value instead)
-  // useEffect(() => {
-  //   fetchStreakCount();
-  // }, []);
-
-  // Fetch required tasks assigned to the child
+  // Load assigned activities, coin balance, and streak count on component mount
   useEffect(() => {
-    const fetchAssignedTasks = async () => {
-      try {
-        const [unitsResp, assignmentsResp] = await Promise.all([
-          fetch(`${API_URL}/api/learning_units/`, { method: 'GET' }),
-          fetch(`${API_URL}/api/assignments/${childId}`, { method: 'GET' })
-        ]);
-
-        if (!unitsResp.ok || !assignmentsResp.ok) {
-          throw new Error('Failed to fetch data');
-        }
-
-        const allUnits = await unitsResp.json();
-        const childAssignments = await assignmentsResp.json();
-
-        const unitMap: Record<string, any> = {};
-        allUnits.forEach((unit: any) => {
-            unitMap[unit.id] = unit;
-        });
-
-        // Filter for required units and format accordingly
-        const requiredAssignments = childAssignments.filter(
-          (a: any) => a.participation_type === 'required'
-        );
-
-        const formattedTasks: Task[] = requiredAssignments.map((assignment: any) => {
-          const unit = unitMap[assignment.learning_unit];
-          return {
-            id: unit.id,
-            assignmentId: assignment.id,
-            name: unit.title,
-            completed: assignment.completed_at !== null,
-            // type: unit.exercise_type
-          };
-        });
-
-        setTasks(formattedTasks);
-
-      } catch (err) {
-        console.error('Error fetching assigned tasks:', err);
-      }
-    };
-
-    fetchAssignedTasks();
-  }, [childId]);
+    console.log('=== CHILD DASHBOARD USEEFFECT TRIGGERED ===');
+    console.log('childId value:', childId);
+    console.log('childId type:', typeof childId);
+    console.log('Context childId:', contextChildId);
+    console.log('Using fallback?', !contextChildId);
+    
+    // Now childId will always have a value (either from context or fallback)
+    console.log('Calling fetchAssignedLearningUnit with childId:', childId);
+    fetchAssignedLearningUnit(childId, setTasks, setIsDataLoaded);
+    //fetchCoinBalance(childId, setCoinBalance);
+    //fetchStreakCount(childId, setStreakCount);
+  }, [childId, contextChildId]);
 
   // Handle task completion from activity page with blooming animation
   useEffect(() => {
     console.log('=== COMPLETION EFFECT TRIGGERED ===');
     console.log('completedTaskId received:', completedTaskId);
+    console.log('isLoading:', isLoading);
     console.log('Current tasks state:', tasksRef.current);
 
     if (completedTaskId && typeof completedTaskId === 'string') {
@@ -393,6 +509,13 @@ const ChildDashboard = () => {
       const currentTask = tasksRef.current.find(task => task.id === completedTaskId);
       if (currentTask?.completed) {
         console.log('Task already completed, skipping...');
+        return;
+      }
+
+      // If still loading, store the pending bloom task ID
+      if (isLoading) {
+        console.log('Still loading, storing pending bloom task:', completedTaskId);
+        setPendingBloomTaskId(completedTaskId);
         return;
       }
 
@@ -422,7 +545,7 @@ const ChildDashboard = () => {
           const updatedTasks = prevTasks.map(task => {
             if (task.id === completedTaskId) {
               console.log('Marking task as completed:', task);
-              return { ...task, completed: true };
+              return { ...task, completed: true, completedAt: new Date().toISOString() };
             }
             return task;
           });
@@ -457,83 +580,180 @@ const ChildDashboard = () => {
 
       return () => clearTimeout(completionTimeout);
     }
-  }, [completedTaskId, screenHeight]);
+  }, [completedTaskId, screenHeight, childId, isLoading]);
+
+  // Monitor UI readiness after data loads
+  useEffect(() => {
+    if (isDataLoaded && !isUIReady) {
+      // Wait for critical images to load (background + mascot) + extra time for UI rendering
+      const expectedImages = mascotData.accessoryId ? 3 : 2; // background + mascot + optional accessory
+      
+      const completeLoading = () => {
+        const elapsedTime = Date.now() - loadingStartTime;
+        const minimumLoadingTime = 3000; // 3 seconds minimum to allow for full UI rendering
+        const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
+        
+        setTimeout(() => {
+          console.log('Loading completed after minimum time with UI buffer');
+          setIsUIReady(true);
+          setIsLoading(false);
+        }, remainingTime);
+      };
+      
+      // Check if critical images and content layout are ready
+      const criticalElementsReady = 
+        loadedImagesCount >= expectedImages && 
+        contentLayoutComplete;
+      
+      if (criticalElementsReady) {
+        // Critical elements loaded, but ensure minimum loading time + UI render buffer
+        const bufferTimeout = setTimeout(() => {
+          console.log('Critical elements loaded, adding UI render buffer');
+          completeLoading();
+        }, 1500); // Longer buffer to ensure all UI elements finish rendering
+        return () => clearTimeout(bufferTimeout);
+      } else {
+        // Fallback timeout in case elements don't fire events
+        const fallbackTimeout = setTimeout(() => {
+          console.log('Fallback timeout - assuming UI is ready');
+          console.log('Status: images:', loadedImagesCount, 'expected:', expectedImages, 'layout:', contentLayoutComplete);
+          completeLoading();
+        }, 6000); // Even longer fallback to be safe
+        return () => clearTimeout(fallbackTimeout);
+      }
+    }
+  }, [isDataLoaded, isUIReady, loadedImagesCount, mascotData.accessoryId, loadingStartTime, contentLayoutComplete]);
+
+  // Helper function to handle image loading
+  const handleImageLoad = (imageName: string) => {
+    console.log(`Image loaded: ${imageName}`);
+    setLoadedImagesCount(prev => prev + 1);
+  };
+
+  // Track when content layout is complete
+  useEffect(() => {
+    if (tasks.length > 0 && isDataLoaded && !contentLayoutComplete) {
+      // Give time for all UI elements to render after tasks load
+      const layoutTimeout = setTimeout(() => {
+        console.log('Content layout should be complete');
+        setContentLayoutComplete(true);
+      }, 2500); // Allow time for SVG, task images, and layout calculations
+      return () => clearTimeout(layoutTimeout);
+    }
+  }, [tasks, isDataLoaded, contentLayoutComplete]);
+
+  // Handle pending bloom animation after loading completes
+  useEffect(() => {
+    if (!isLoading && pendingBloomTaskId) {
+      console.log('Loading completed, triggering pending bloom animation for:', pendingBloomTaskId);
+      
+      // Find the completed task index for scrolling
+      const completedTaskIndex = tasksRef.current.findIndex(task => task.id === pendingBloomTaskId);
+      console.log('Task index found:', completedTaskIndex);
+
+      // Scroll to center the blooming flower
+      if (scrollViewRef.current && completedTaskIndex !== -1) {
+        const taskPosition = completedTaskIndex * 200;
+        const centerOffset = taskPosition - (screenHeight / 2) + 100;
+        console.log('Scrolling to position:', centerOffset);
+        scrollViewRef.current.scrollTo({
+          y: Math.max(0, centerOffset),
+          animated: true
+        });
+      }
+      
+      setBloomingTaskId(pendingBloomTaskId);
+
+      // Update the task to completed and trigger blooming animation
+      const completionTimeout = setTimeout(() => {
+        console.log('=== EXECUTING PENDING TASK COMPLETION ===');
+        console.log('Updating tasks, marking task', pendingBloomTaskId, 'as completed');
+
+        setTasks(prevTasks => {
+          console.log('Previous tasks:', prevTasks);
+          const updatedTasks = prevTasks.map(task => {
+            if (task.id === pendingBloomTaskId) {
+              console.log('Marking task as completed:', task);
+              return { ...task, completed: true, completedAt: new Date().toISOString() };
+            }
+            return task;
+          });
+          console.log('Updated tasks after completion:', updatedTasks);
+          return updatedTasks;
+        });
+
+        // After blooming animation, scroll to next incomplete task
+        setTimeout(() => {
+          const currentTasks = tasksRef.current;
+          const nextIncompleteIndex = currentTasks.findIndex(t => !t.completed);
+          console.log('Next incomplete task index:', nextIncompleteIndex);
+
+          if (scrollViewRef.current && nextIncompleteIndex !== -1) {
+            const nextTaskPosition = nextIncompleteIndex * 200;
+            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
+            console.log('Scrolling to next task at position:', nextCenterOffset);
+            scrollViewRef.current.scrollTo({
+              y: Math.max(0, nextCenterOffset),
+              animated: true
+            });
+          }
+        }, 2000);
+
+        // Clear the blooming and pending states after animation completes
+        setTimeout(() => {
+          console.log('Clearing blooming and pending states');
+          setBloomingTaskId(null);
+          setPendingBloomTaskId(null);
+        }, 2000);
+      }, 500); // Short delay to ensure UI is fully rendered
+
+      return () => clearTimeout(completionTimeout);
+    }
+  }, [isLoading, pendingBloomTaskId, screenHeight]);
 
 
 
   const handleTaskPress = async (task: Task) => {
     if (task.completed) return;
-
-    const slugify = (title: string) => {
-      return title
-        .toLowerCase() 
-        .replace(/\s+/g, '_')
-        .replace(/[^\w_]/g, '');
-    };
-
-    const exercise = slugify(task.name);
-
-    // Navigate directly to the task with mascot data
-      router.push({
-        pathname: `/${exercise}` as any,
-        params: { 
-          taskId: task.id, 
-          // exerciseId: firstExercise.id,
-          assignmentId: task.assignmentId,
-          taskName: task.name,
-          bodyType: mascotData.bodyType,
-          accessoryId: mascotData.accessoryId?.toString() || '',
-        }
-      });
-
-    /* try {
-      const response = await fetch(`${API_URL}/api/exercises/${task.id}/`, { method: 'GET' });
-      if (!response.ok) throw new Error(`Failed to fetch exercises (${response.status})`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch exercises (${response.status})`);
+    
+    console.log('=== TASK PRESSED ===');
+    console.log('Task:', task);
+    console.log('Exercise type:', task.exerciseType);
+    console.log('Exercise ID:', task.exerciseId);
+    
+    // Determine the route based on exercise type
+    let routePath = '/multiple_drag_exercise'; // default
+    if (task.exerciseType) {
+      switch (task.exerciseType) {
+        case 'multiple_drag':
+          routePath = '/multiple_drag_exercise';
+          break;
+        case 'multiple_select':
+          routePath = '/multiple_select_exercise';
+          break;
+        case 'speaking':
+          routePath = '/describe_exercise';
+          break;
+        case 'ordered_drag':
+          routePath = '/narrative-inferencing-ex2';
+          break;
+        default:
+          console.warn('Unknown exercise type:', task.exerciseType, 'using default route');
+          routePath = '/multiple_drag_exercise';
       }
-
-      const exercises = await response.json();
-
-      // ✅ Find first exercise (order === 1)
-      const firstExercise = exercises.find((ex: any) => ex.order === 1);
-
-      
-      
-    } catch (err) {
-      console.error('Error fetching assignments:', err);
-    } */
-    
-    
-    // REMEMEBER TO ADD IN AUTHORIZATION
-    // try {
-    //   const moduleId = 'some-module-id'; // TODO: Get actual module ID from props/context
-    //       if (!session?.access_token) {
-    //         Alert.alert('Error', 'You must be authorized to perform this action');
-    //         return;
-    //       }
-    //   const res = await fetch(`${API_URL}/api/modules/${moduleId}/activities`);
-    //   if (!res.ok) throw new Error('Failed to fetch activities');
-
-    //   const assignedActivities = await res.json();
-    //   const currentTask = assignedActivities.find((a: any) => a.activity.id === task.id);
-    //
-    //   if (currentTask) {
-    //     router.push({
-    //       pathname: `/${task.name}` as any,
-    //       params: {
-    //         taskId: task.id,
-    //         taskName: task.name,
-    //         bodyType: mascotData.bodyType,
-    //         accessoryId: mascotData.accessoryId?.toString() || '',
-    //         activityData: JSON.stringify(currentTask)
-    //       }
-    //     });
-    //   }
-    // } catch (err) {
-    //   console.error('Failed to fetch task data:', err);
-    // }
+    }
+    console.log('Navigating to:', routePath);
+    // Navigate to the exercise with exercise ID and mascot data
+    router.push({
+      pathname: routePath as any,
+      params: {
+        exerciseId: task.exerciseId || task.id,
+        taskId: task.id,
+        taskName: task.name,
+        bodyType: mascotData.bodyType,
+        accessoryId: mascotData.accessoryId?.toString() || ''
+      }
+    });
   };
 
   const handleMascotCustomization = () => {
@@ -558,6 +778,15 @@ const ChildDashboard = () => {
   const totalTasks = tasks.length;
   console.log('Tasks:', tasks);
 
+  // Show loading screen while data is being fetched
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Background Image */}
@@ -565,6 +794,9 @@ const ChildDashboard = () => {
         source={require('@/assets/images/child-dashboard-background.jpg')}
         style={styles.backgroundImage}
         resizeMode="cover"
+        onLoad={() => {
+          console.log('Background image loaded');
+        }}
       />
 
       {/* Header */}
@@ -591,6 +823,15 @@ const ChildDashboard = () => {
         showsVerticalScrollIndicator={false}
         style={styles.verticalScroll}
         contentContainerStyle={styles.scrollContent}
+        onLayout={() => {
+          console.log('ScrollView layout completed');
+          // Mark content layout as complete
+          if (!contentLayoutComplete) {
+            setTimeout(() => {
+              setContentLayoutComplete(true);
+            }, 300);
+          }
+        }}
       >
         {/* Green Wave Path */}
         <Svg
@@ -703,12 +944,14 @@ const ChildDashboard = () => {
                 source={bodyImage}
                 style={styles.mascotImage}
                 resizeMode="contain"
+                onLoad={() => handleImageLoad('mascot-body')}
               />
               {accessoryImage && (
                 <Image
                   source={accessoryImage}
                   style={[styles.mascotImage, styles.mascotAccessory]}
                   resizeMode="contain"
+                  onLoad={() => handleImageLoad('mascot-accessory')}
                 />
               )}
             </>
@@ -751,9 +994,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
     height: '100%',
-    zIndex: -1,
-    opacity: 0.3,
     filter: 'brightness(1.3)',
+    opacity: 0.5,
   },
 
   header: {
@@ -815,12 +1057,13 @@ const styles = StyleSheet.create({
   },
   verticalScroll: {
     flex: 1,
+    marginTop: '10%',
   },
   scrollContent: {
     position: 'relative',
-    minHeight: '100%',
+    height: '100%',
     left: -40,
-    top: -20,
+    top: -10,
   },
   sineWavePath: {
     position: 'absolute',
@@ -913,18 +1156,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   koalaContainer: {
-    position: 'fixed',
-    bottom: 120,
+    position: 'absolute',
+    bottom: 60,
     left: 90,
     height: 200,
     width: 400,
-    display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
   },
   mascotImage: {
-    width: 300,
-    height: 500,
+    width: 200,
+    height: 400,
     position: 'absolute',
     zIndex: 1,
   },
@@ -948,6 +1190,25 @@ const styles = StyleSheet.create({
   navButton: {
     alignItems: 'center',
     marginBottom: 10,
+  },
+  // Loading screen styles
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  loadingText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    marginBottom: 30,
+    textAlign: 'center',
   },
 });
 
