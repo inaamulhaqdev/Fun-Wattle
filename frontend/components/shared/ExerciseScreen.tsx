@@ -2,7 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { IconButton, Text } from 'react-native-paper';
 import { useLocalSearchParams, router } from 'expo-router';
-import NarrativeInferencingEx1 from '@/app/multiple_select';
+import NarrativeInferencingEx1 from '@/app/multiple_select_exercise';
 import NarrativeInferencingEx2 from '@/app/narrative-inferencing-ex2';
 
 export default function ExerciseScreen() {

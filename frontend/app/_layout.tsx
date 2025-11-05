@@ -80,6 +80,7 @@ export default function RootLayout() {
           <Stack.Screen name="child-stats" options={{ headerShown: false }} />
           <Stack.Screen name="activity" options={{ headerShown: false }} />
           <Stack.Screen name="multiple_drag_exercise" options={{ headerShown: false }} />
+          <Stack.Screen name="multiple_select_exercise" options={{ headerShown: false }} />
           <Stack.Screen name="describe_exercise" options={{ headerShown: false }} />
           <Stack.Screen name="mascot-customization" options={{ headerShown: false }} />
           <Stack.Screen name="(therapist-tabs)" options={{ headerShown: false }} />

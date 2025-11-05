@@ -59,16 +59,20 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
       return null;
     }
 
-    const questionsData = await response.json();
-    console.log('Questions data received:', questionsData);
-    console.log('First question structure:', questionsData[0]);
+    const exerciseData = await response.json();
+    console.log('Questions data received:', exerciseData);
+    console.log('First question structure:', exerciseData[0]);
 
-    if (!Array.isArray(questionsData) || questionsData.length === 0) {
+    if (!Array.isArray(exerciseData) || exerciseData.length === 0) {
       console.warn('No questions found for exercise:', exerciseId);
       return null;
     }
 
     // Transform the questions data to match our Exercise interface
+    // Each item in exerciseData has a question_data field containing the actual question
+    const questionsData = exerciseData.map(item => item.question_data);
+    console.log('Transformed questions:', questionsData);
+
     const exercise: Exercise = {
       title: 'Multiple Select Exercise',
       context: '',
@@ -138,20 +142,32 @@ export const MultipleSelect = () => {
   };
 
   const completeExercise = async () => {
+    if (!exercise) {
+      console.error('No exercise data available');
+      return;
+    }
+    
     try {
       console.log('Completing exercise with session info:', { childId, session });
       
+      const sessionEndTime = Date.now();
+      const totalSessionTime = sessionEndTime - sessionStartTime;
+
+      // Calculate correct answers from score (score is 10 points per correct answer)
+      const correctAnswers = score / 10;
+      const totalQuestions = exercise.questions.length;
+      
+      const accuracy = Math.max(0, Math.min(1, correctAnswers / totalQuestions));
+      const timeSpent = Math.max(0, Math.round(totalSessionTime / 60000));
+      
       const exerciseResult = {
-        exercise_id: exerciseId,
-        child_id: childId,
-        score: score,
-        time_taken: Date.now() - sessionStartTime,
-        completed_at: new Date().toISOString()
+        accuracy: accuracy,
+        time_spent: timeSpent
       };
 
       console.log('Submitting exercise result:', exerciseResult);
 
-      const response = await fetch(`${API_URL}/api/exercise-results/`, {
+      const response = await fetch(`${API_URL}/api/results/${childId}/exercise/${exerciseId}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,16 +178,16 @@ export const MultipleSelect = () => {
 
       if (response.ok) {
         console.log('Exercise result submitted successfully');
-        Alert.alert("Great job!", "You have finished all the questions!");
-        router.back();
+        router.push({
+          pathname: '/child-dashboard',
+          params: { completedTaskId: exerciseId }
+        });
       } else {
         console.error('Failed to submit exercise result:', response.status);
-        Alert.alert("Great job!", "You have finished all the questions!");
         router.back();
       }
     } catch (error) {
       console.error('Error submitting exercise result:', error);
-      Alert.alert("Great job!", "You have finished all the questions!");
       router.back();
     }
   }
