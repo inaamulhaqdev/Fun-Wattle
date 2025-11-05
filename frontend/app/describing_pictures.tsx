@@ -367,6 +367,12 @@ const DescribeExerciseComponent = () => {
     }
   }, [currentQuestion, pointerAnim, exercise.questions]);
 
+  useEffect(() => {
+    if (gptFeedback) {
+      handlePlayFeedback();
+    }
+  }, [gptFeedback]);
+
   // const submitExerciseResults = async () => {
   //   const sessionEndTime = Date.now();
   //   const totalSessionTime = sessionEndTime - sessionStartTime;
@@ -516,8 +522,7 @@ const DescribeExerciseComponent = () => {
 
         const data = await response.json();
         console.log('Audio successfully sent:', data);
-        setGptFeedback(data.feedback); // TODO: Remove when testing is complete
-
+        setGptFeedback(data.feedback);
 
         setExerciseResponses(prev => [
           ...prev,
@@ -690,35 +695,6 @@ const DescribeExerciseComponent = () => {
           />
         </View>
       </View>
-       {/* Show GPT feedback TODO: Remove when testing is complete! */}
-       {gptFeedback && (
-          <View style={{ alignItems: 'center', marginTop: 10 }}>
-            <Text
-              style={{
-                textAlign: 'center',
-                color: '#333',
-                fontSize: 16,
-                marginHorizontal: 20,
-              }}
-            >
-              {gptFeedback}
-            </Text>
-
-            {/* Hear button */}
-            <TouchableOpacity
-              style={{
-                marginTop: 8,
-                backgroundColor: '#4CAF50',
-                borderRadius: 20,
-                paddingVertical: 6,
-                paddingHorizontal: 14,
-              }}
-              onPress={handlePlayFeedback}
-            >
-              <Text style={{ color: 'white', fontWeight: '600' }}>Hear</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
       {/* Exercise image */}
       <View style={styles.imageContainer}>
