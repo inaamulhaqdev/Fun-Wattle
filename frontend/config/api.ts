@@ -11,6 +11,6 @@ const getApiUrl = () => {
 };
 
 // Use this if you are running docker for both frontend and backend
-export const API_URL = `https://funwattle-backend-v1.onrender.com`;
+export const API_URL = `https://funwattle-web-service.onrender.com`;
 // You can use this if you are just running docker for backend and frontend is local
 // export const API_URL = getApiUrl()
