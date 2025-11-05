@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import azure.cognitiveservices.speech as speechsdk
 from openai import AzureOpenAI
+from django.http import HttpResponse
 
 
 @api_view(['GET'])
@@ -246,6 +247,7 @@ def assess_speech(request):
 
         system_prompt = "You are an encouraging, friendly speech therapist helping children practice pronunciation. Ensure that you are providing constructive feedback on their pronunciation. Ensure you are following the professional and ethical speech pathologist guidelines when interacting with the child."
         user_prompt = f"""
+        Question asked: "{request.data.get('questionText')}"
         Child's speech: "{result.text}"
         Pronunciation Assessment Results: {json.dumps(pron_data, indent=2)}
         Give:
@@ -275,3 +277,59 @@ def assess_speech(request):
     finally:
         os.remove(temp_input.name)
         os.remove(temp_output_path)
+
+@api_view(['POST'])
+def text_to_speech(request):
+    """
+    Convert text to speech using Azure Speech with SSML for expressive style.
+    Request body: {"text": "Great job!", "voice": "en-AU-NatashaNeural", "style": "cheerful"}
+    """
+    text = request.data.get("text")
+    voice = request.data.get("voice", "en-AU-NatashaNeural")
+    style = request.data.get("style", "cheerful")
+
+    if not text:
+        return HttpResponse("Missing 'text' field", status=400)
+
+    # Azure Speech configuration
+    speech_config = speechsdk.SpeechConfig(
+        subscription=AZURE_SPEECH_KEY,
+        region=AZURE_SPEECH_REGION
+    )
+    speech_config.set_speech_synthesis_output_format(
+        speechsdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
+    )
+
+    #　SSML — Expressive voice style
+    ssml_text = f"""
+    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"
+           xmlns:mstts="https://www.w3.org/2001/mstts"
+           xml:lang="en-AU">
+        <voice name="{voice}">
+            <mstts:express-as style="{style}" styledegree="1.2">
+                {text}
+            </mstts:express-as>
+        </voice>
+    </speak>
+    """
+
+    # Generate audio from SSML
+    temp_output = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+    audio_output = speechsdk.audio.AudioOutputConfig(filename=temp_output.name)
+    synthesizer = speechsdk.SpeechSynthesizer(
+        speech_config=speech_config, audio_config=audio_output
+    )
+
+    result = synthesizer.speak_ssml_async(ssml_text).get()
+
+    if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
+        return HttpResponse("Speech synthesis failed", status=500)
+
+    with open(temp_output.name, "rb") as f:
+        audio_data = f.read()
+
+    os.remove(temp_output.name)
+
+    response = HttpResponse(audio_data, content_type="audio/mpeg")
+    response["Content-Disposition"] = "inline; filename=tts.mp3"
+    return response
