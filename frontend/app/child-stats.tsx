@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather, FontAwesome5, FontAwesome6, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { API_URL } from '../config/api';
+import { useApp } from "@/context/AppContext";
+
+// Task data structure
+interface Task {
+  id: string;
+  name: string;
+  completed: boolean;
+  description: string;
+}
 
 const StatsPage = () => {
   const navigation = useNavigation();
@@ -34,6 +44,55 @@ const StatsPage = () => {
   const handleSettings = () => {
     router.push('/child-settings');
   };
+
+  const { childId } = useApp();
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // Fetch recommended tasks assigned to the child
+  useEffect(() => {
+    const fetchAssignedTasks = async () => {
+      try {
+        const [unitsResp, assignmentsResp] = await Promise.all([
+          fetch(`${API_URL}/api/learning_units/`),
+          fetch(`${API_URL}/api/assignments/${childId}`)
+        ]);
+
+        if (!unitsResp.ok || !assignmentsResp.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const allUnits = await unitsResp.json();
+        const childAssignments = await assignmentsResp.json();
+
+        const unitMap: Record<string, any> = {};
+        allUnits.forEach((unit: any) => {
+          unitMap[unit.id] = unit;
+        });
+
+        // Filter for recommended units and format accordingly
+        const requiredAssignments = childAssignments.filter(
+          (a: any) => a.participation_type === 'recommended'
+        );
+
+        const formattedTasks: Task[] = requiredAssignments.map((assignment: any) => {
+          const unit = unitMap[assignment.learning_unit];
+          return {
+            id: unit.id,
+            name: unit.title,
+            completed: assignment.completed_at !== null,
+            description: unit.description
+          };
+        });
+
+        setTasks(formattedTasks);
+
+      } catch (err) {
+        console.error('Error fetching assigned tasks:', err);
+      }
+    };
+
+    fetchAssignedTasks();
+  }, [childId]);
 
   const StatCard = ({ title, value, subtitle, icon, backgroundColor }: {
     title: string;
@@ -161,6 +220,18 @@ const StatsPage = () => {
 
           {/* Recommended Exercises */}
           <View style={styles.recommendedSection}>
+          <Text style={styles.sectionTitle}>Recommended for You</Text>
+            {tasks.map((task) => (
+              <RecommendedExercise
+                key={task.id}
+                title={task.name}
+                description={task.description}
+                difficulty={"Medium"}
+                onPress={() => console.log(task.name)}
+              />
+            ))}
+          </View>
+          {/* <View style={styles.recommendedSection}>
             <Text style={styles.sectionTitle}>Recommended for You</Text>
             
             <RecommendedExercise
@@ -190,7 +261,7 @@ const StatsPage = () => {
               difficulty="Medium"
               onPress={() => console.log('Navigate to Creative Writing')}
             />
-          </View>
+          </View> */}
 
           {/* Bottom padding for scroll */}
           <View style={{ height: 100 }} />

@@ -2,17 +2,33 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Menu, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
-import Filters from "../../components/parent/Filters";
+import Filters from "../../components/home_screen/Filters";
 import { supabase } from '@/config/supabase';
 import { API_URL } from '@/config/api';
 import { Account } from '@/components/AccountSelectionPage';
+import { useApp } from '@/context/AppContext';
+import { useFocusEffect } from "expo-router";
+import { AssignedLearningUnit } from "@/types/learningUnitTypes";
+import { fetchUnitStats } from "@/components/util/fetchUnitStats";
+
+const formatDate = (isoString: string): string => {
+  const date = new Date(isoString);
+  
+  return date.toLocaleDateString("en-AU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
 
 export default function TherapistDashboard() {
+  const { childId, session } = useApp();
   const [loading, setLoading] = useState(true);
   const [therapistName, setTherapistName] = useState('');
   const [childList, setChildList] = useState<string[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
+  const [data, setData] = useState<AssignedLearningUnit[]>([]);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -58,6 +74,64 @@ export default function TherapistDashboard() {
 
     fetchProfiles();
   }, []);
+
+  const userId = session.user.id
+
+  // Get assignments
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchAssignments = async () => {
+        try {
+          setLoading(true);
+
+          const [unitsResp, assignmentsResp] = await Promise.all([
+            fetch(`${API_URL}/api/learning_units/`),
+            fetch(`${API_URL}/api/activities/${userId}/`)
+          ]);
+
+          if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');
+
+          const allUnits = await unitsResp.json();
+          const assignments = await assignmentsResp.json();
+
+          const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
+
+          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => {
+            const unit = allUnits.find((unit: any) => unit.id === assignment.learning_unit);
+            return {
+              assignmentId: assignment.id,
+              learningUnitId: assignment.learning_unit,
+              title: unit.title || '',
+              category: unit.category || '',
+              participationType: assignment.participation_type,
+              assignedDate: formatDate(assignment.assigned_at),
+            };
+          });
+
+          const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
+            assignedUnitsDetails.map(async (unit) => {
+              const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, childId);
+              return {
+                ...unit,
+                time: totalDuration,
+                status,
+              };
+            })
+          );
+
+          setData(assignedUnitsWithStats);
+
+        } catch (err) {
+          console.error(err);
+          Alert.alert('Error', 'Failed to load learning units.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchAssignments();
+    }, [childId, userId])
+  );
 
   if (loading) {
     return (
@@ -113,7 +187,7 @@ export default function TherapistDashboard() {
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
             )}
           </View>
-          {childList.length > 0 && <Filters />}
+          {childList.length > 0 && <Filters assignedUnits = { data } />}
         </View>
       </SafeAreaView>
     </PaperProvider>
