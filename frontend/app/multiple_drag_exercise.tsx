@@ -503,7 +503,6 @@ export default function MultipleDragExercise() {
     }
 
     // Submit to backend
-    /*
     try {
       const response = await fetch(`${API_URL}/api/results/${childId}/exercise/${exerciseId}/`, {
         method: 'POST',
@@ -524,19 +523,24 @@ export default function MultipleDragExercise() {
       console.log('Exercise submitted successfully:', result);
 
       // Navigate back to dashboard after successful submission
-      router.push('/child-dashboard');
+      router.push({
+        pathname: '/child-dashboard',
+        params: { completedTaskId: exerciseId }
+      });
 
     } catch (error) {
       console.error('Error submitting exercise:', error);
     }
-    */
+    
 
 
     // Navigate back to dashboard after submission (regardless of API success for now)
+    /*
     router.push({
       pathname: '/child-dashboard',
       params: { completedTaskId: exerciseId }
     });
+    */
     
   };
 
