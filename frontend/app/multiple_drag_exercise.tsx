@@ -299,7 +299,7 @@ const DraggableOption: React.FC<DraggableOptionProps> = ({
 
 export default function MultipleDragExercise() {
   const router = useRouter();
-  const { childId } = useApp();
+  const { childId, session } = useApp();
   const params = useLocalSearchParams();
   const exerciseId = params.exerciseId as string;
   
@@ -497,14 +497,10 @@ export default function MultipleDragExercise() {
       throw new Error('Child ID and Exercise ID are required');
     }
 
-    // *** Remove this navigation after backend is complete. ***
-    // temporary navigation to simulate completion
-    /*
-    router.push({
-      pathname: '/child-dashboard',
-      params: { completedTaskId: 2 }
-    });
-    */
+    if (!session?.access_token) {
+      console.error('Error', 'You must be authorized to perform this action');
+      return;
+    }
 
     // Submit to backend
     try {
@@ -512,6 +508,7 @@ export default function MultipleDragExercise() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify(exerciseSubmission)
       });
