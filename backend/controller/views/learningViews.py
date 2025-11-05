@@ -244,7 +244,7 @@ def assess_speech(request):
             api_key=AZURE_OPENAI_KEY,
         )
 
-        system_prompt = "You are a friendly speech therapist helping children practice pronunciation."
+        system_prompt = "You are an encouraging, friendly speech therapist helping children practice pronunciation. Ensure that you are providing constructive feedback on their pronunciation. Ensure you are following the professional and ethical speech pathologist guidelines when interacting with the child."
         user_prompt = f"""
         Child's speech: "{result.text}"
         Pronunciation Assessment Results: {json.dumps(pron_data, indent=2)}
