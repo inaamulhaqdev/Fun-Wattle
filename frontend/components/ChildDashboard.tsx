@@ -61,7 +61,7 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
 */
 
 // Function to fetch exercises for a learning unit
-const fetchExercisesForLearningUnit = async (learningUnitId: string): Promise<any[]> => {
+const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: string): Promise<any[]> => {
   try {
     const url = `${API_URL}/api/exercises/${learningUnitId}/`;
     console.log('Fetching exercises from URL:', url);
@@ -76,7 +76,47 @@ const fetchExercisesForLearningUnit = async (learningUnitId: string): Promise<an
     if (response.ok) {
       const exercises = await response.json();
       console.log('Exercises fetched for learning unit', learningUnitId, ':', exercises);
-      return exercises;
+      
+      // For each exercise, check if it has results (meaning it's completed)
+      const exercisesWithCompletionStatus = await Promise.all(
+        exercises.map(async (exercise: any) => {
+          try {
+            const resultsUrl = `${API_URL}/api/results/${childId}/exercise/${exercise.id}/`;
+            console.log('Checking completion status for exercise:', exercise.id, 'at URL:', resultsUrl);
+            
+            const resultsResponse = await fetch(resultsUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            let isCompleted = false;
+            if (resultsResponse.ok) {
+              const results = await resultsResponse.json();
+              // If there are any results, the exercise is completed
+              isCompleted = Array.isArray(results) && results.length > 0;
+              console.log('Exercise', exercise.id, 'completion status:', isCompleted, 'Results:', results);
+            } else {
+              console.log('No results found for exercise', exercise.id, '- treating as incomplete');
+            }
+
+            return {
+              ...exercise,
+              completed: isCompleted
+            };
+          } catch (error) {
+            console.error('Error checking completion status for exercise', exercise.id, ':', error);
+            return {
+              ...exercise,
+              completed: false
+            };
+          }
+        })
+      );
+      
+      console.log('Exercises with completion status:', exercisesWithCompletionStatus);
+      return exercisesWithCompletionStatus;
     } else {
       console.error('Failed to fetch exercises for learning unit', learningUnitId, ':', response.status);
       return [];
@@ -88,7 +128,7 @@ const fetchExercisesForLearningUnit = async (learningUnitId: string): Promise<an
 };
 
 // Function to fetch assigned learning units from backend
-const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task[]) => void) => {
+const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task[]) => void, setIsDataLoaded: (loaded: boolean) => void) => {
   console.log('fetching assigned learning units for childId:', childId); 
   console.log('API_URL:', API_URL);
   
@@ -129,7 +169,7 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
     // Fetch exercises for each learning unit
     const allExercises: any[] = [];
     for (const learningUnitId of learningUnitIds) {
-      const exercises = await fetchExercisesForLearningUnit(learningUnitId);
+      const exercises = await fetchExercisesForLearningUnit(learningUnitId, childId);
       allExercises.push(...exercises);
     }
 
@@ -140,7 +180,7 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
       const transformedTasks: Task[] = allExercises.map((exercise: any, index: number) => ({
         id: exercise.id || `exercise-${index}`,
         name: exercise.title || 'Untitled Exercise',
-        completed: false,
+        completed: exercise.completed || false,
         exerciseType: exercise.exercise_type || 'multiple_drag',
         exerciseId: exercise.id,
         description: exercise.description || ''
@@ -155,6 +195,10 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
   } catch (error) {
     console.error('Network error fetching assigned activities:', error);
     console.log('Using default tasks due to network error');
+  } finally {
+    // Set data loaded to true when data fetching is complete
+    setIsDataLoaded(true);
+    console.log('Data loading completed');
   }
 };
 
@@ -380,6 +424,13 @@ const ChildDashboard = () => {
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
   const [streakCount, setStreakCount] = useState(0);
   const [coinBalance, setCoinBalance] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [isUIReady, setIsUIReady] = useState(false);
+  const [pendingBloomTaskId, setPendingBloomTaskId] = useState<string | null>(null);
+  const [loadedImagesCount, setLoadedImagesCount] = useState(0);
+  const [loadingStartTime] = useState(Date.now());
+  const [contentLayoutComplete, setContentLayoutComplete] = useState(false);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
   const tasksRef = React.useRef<Task[]>(defaultTasks);
@@ -438,7 +489,7 @@ const ChildDashboard = () => {
     
     // Now childId will always have a value (either from context or fallback)
     console.log('Calling fetchAssignedLearningUnit with childId:', childId);
-    fetchAssignedLearningUnit(childId, setTasks);
+    fetchAssignedLearningUnit(childId, setTasks, setIsDataLoaded);
     //fetchCoinBalance(childId, setCoinBalance);
     //fetchStreakCount(childId, setStreakCount);
   }, [childId, contextChildId]);
@@ -447,6 +498,7 @@ const ChildDashboard = () => {
   useEffect(() => {
     console.log('=== COMPLETION EFFECT TRIGGERED ===');
     console.log('completedTaskId received:', completedTaskId);
+    console.log('isLoading:', isLoading);
     console.log('Current tasks state:', tasksRef.current);
 
     if (completedTaskId && typeof completedTaskId === 'string') {
@@ -456,6 +508,13 @@ const ChildDashboard = () => {
       const currentTask = tasksRef.current.find(task => task.id === completedTaskId);
       if (currentTask?.completed) {
         console.log('Task already completed, skipping...');
+        return;
+      }
+
+      // If still loading, store the pending bloom task ID
+      if (isLoading) {
+        console.log('Still loading, storing pending bloom task:', completedTaskId);
+        setPendingBloomTaskId(completedTaskId);
         return;
       }
 
@@ -520,7 +579,136 @@ const ChildDashboard = () => {
 
       return () => clearTimeout(completionTimeout);
     }
-  }, [completedTaskId, screenHeight, childId]);
+  }, [completedTaskId, screenHeight, childId, isLoading]);
+
+  // Monitor UI readiness after data loads
+  useEffect(() => {
+    if (isDataLoaded && !isUIReady) {
+      // Wait for critical images to load (background + mascot) + extra time for UI rendering
+      const expectedImages = mascotData.accessoryId ? 3 : 2; // background + mascot + optional accessory
+      
+      const completeLoading = () => {
+        const elapsedTime = Date.now() - loadingStartTime;
+        const minimumLoadingTime = 3000; // 3 seconds minimum to allow for full UI rendering
+        const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
+        
+        setTimeout(() => {
+          console.log('Loading completed after minimum time with UI buffer');
+          setIsUIReady(true);
+          setIsLoading(false);
+        }, remainingTime);
+      };
+      
+      // Check if critical images and content layout are ready
+      const criticalElementsReady = 
+        loadedImagesCount >= expectedImages && 
+        contentLayoutComplete;
+      
+      if (criticalElementsReady) {
+        // Critical elements loaded, but ensure minimum loading time + UI render buffer
+        const bufferTimeout = setTimeout(() => {
+          console.log('Critical elements loaded, adding UI render buffer');
+          completeLoading();
+        }, 1500); // Longer buffer to ensure all UI elements finish rendering
+        return () => clearTimeout(bufferTimeout);
+      } else {
+        // Fallback timeout in case elements don't fire events
+        const fallbackTimeout = setTimeout(() => {
+          console.log('Fallback timeout - assuming UI is ready');
+          console.log('Status: images:', loadedImagesCount, 'expected:', expectedImages, 'layout:', contentLayoutComplete);
+          completeLoading();
+        }, 6000); // Even longer fallback to be safe
+        return () => clearTimeout(fallbackTimeout);
+      }
+    }
+  }, [isDataLoaded, isUIReady, loadedImagesCount, mascotData.accessoryId, loadingStartTime, contentLayoutComplete]);
+
+  // Helper function to handle image loading
+  const handleImageLoad = (imageName: string) => {
+    console.log(`Image loaded: ${imageName}`);
+    setLoadedImagesCount(prev => prev + 1);
+  };
+
+  // Track when content layout is complete
+  useEffect(() => {
+    if (tasks.length > 0 && isDataLoaded && !contentLayoutComplete) {
+      // Give time for all UI elements to render after tasks load
+      const layoutTimeout = setTimeout(() => {
+        console.log('Content layout should be complete');
+        setContentLayoutComplete(true);
+      }, 2500); // Allow time for SVG, task images, and layout calculations
+      return () => clearTimeout(layoutTimeout);
+    }
+  }, [tasks, isDataLoaded, contentLayoutComplete]);
+
+  // Handle pending bloom animation after loading completes
+  useEffect(() => {
+    if (!isLoading && pendingBloomTaskId) {
+      console.log('Loading completed, triggering pending bloom animation for:', pendingBloomTaskId);
+      
+      // Find the completed task index for scrolling
+      const completedTaskIndex = tasksRef.current.findIndex(task => task.id === pendingBloomTaskId);
+      console.log('Task index found:', completedTaskIndex);
+
+      // Scroll to center the blooming flower
+      if (scrollViewRef.current && completedTaskIndex !== -1) {
+        const taskPosition = completedTaskIndex * 200;
+        const centerOffset = taskPosition - (screenHeight / 2) + 100;
+        console.log('Scrolling to position:', centerOffset);
+        scrollViewRef.current.scrollTo({
+          y: Math.max(0, centerOffset),
+          animated: true
+        });
+      }
+      
+      setBloomingTaskId(pendingBloomTaskId);
+
+      // Update the task to completed and trigger blooming animation
+      const completionTimeout = setTimeout(() => {
+        console.log('=== EXECUTING PENDING TASK COMPLETION ===');
+        console.log('Updating tasks, marking task', pendingBloomTaskId, 'as completed');
+
+        setTasks(prevTasks => {
+          console.log('Previous tasks:', prevTasks);
+          const updatedTasks = prevTasks.map(task => {
+            if (task.id === pendingBloomTaskId) {
+              console.log('Marking task as completed:', task);
+              return { ...task, completed: true, completedAt: new Date().toISOString() };
+            }
+            return task;
+          });
+          console.log('Updated tasks after completion:', updatedTasks);
+          return updatedTasks;
+        });
+
+        // After blooming animation, scroll to next incomplete task
+        setTimeout(() => {
+          const currentTasks = tasksRef.current;
+          const nextIncompleteIndex = currentTasks.findIndex(t => !t.completed);
+          console.log('Next incomplete task index:', nextIncompleteIndex);
+
+          if (scrollViewRef.current && nextIncompleteIndex !== -1) {
+            const nextTaskPosition = nextIncompleteIndex * 200;
+            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
+            console.log('Scrolling to next task at position:', nextCenterOffset);
+            scrollViewRef.current.scrollTo({
+              y: Math.max(0, nextCenterOffset),
+              animated: true
+            });
+          }
+        }, 2000);
+
+        // Clear the blooming and pending states after animation completes
+        setTimeout(() => {
+          console.log('Clearing blooming and pending states');
+          setBloomingTaskId(null);
+          setPendingBloomTaskId(null);
+        }, 2000);
+      }, 500); // Short delay to ensure UI is fully rendered
+
+      return () => clearTimeout(completionTimeout);
+    }
+  }, [isLoading, pendingBloomTaskId, screenHeight]);
 
 
 
@@ -589,6 +777,15 @@ const ChildDashboard = () => {
   const totalTasks = tasks.length;
   console.log('Tasks:', tasks);
 
+  // Show loading screen while data is being fetched
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Background Image */}
@@ -596,6 +793,9 @@ const ChildDashboard = () => {
         source={require('@/assets/images/child-dashboard-background.jpg')}
         style={styles.backgroundImage}
         resizeMode="cover"
+        onLoad={() => {
+          console.log('Background image loaded');
+        }}
       />
 
       {/* Header */}
@@ -622,6 +822,15 @@ const ChildDashboard = () => {
         showsVerticalScrollIndicator={false}
         style={styles.verticalScroll}
         contentContainerStyle={styles.scrollContent}
+        onLayout={() => {
+          console.log('ScrollView layout completed');
+          // Mark content layout as complete
+          if (!contentLayoutComplete) {
+            setTimeout(() => {
+              setContentLayoutComplete(true);
+            }, 300);
+          }
+        }}
       >
         {/* Green Wave Path */}
         <Svg
@@ -734,12 +943,14 @@ const ChildDashboard = () => {
                 source={bodyImage}
                 style={styles.mascotImage}
                 resizeMode="contain"
+                onLoad={() => handleImageLoad('mascot-body')}
               />
               {accessoryImage && (
                 <Image
                   source={accessoryImage}
                   style={[styles.mascotImage, styles.mascotAccessory]}
                   resizeMode="contain"
+                  onLoad={() => handleImageLoad('mascot-accessory')}
                 />
               )}
             </>
@@ -782,9 +993,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
     height: '100%',
-    zIndex: -1,
-    opacity: 0.3,
     filter: 'brightness(1.3)',
+    opacity: 0.5,
   },
 
   header: {
@@ -846,12 +1056,13 @@ const styles = StyleSheet.create({
   },
   verticalScroll: {
     flex: 1,
+    marginTop: '10%',
   },
   scrollContent: {
     position: 'relative',
-    minHeight: '100%',
+    height: '100%',
     left: -40,
-    top: -20,
+    top: -10,
   },
   sineWavePath: {
     position: 'absolute',
@@ -944,18 +1155,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   koalaContainer: {
-    position: 'fixed',
-    bottom: 120,
+    position: 'absolute',
+    bottom: 60,
     left: 90,
     height: 200,
     width: 400,
-    display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
   },
   mascotImage: {
-    width: 300,
-    height: 500,
+    width: 200,
+    height: 400,
     position: 'absolute',
     zIndex: 1,
   },
@@ -979,6 +1189,25 @@ const styles = StyleSheet.create({
   navButton: {
     alignItems: 'center',
     marginBottom: 10,
+  },
+  // Loading screen styles
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  loadingText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    marginBottom: 30,
+    textAlign: 'center',
   },
 });
 

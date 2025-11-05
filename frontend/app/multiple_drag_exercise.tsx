@@ -356,13 +356,13 @@ export default function MultipleDragExercise() {
 
   // Get completion message and styling based on accuracy
   const getCompletionData = () => {
-    if (finalAccuracy >= 0.9) {
+    if (finalAccuracy >= 0.8) {
       return {
         message: "Excellent!",
         backgroundColor: '#4CAF50', // Green
         showTryAgain: false
       };
-    } else if (finalAccuracy >= 0.6) {
+    } else if (finalAccuracy >= 0.5) {
       return {
         message: "Good Work!",
         backgroundColor: '#4CAF50', // Green
@@ -503,7 +503,6 @@ export default function MultipleDragExercise() {
     }
 
     // Submit to backend
-    /*
     try {
       const response = await fetch(`${API_URL}/api/results/${childId}/exercise/${exerciseId}/`, {
         method: 'POST',
@@ -524,16 +523,24 @@ export default function MultipleDragExercise() {
       console.log('Exercise submitted successfully:', result);
 
       // Navigate back to dashboard after successful submission
-      router.push('/child-dashboard');
+      router.push({
+        pathname: '/child-dashboard',
+        params: { completedTaskId: exerciseId }
+      });
 
     } catch (error) {
       console.error('Error submitting exercise:', error);
     }
-    */
+    
 
 
     // Navigate back to dashboard after submission (regardless of API success for now)
-    router.push('/child-dashboard');
+    /*
+    router.push({
+      pathname: '/child-dashboard',
+      params: { completedTaskId: exerciseId }
+    });
+    */
     
   };
 

@@ -7,36 +7,153 @@ import { requestAudioPermissions, startRecording, stopRecording } from '@/compon
 import { API_URL } from '../config/api';
 import { useApp } from '@/context/AppContext';
 
-// Send the audio file as a POST request
-// Questions data
-/*
-const questions = [
-  {
-    id: 1,
-    question: "Where are we?",
-    showPointer: false,
-    pointerPosition: null
-  },
-  {
-    id: 2,
-    question: "What colour is the water?",
-    showPointer: true,
-    pointerPosition: { top: 250, left: 100 } // Point to ocean
-  },
-  {
-    id: 3,
-    question: "What is the weather like?",
-    showPointer: true,
-    pointerPosition: { top: 100, left: 100 } // Point to sky
-  },
-  {
-    id: 4,
-    question: "What else can you see?",
-    showPointer: false,
-    pointerPosition: null
+// Question data interfaces
+interface Question {
+  id: number;
+  question: string;
+  image: string;
+  show_pointer: boolean;
+  pointerPosition?: {
+    top: string;
+    left: string;
+  };
+}
+
+interface DescribeExercise {
+  id: string;
+  title: string;
+  questions: Question[];
+}
+
+interface ApiQuestion {
+  id: number;
+  question_data: string | object;
+  order: number;
+}
+
+// Fetch questions for a specific exercise by ID
+const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeExercise | null> => {
+  console.log('=== FETCHING DESCRIBE EXERCISE QUESTIONS ===');
+  console.log('Exercise ID:', exerciseId);
+  console.log('API_URL:', API_URL);
+  
+  try {
+    const url = `${API_URL}/api/questions/${exerciseId}/`;
+    console.log('Fetching questions from URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+
+    if (!response.ok) {
+      console.error('Failed to fetch questions:', response.status, response.statusText);
+      
+      try {
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+      } catch (bodyError) {
+        console.error('Could not read error response body:', bodyError);
+      }
+      
+      return null;
+    }
+
+    const questionsData = await response.json();
+    console.log('Questions data received:', questionsData);
+
+    if (!Array.isArray(questionsData) || questionsData.length === 0) {
+      console.warn('No questions found for exercise:', exerciseId);
+      return null;
+    }
+
+    // Transform API questions to our Question format
+    const transformedQuestions: Question[] = questionsData
+      .sort((a: ApiQuestion, b: ApiQuestion) => a.order - b.order) // Sort by order
+      .map((apiQuestion: ApiQuestion, index: number) => {
+        try {
+          // Handle both string and object cases for question_data
+          let questionData;
+          if (typeof apiQuestion.question_data === 'string') {
+            questionData = JSON.parse(apiQuestion.question_data);
+          } else {
+            questionData = apiQuestion.question_data;
+          }
+          console.log(`Question ${index + 1} data:`, questionData);
+          
+          return {
+            id: index + 1,
+            question: questionData.question || 'Question not available',
+            image: questionData.image || '',
+            show_pointer: questionData.show_pointer || false,
+            pointerPosition: questionData.pointerPosition || undefined
+          };
+        } catch (parseError) {
+          console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
+          return {
+            id: index + 1,
+            question: 'Error loading question',
+            image: '',
+            show_pointer: false,
+            pointerPosition: undefined
+          };
+        }
+      });
+
+    console.log('Transformed questions:', transformedQuestions);
+
+    return {
+      id: exerciseId,
+      title: 'Describe Exercise',
+      questions: transformedQuestions
+    };
+
+  } catch (error) {
+    console.error('Network error fetching questions:', error);
+    return null;
   }
-];
-*/
+};
+
+// Fallback exercise data
+const fallbackExercise: DescribeExercise = {
+  id: 'fallback',
+  title: 'Describe Exercise',
+  questions: [
+    {
+      id: 1,
+      question: "Where are we?",
+      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
+      show_pointer: false,
+      pointerPosition: undefined
+    },
+    {
+      id: 2,
+      question: "What colour is the water?",
+      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
+      show_pointer: true,
+      pointerPosition: { top: "250", left: "100" }
+    },
+    {
+      id: 3,
+      question: "What is the weather like?",
+      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
+      show_pointer: true,
+      pointerPosition: { top: "100", left: "100" }
+    },
+    {
+      id: 4,
+      question: "What else can you see?",
+      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
+      show_pointer: false,
+      pointerPosition: undefined
+    }
+  ]
+};
 
 // Mascot data interface
 interface MascotData {
@@ -102,13 +219,21 @@ const getMascotImages = (mascotData: MascotData) => {
 //   }
 // };
 
-const DescribeExercise = () => {
-  const { taskId, bodyType, accessoryId } = useLocalSearchParams();
+const DescribeExerciseComponent = () => {
+  const { taskId, bodyType, accessoryId, exerciseId } = useLocalSearchParams();
+  const { childId: contextChildId } = useApp();
+  
+  // Fallback childId for testing if context doesn't provide one
+  const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
+  const childId = contextChildId || fallbackChildId;
+  
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [showMascotResponse, setShowMascotResponse] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
+  const [exercise, setExercise] = useState<DescribeExercise>(fallbackExercise);
+  const [isLoading, setIsLoading] = useState(true);
   const [sessionStartTime] = useState(Date.now()); // Used in commented backend submission
   const { session } = useApp();
   const [exerciseResponses, setExerciseResponses] = useState<{ // Used in commented backend submission
@@ -131,6 +256,7 @@ const DescribeExercise = () => {
   const pointerAnim = React.useRef(new Animated.Value(1)).current;
 
   //Fetch mascot data from backend
+  /*
   const fetchMascotData = async () => {
     try {
       const response = await fetch(`${API_URL}/api/profile/${childId}/mascot`, {
@@ -153,6 +279,39 @@ const DescribeExercise = () => {
       // Keep default mascot on error
     }
   };
+  */
+
+  // Load exercise data from API
+  useEffect(() => {
+    const loadExerciseData = async () => {
+      console.log('Loading exercise data - exerciseId:', exerciseId);
+      console.log('Loading exercise data - childId:', childId);
+      
+      setIsLoading(true);
+      
+      // Try to fetch questions by exerciseId first
+      if (exerciseId) {
+        console.log('exerciseId exists, fetching questions by exercise ID:', exerciseId);
+        const fetchedExercise = await fetchQuestionsByExerciseId(exerciseId as string);
+        
+        if (fetchedExercise) {
+          console.log('Successfully loaded exercise data:', fetchedExercise);
+          setExercise(fetchedExercise);
+          setIsLoading(false);
+          return;
+        } else {
+          console.warn('Failed to load exercise data, using fallback');
+        }
+      }
+      
+      // Use fallback data if API fetch failed
+      console.log('Using fallback exercise data');
+      setExercise(fallbackExercise);
+      setIsLoading(false);
+    };
+
+    loadExerciseData();
+  }, [exerciseId, childId]);
 
   // Load mascot data from route parameters
   useEffect(() => {
@@ -182,7 +341,7 @@ const DescribeExercise = () => {
 
   // Animate pointer pulsing effect
   useEffect(() => {
-    if (DESCRIBE_EXERCISE.questions[currentQuestion].showPointer) {
+    if (exercise.questions[currentQuestion]?.show_pointer) {
       const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(pointerAnim, {
@@ -204,7 +363,7 @@ const DescribeExercise = () => {
         pointerAnim.setValue(1);
       };
     }
-  }, [currentQuestion, pointerAnim]);
+  }, [currentQuestion, pointerAnim, exercise.questions]);
 
   // const submitExerciseResults = async () => {
   //   const sessionEndTime = Date.now();
@@ -293,7 +452,7 @@ const DescribeExercise = () => {
       if (!uri) return;
 
       const timeSpent = Date.now() - questionStartTime;
-      const currentQData = questions[currentQuestion];
+      const currentQData = exercise.questions[currentQuestion];
 
       try {
         const formData = new FormData();
@@ -430,7 +589,7 @@ const DescribeExercise = () => {
 
   // Handle next question
   const handleNextQuestion = () => {
-    if (currentQuestion < DESCRIBE_EXERCISE.questions.length - 1) {
+    if (currentQuestion < exercise.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setQuestionStartTime(Date.now()); // Reset timer for next question
       speechBubbleAnim.setValue(0);
@@ -455,7 +614,16 @@ const DescribeExercise = () => {
     }
   };
 
-  const currentQ = DESCRIBE_EXERCISE.questions[currentQuestion];
+  // Show loading screen while fetching exercise data
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading Exercise...</Text>
+      </View>
+    );
+  }
+
+  const currentQ = exercise.questions[currentQuestion];
   const { bodyImage, accessoryImage } = getMascotImages(mascotData);
 
   if (isCompleted) {
@@ -471,12 +639,12 @@ const DescribeExercise = () => {
     <View style={styles.container}>
       {/* Progress indicator */}
       <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>Question {currentQuestion + 1} of {DESCRIBE_EXERCISE.questions.length}</Text>
+        <Text style={styles.progressText}>Question {currentQuestion + 1} of {exercise.questions.length}</Text>
         <View style={styles.progressBar}>
           <View
             style={[
               styles.progressFill,
-              { width: `${((currentQuestion + 1) / questions.length) * 100}%` }
+              { width: `${((currentQuestion + 1) / exercise.questions.length) * 100}%` }
             ]}
           />
         </View>
@@ -494,20 +662,23 @@ const DescribeExercise = () => {
         </Text>
        )}
 
-      {/* Beach image */}
+      {/* Exercise image */}
       <View style={styles.imageContainer}>
         <Image
-          source={require('@/assets/images/beach.jpg')}
+          source={currentQ.image ? { uri: currentQ.image } : require('@/assets/images/beach.jpg')}
           style={styles.beachImage}
           resizeMode="cover"
         />
 
         {/* Pointer for ocean question */}
-        {currentQ.showPointer && currentQ.pointerPosition && (
+        {currentQ.show_pointer && currentQ.pointerPosition && (
           <Animated.View
             style={[
               styles.pointerContainer,
-              currentQ.pointerPosition,
+              {
+                top: parseInt(currentQ.pointerPosition.top),
+                left: parseInt(currentQ.pointerPosition.left),
+              },
               { transform: [{ scale: pointerAnim }] }
             ]}
           >
@@ -604,7 +775,7 @@ const DescribeExercise = () => {
               styles.nextButtonText,
               !exerciseResponses.some(r => r.questionId === currentQ.id) && styles.nextButtonTextDisabled
             ]}>
-              {currentQuestion < DESCRIBE_EXERCISE.questions.length - 1 ? "Next Question" : "Finish"}
+              {currentQuestion < exercise.questions.length - 1 ? "Next Question" : "Finish"}
             </Text>
         </TouchableOpacity>
 
@@ -822,6 +993,18 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E8F4FD',
+  },
+  loadingText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    textAlign: 'center',
+  },
 });
 
 // Hide the default header for this page
@@ -829,4 +1012,4 @@ export const options = {
   headerShown: false,
 };
 
-export default DescribeExercise;
+export default DescribeExerciseComponent;
