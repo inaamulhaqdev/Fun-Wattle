@@ -25,17 +25,18 @@ export const fetchUnitStats = async (
     const results = await Promise.all(
       exercises.map(async (ex) => {
         const resResp = await fetch(`${API_URL}/api/results/${childId}/exercise/${ex.id}/`);
-        if (!resResp.ok) return { time_spent: 0, completed_at: null };
+        if (!resResp.ok) throw new Error("Failed to fetch results for exercises");
 
         const resJson = await resResp.json();
+
         if (Array.isArray(resJson) && resJson.length > 0) {
           const first = resJson[0];
           return {
             time_spent: first.time_spent || 0,
-            completed_at: first.completed_at || null,
+            completed: true,
           };
         }
-        return { time_spent: 0, completed_at: null };
+        return { time_spent: 0, completed: false };
       })
     );
 
@@ -43,7 +44,7 @@ export const fetchUnitStats = async (
     let completedCount = 0;
     results.forEach((r) => {
       totalTime += r.time_spent;
-      if (r.completed_at) completedCount++;
+      if (r.completed) completedCount++;
     });
 
     let baseStatus: string;

@@ -12,7 +12,6 @@ import { API_URL } from '@/config/api';
 // Task data structure
 interface Task {
   id: string;
-  assignmentId: string;
   name: string;
   completed: boolean;
   exerciseType?: string; // For routing to correct exercise component
@@ -27,7 +26,7 @@ interface MascotData {
 }
 
 // Default tasks (fallback if API fails)
-const defaultTasks: Task[] = [
+/* const defaultTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
   { id: '2', name: 'multiple_drag_exercise', completed: false },
   { id: '3', name: 'describe_exercise', completed: false },
@@ -420,7 +419,7 @@ const ChildDashboard = () => {
   console.log('Fallback childId:', fallbackChildId);
   console.log('Final childId being used:', childId);
   
-  const [tasks, setTasks] = useState<Task[]>(defaultTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
   const [streakCount, setStreakCount] = useState(0);
@@ -434,7 +433,7 @@ const ChildDashboard = () => {
   const [contentLayoutComplete, setContentLayoutComplete] = useState(false);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const tasksRef = React.useRef<Task[]>(defaultTasks);
+  const tasksRef = React.useRef<Task[]>([]);
 
   // Keep tasksRef in sync with tasks state
   React.useEffect(() => {

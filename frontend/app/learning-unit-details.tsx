@@ -12,7 +12,7 @@ interface Exercise {
   title: string;
   order: number;
   time_spent: number;
-  completed_at: string | null;
+  completed: boolean;
   accuracy: number;
   // num_correct: number;
   // num_incorrect: number;
@@ -62,20 +62,20 @@ export default function LearningUnitDetails() {
         const results = await Promise.all(
           sorted.map(async (ex) => {
             const resResp = await fetch(`${API_URL}/api/results/${childId}/exercise/${ex.id}/`);
-            if (!resResp.ok) return { time_spent: 0, completed_at: null, accuracy: 0, /* num_correct: 0, num_incorrect: 0 */ };
+            if (!resResp.ok) throw new Error('Failed to fetch result details.');
 
             const resJson = await resResp.json();
             if (Array.isArray(resJson) && resJson.length > 0) {
               const first = resJson[0];
               return {
                 time_spent: first.time_spent || 0,
-                completed_at: first.completed_at || null,
+                completed: true,
                 accuracy: first.accuracy,
                 /* num_correct: first.num_correct,
                 num_incorrect: first.num_incorrect */
               };
             }
-            return { time_spent: 0, completed_at: null, accuracy: 0, /* num_correct: 0, num_incorrect: 0 */ };
+            return { time_spent: 0, completed: false, accuracy: 0 };
           })
         );
 
@@ -85,7 +85,7 @@ export default function LearningUnitDetails() {
         const exercisesWithResults = sorted.map((ex, i) => {
           const r = results[i];
           totalTime += r.time_spent;
-          if (r.completed_at) completedCount++;
+          if (r.completed) completedCount++;
 
           return { ...ex, ...r };
         });
@@ -131,9 +131,9 @@ export default function LearningUnitDetails() {
               <ActivityCards
                 key={exercise.id}
                 title={exercise.title}
-                completed={exercise.completed_at ? "Completed" : "Not started"}
-                correct={0}/* {exercise.num_correct} */
-                incorrect={0}/* {exercise.num_incorrect} */
+                completed={exercise.completed ? "Completed" : "Not started"}
+                correct={0}
+                incorrect={0}
                 accuracy={exercise.accuracy != null ? `${(exercise.accuracy * 100).toFixed(0)}%` : ""}
               />
             ))}
