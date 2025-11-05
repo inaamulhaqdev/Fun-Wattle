@@ -7,6 +7,7 @@ import { Audio } from 'expo-av';
 import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers';
 import { API_URL } from '../config/api';
 import { useApp } from '@/context/AppContext';
+import { Buffer } from 'buffer';
 
 // Question data interfaces
 interface Question {

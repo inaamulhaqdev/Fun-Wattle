@@ -11,6 +11,7 @@ from rest_framework.response import Response
 import azure.cognitiveservices.speech as speechsdk
 from openai import AzureOpenAI
 from django.http import HttpResponse
+import re
 
 
 @api_view(['GET'])
@@ -250,10 +251,9 @@ def assess_speech(request):
         Question asked: "{request.data.get('questionText')}"
         Child's speech: "{result.text}"
         Pronunciation Assessment Results: {json.dumps(pron_data, indent=2)}
-        Give:
-        1. A short encouraging summary
-        2. One area to improve
-        3. A fun motivational line
+        Give feedback in 3 short sentences - one encouraging summary, one area of improvement and one fun motivational line. 
+        Write in plain text only.
+        Do not include numbers, bullet points, headings, markdown, or emojis.
         """
 
         response_gpt = client.chat.completions.create(
@@ -267,6 +267,11 @@ def assess_speech(request):
         )
 
         feedback_text = response_gpt.choices[0].message.content
+
+        # clean up gpt feedback 
+        feedback_text = re.sub(r'^\s*(?:\d+[\.\)]\s*|[-*•]\s*|[#*]+)\s*', '', feedback_text, flags=re.MULTILINE) 
+        feedback_text = re.sub(r'[^\w\s.,!?\'"]+', '', feedback_text)   
+        feedback_text = re.sub(r'\s+', ' ', feedback_text).strip()        
 
         return Response({
             "transcript": result.text,

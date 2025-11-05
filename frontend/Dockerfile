@@ -8,6 +8,7 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install -g expo-cli
 RUN npm install
+RUN npm install buffer
 
 # Copy source code
 COPY . .
