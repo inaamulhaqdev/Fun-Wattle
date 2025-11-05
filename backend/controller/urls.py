@@ -29,6 +29,5 @@ urlpatterns = [
     path("assess/", assess_speech, name="assess_speech"), # POST
     path('text-to-speech/', text_to_speech), # POST
 
-    # Parent Dashboard Routes
-    # path('dashboard/parent/<str:child_id>/', get_child_dashboard, name='get_child_dashboard'),
+    path('dashboard/parent/<str:child_id>/', get_child_stats, name='get_child_stats'),
 ]

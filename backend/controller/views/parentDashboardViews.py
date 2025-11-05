@@ -7,5 +7,5 @@ from ..serializers import UserSerializer, ProfileSerializer, User_ProfileSeriali
 from rest_framework.exceptions import MethodNotAllowed
 
 @api_view(['GET'])
-def get_child_dashboard(request, child_id):
+def get_child_stats(request, child_id):
     return Response({'Message': 'This post profile/id/parent route is unimplemented'}, status=501)
