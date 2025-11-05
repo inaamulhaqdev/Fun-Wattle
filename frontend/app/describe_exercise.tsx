@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert, Platf
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
+import { Audio } from 'expo-av';
 import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers';
 import { API_URL } from '../config/api';
 import { useApp } from '@/context/AppContext';
@@ -550,6 +551,45 @@ const DescribeExerciseComponent = () => {
     }
   };
 
+  const handlePlayFeedback = async () => {
+    if (!gptFeedback) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/text-to-speech/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: gptFeedback,
+          voice: 'en-AU-NatashaNeural',
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('TTS failed');
+        return;
+      }
+
+      const sound = new Audio.Sound();
+
+      if (Platform.OS === 'web') {
+        const blob = await response.blob();
+        const uri = URL.createObjectURL(blob);
+        await sound.loadAsync({ uri });
+      } else {
+        const arrayBuffer = await response.arrayBuffer();
+        const base64Audio = `data:audio/mp3;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
+        await sound.loadAsync({ uri: base64Audio });
+      }
+
+      await sound.playAsync();
+    } catch (err) {
+      console.error('Error playing feedback audio:', err);
+    }
+  };
+
   /*
   // Handle submit answer
   const handleSubmit = () => {
@@ -651,16 +691,33 @@ const DescribeExerciseComponent = () => {
       </View>
        {/* Show GPT feedback TODO: Remove when testing is complete! */}
        {gptFeedback && (
-        <Text style={{
-          textAlign: 'center',
-          color: '#333',
-          fontSize: 16,
-          marginTop: 10,
-          marginHorizontal: 20,
-        }}>
-          {gptFeedback}
-        </Text>
-       )}
+          <View style={{ alignItems: 'center', marginTop: 10 }}>
+            <Text
+              style={{
+                textAlign: 'center',
+                color: '#333',
+                fontSize: 16,
+                marginHorizontal: 20,
+              }}
+            >
+              {gptFeedback}
+            </Text>
+
+            {/* Hear button */}
+            <TouchableOpacity
+              style={{
+                marginTop: 8,
+                backgroundColor: '#4CAF50',
+                borderRadius: 20,
+                paddingVertical: 6,
+                paddingHorizontal: 14,
+              }}
+              onPress={handlePlayFeedback}
+            >
+              <Text style={{ color: 'white', fontWeight: '600' }}>Hear</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
       {/* Exercise image */}
       <View style={styles.imageContainer}>
