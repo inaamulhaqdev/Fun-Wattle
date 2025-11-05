@@ -589,7 +589,7 @@ const ChildDashboard = () => {
       
       const completeLoading = () => {
         const elapsedTime = Date.now() - loadingStartTime;
-        const minimumLoadingTime = 2000; // 2 seconds minimum to allow for full UI rendering
+        const minimumLoadingTime = 3000; // 3 seconds minimum to allow for full UI rendering
         const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
         
         setTimeout(() => {
@@ -1156,7 +1156,7 @@ const styles = StyleSheet.create({
   },
   koalaContainer: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 60,
     left: 90,
     height: 200,
     width: 400,
@@ -1164,8 +1164,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mascotImage: {
-    width: 300,
-    height: 500,
+    width: 200,
+    height: 400,
     position: 'absolute',
     zIndex: 1,
   },
