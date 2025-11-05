@@ -251,9 +251,12 @@ def assess_speech(request):
         Question asked: "{request.data.get('questionText')}"
         Child's speech: "{result.text}"
         Pronunciation Assessment Results: {json.dumps(pron_data, indent=2)}
-        Give feedback in 3 short sentences - one encouraging summary, one area of improvement and one fun motivational line. 
-        Write in plain text only.
-        Do not include numbers, bullet points, headings, markdown, or emojis.
+        Generate exactly three sentences giving feedback:
+        - First sentence: encouraging and positive
+        - Second sentence: area to improve
+        - Third sentence: fun motivational line
+        DO NOT include any headings, labels, numbers, bullets, markdown symbols, or emojis.
+        Output ONLY the sentences themselves, nothing else.
         """
 
         response_gpt = client.chat.completions.create(
@@ -268,6 +271,15 @@ def assess_speech(request):
 
         feedback_text = response_gpt.choices[0].message.content
 
+        labels_to_remove = [
+            r'Encouraging Summary\s*:\s*',
+            r'Area to Improve\s*:\s*',
+            r'Motivational Line\s*:\s*'
+        ]
+
+        for label in labels_to_remove:
+            feedback_text = re.sub(label, '', feedback_text, flags=re.IGNORECASE)
+        
         # clean up gpt feedback 
         feedback_text = re.sub(r'^\s*(?:\d+[\.\)]\s*|[-*•]\s*|[#*]+)\s*', '', feedback_text, flags=re.MULTILINE) 
         feedback_text = re.sub(r'[^\w\s.,!?\'"]+', '', feedback_text)   
