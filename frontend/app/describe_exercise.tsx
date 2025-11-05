@@ -573,11 +573,18 @@ const DescribeExerciseComponent = () => {
       }
 
       const sound = new Audio.Sound();
-      const blob = await response.blob();
-      const uri = URL.createObjectURL(blob);
-      await sound.loadAsync({ uri });
-      await sound.playAsync();
 
+      if (Platform.OS === 'web') {
+        const blob = await response.blob();
+        const uri = URL.createObjectURL(blob);
+        await sound.loadAsync({ uri });
+      } else {
+        const arrayBuffer = await response.arrayBuffer();
+        const base64Audio = `data:audio/mp3;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
+        await sound.loadAsync({ uri: base64Audio });
+      }
+
+      await sound.playAsync();
     } catch (err) {
       console.error('Error playing feedback audio:', err);
     }
