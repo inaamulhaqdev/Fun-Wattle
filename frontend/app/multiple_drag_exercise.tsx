@@ -356,13 +356,13 @@ export default function MultipleDragExercise() {
 
   // Get completion message and styling based on accuracy
   const getCompletionData = () => {
-    if (finalAccuracy >= 0.9) {
+    if (finalAccuracy >= 0.8) {
       return {
         message: "Excellent!",
         backgroundColor: '#4CAF50', // Green
         showTryAgain: false
       };
-    } else if (finalAccuracy >= 0.6) {
+    } else if (finalAccuracy >= 0.5) {
       return {
         message: "Good Work!",
         backgroundColor: '#4CAF50', // Green
