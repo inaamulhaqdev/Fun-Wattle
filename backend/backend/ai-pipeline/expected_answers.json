@@ -1,0 +1,22 @@
+[
+    {
+        "question_id": "15f80cf4-0540-4c90-b087-24f4021c4738", 
+        "question_text": "Where are we?", 
+        "expected_answers": ["beach"]
+    }, 
+    {
+        "question_id": "b25b3624-155e-4192-932e-5faab83c0fb4", 
+        "question_text": "What colour is the water?", 
+        "expected_answers": ["blue", "dark blue", "light blue", "cerulean", "sky blue", "columbia blue", "cobalt", "cobalt blue"]
+    }, 
+    {
+        "question_id": "a62c0ccb-6c04-4af3-a5a4-7ac11c58d7fe", 
+        "question_text": "What is the weather like?", 
+        "expected_answers": ["sunny", "hot", "warm"]
+    }, 
+    {
+        "question_id": "345cc696-c962-4ea3-b5e5-dfad39c02ea1", 
+        "question_text": "What else can you see?", 
+        "expected_answers": ["ball", "beach ball", "stripy ball", "stripy beach ball", "shell", "white shell", "white seashell", "seashell", "curvy shell", "curvy seashell", "white conch shell", "conch shell", "white conch seashell", "conch seashell", "starfish", "three starfish", "orange starfish", "white starfish", "one orange starfish and two white starfish", "island", "two islands", "sand", "clouds", "white clouds", "white", "fluffy clouds", "fluffy clouds", "sunlight", "palm trees", "palm tree", "green trees", "trees", "green palm trees", "fauna", "bushes", "green bushes"]
+    }
+]
