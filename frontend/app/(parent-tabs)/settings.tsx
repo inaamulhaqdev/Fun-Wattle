@@ -34,28 +34,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-  },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  childRow: {
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: "#eee",
-    marginVertical: 6,
-  },
-  selectedRow: {
-    backgroundColor: "#c6e6ff",
-    borderWidth: 1,
-    borderColor: "#007aff",
-  },
-  childName: {
-    fontSize: 16,
-    fontWeight: "500",
+    marginTop: 50
   },
   actionButton: {
-    marginTop: 20,
+    marginHorizontal: 20,
+    marginVertical: 20,
+    backgroundColor: '#FDD652',
   }
 });
