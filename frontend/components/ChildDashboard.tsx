@@ -426,7 +426,11 @@ const ChildDashboard = () => {
   const [coinBalance, setCoinBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [isUIReady, setIsUIReady] = useState(false);
   const [pendingBloomTaskId, setPendingBloomTaskId] = useState<string | null>(null);
+  const [loadedImagesCount, setLoadedImagesCount] = useState(0);
+  const [loadingStartTime] = useState(Date.now());
+  const [contentLayoutComplete, setContentLayoutComplete] = useState(false);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
   const tasksRef = React.useRef<Task[]>(defaultTasks);
@@ -490,6 +494,31 @@ const ChildDashboard = () => {
     //fetchStreakCount(childId, setStreakCount);
   }, [childId, contextChildId]);
 
+  // Auto-scroll to center the next incomplete task when dashboard loads
+  useEffect(() => {
+    if (!isLoading && tasks.length > 0) {
+      // Find the next incomplete task
+      const nextIncompleteIndex = tasks.findIndex(t => !t.completed);
+      console.log('Dashboard loaded - auto centering next incomplete task at index:', nextIncompleteIndex);
+      
+      if (scrollViewRef.current && nextIncompleteIndex !== -1) {
+        // Add a delay to ensure UI is fully rendered before scrolling
+        const autoScrollTimeout = setTimeout(() => {
+          const nextTaskPosition = nextIncompleteIndex * 200;
+          const centerOffset = nextTaskPosition - (screenHeight / 2) + 100;
+          console.log('Auto-centering to position:', centerOffset);
+          
+          scrollViewRef.current?.scrollTo({
+            y: Math.max(0, centerOffset),
+            animated: true
+          });
+        }, 500); // Small delay after loading completes
+        
+        return () => clearTimeout(autoScrollTimeout);
+      }
+    }
+  }, [isLoading, tasks, screenHeight]);
+
   // Handle task completion from activity page with blooming animation
   useEffect(() => {
     console.log('=== COMPLETION EFFECT TRIGGERED ===');
@@ -514,27 +543,24 @@ const ChildDashboard = () => {
         return;
       }
 
-      // Wait longer for loading screen to fully disappear before starting bloom animation
-      const bloomDelay = setTimeout(() => {
-        // Find the completed task index for scrolling
-        const completedTaskIndex = tasksRef.current.findIndex(task => task.id === completedTaskId);
-        console.log('Task index found:', completedTaskIndex);
+      // Find the completed task index for scrolling
+      const completedTaskIndex = tasksRef.current.findIndex(task => task.id === completedTaskId);
+      console.log('Task index found:', completedTaskIndex);
 
-        // Scroll to center the blooming flower
-        if (scrollViewRef.current && completedTaskIndex !== -1) {
-          const taskPosition = completedTaskIndex * 200;
-          const centerOffset = taskPosition - (screenHeight / 2) + 100;
-          console.log('Scrolling to position:', centerOffset);
-          scrollViewRef.current.scrollTo({
-            y: Math.max(0, centerOffset),
-            animated: true
-          });
-        }
-        
-        // Start blooming animation
-        setBloomingTaskId(completedTaskId);
+      // Scroll to center the blooming flower
+      if (scrollViewRef.current && completedTaskIndex !== -1) {
+        const taskPosition = completedTaskIndex * 200;
+        const centerOffset = taskPosition - (screenHeight / 2) + 100;
+        console.log('Scrolling to position:', centerOffset);
+        scrollViewRef.current.scrollTo({
+          y: Math.max(0, centerOffset),
+          animated: true
+        });
+      }
+      setBloomingTaskId(completedTaskId);
 
-        // Update the task to completed
+      // Update the task to completed and trigger blooming animation
+      const completionTimeout = setTimeout(() => {
         console.log('=== EXECUTING TASK COMPLETION ===');
         console.log('Updating tasks, marking task', completedTaskId, 'as completed');
 
@@ -551,7 +577,7 @@ const ChildDashboard = () => {
           return updatedTasks;
         });
 
-        // Stay on blooming flower for a longer time, then scroll to next task
+        // After blooming animation, scroll to next incomplete task
         setTimeout(() => {
           // Find next incomplete task using the updated tasks from ref
           const currentTasks = tasksRef.current;
@@ -560,93 +586,110 @@ const ChildDashboard = () => {
 
           if (scrollViewRef.current && nextIncompleteIndex !== -1) {
             const nextTaskPosition = nextIncompleteIndex * 200;
-            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 100;
+            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
             console.log('Scrolling to next task at position:', nextCenterOffset);
             scrollViewRef.current.scrollTo({
               y: Math.max(0, nextCenterOffset),
               animated: true
             });
           }
-        }, 3000); // Extended stay time on blooming flower
+        }, 2000); // Wait for bloom animation to finish
 
-        // Clear the blooming state after animation and delay
+        // Clear the blooming state after animation completes
         setTimeout(() => {
           console.log('Clearing blooming state');
           setBloomingTaskId(null);
-        }, 4000); // Clear after extended stay time
-      }, 1000); // Longer delay to ensure loading screen has fully disappeared
+        }, 2000);
+      }, 5000);
 
-      return () => clearTimeout(bloomDelay);
+      return () => clearTimeout(completionTimeout);
     }
   }, [completedTaskId, screenHeight, childId, isLoading]);
 
-  // loading screen with delay - longer delay when returning from exercise completion
+  // Monitor UI readiness after data loads
   useEffect(() => {
-    if (isDataLoaded && tasks.length > 0) {
-      // Use longer delay if we have a completed task (returning from exercise)
-      const delayTime = completedTaskId ? 6000 : 4000;
-      const loadingTimeout = setTimeout(() => {
-        console.log(`Loading completed after ${delayTime/1000} second delay`);
-        setIsLoading(false);
-      }, delayTime);
+    if (isDataLoaded && !isUIReady) {
+      // Wait for critical images to load (background + mascot) + extra time for UI rendering
+      const expectedImages = mascotData.accessoryId ? 3 : 2; // background + mascot + optional accessory
       
-      return () => clearTimeout(loadingTimeout);
-    }
-  }, [isDataLoaded, tasks.length, completedTaskId]);
-
-
-
-  // Auto scroll to next incomplete task
-  useEffect(() => {
-    if (!isLoading && tasks.length > 0) {
-      // Find the next incomplete task
-      const nextIncompleteIndex = tasks.findIndex(t => !t.completed);
-      console.log('Dashboard loaded - auto scrolling to next incomplete task at index:', nextIncompleteIndex);
-      
-      if (scrollViewRef.current && nextIncompleteIndex !== -1) {
-        // Add a delay to ensure UI is fully rendered before scrolling
-        const autoScrollTimeout = setTimeout(() => {
-          const nextTaskPosition = nextIncompleteIndex * 200;
-          const centerOffset = nextTaskPosition - (screenHeight / 2) + 100;
-          console.log('Auto-scrolling to position:', centerOffset);
-          
-          scrollViewRef.current?.scrollTo({
-            y: Math.max(0, centerOffset),
-            animated: true
-          });
-        }, 500); // Small delay after loading completes
+      const completeLoading = () => {
+        const elapsedTime = Date.now() - loadingStartTime;
+        const minimumLoadingTime = 3000; // 3 seconds minimum to allow for full UI rendering
+        const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
         
-        return () => clearTimeout(autoScrollTimeout);
+        setTimeout(() => {
+          console.log('Loading completed after minimum time with UI buffer');
+          setIsUIReady(true);
+          setIsLoading(false);
+        }, remainingTime);
+      };
+      
+      // Check if critical images and content layout are ready
+      const criticalElementsReady = 
+        loadedImagesCount >= expectedImages && 
+        contentLayoutComplete;
+      
+      if (criticalElementsReady) {
+        // Critical elements loaded, but ensure minimum loading time + UI render buffer
+        const bufferTimeout = setTimeout(() => {
+          console.log('Critical elements loaded, adding UI render buffer');
+          completeLoading();
+        }, 3000); // Longer buffer to ensure all UI elements finish rendering
+        return () => clearTimeout(bufferTimeout);
+      } else {
+        // Fallback timeout in case elements don't fire events
+        const fallbackTimeout = setTimeout(() => {
+          console.log('Fallback timeout - assuming UI is ready');
+          console.log('Status: images:', loadedImagesCount, 'expected:', expectedImages, 'layout:', contentLayoutComplete);
+          completeLoading();
+        }, 6000); // Even longer fallback to be safe
+        return () => clearTimeout(fallbackTimeout);
       }
     }
-  }, [isLoading, tasks, screenHeight]);
+  }, [isDataLoaded, isUIReady, loadedImagesCount, mascotData.accessoryId, loadingStartTime, contentLayoutComplete]);
+
+  // Helper function to handle image loading
+  const handleImageLoad = (imageName: string) => {
+    console.log(`Image loaded: ${imageName}`);
+    setLoadedImagesCount(prev => prev + 1);
+  };
+
+  // Track when content layout is complete
+  useEffect(() => {
+    if (tasks.length > 0 && isDataLoaded && !contentLayoutComplete) {
+      // Give time for all UI elements to render after tasks load
+      const layoutTimeout = setTimeout(() => {
+        console.log('Content layout should be complete');
+        setContentLayoutComplete(true);
+      }, 2500); // Allow time for SVG, task images, and layout calculations
+      return () => clearTimeout(layoutTimeout);
+    }
+  }, [tasks, isDataLoaded, contentLayoutComplete]);
 
   // Handle pending bloom animation after loading completes
   useEffect(() => {
     if (!isLoading && pendingBloomTaskId) {
       console.log('Loading completed, triggering pending bloom animation for:', pendingBloomTaskId);
       
-      // Additional delay to ensure loading screen has fully disappeared
-      const pendingBloomDelay = setTimeout(() => {
-        // Find the completed task index for scrolling
-        const completedTaskIndex = tasksRef.current.findIndex(task => task.id === pendingBloomTaskId);
-        console.log('Task index found:', completedTaskIndex);
+      // Find the completed task index for scrolling
+      const completedTaskIndex = tasksRef.current.findIndex(task => task.id === pendingBloomTaskId);
+      console.log('Task index found:', completedTaskIndex);
 
-        // Scroll to center the blooming flower
-        if (scrollViewRef.current && completedTaskIndex !== -1) {
-          const taskPosition = completedTaskIndex * 200;
-          const centerOffset = taskPosition - (screenHeight / 2) + 100;
-          console.log('Scrolling to position:', centerOffset);
-          scrollViewRef.current.scrollTo({
-            y: Math.max(0, centerOffset),
-            animated: true
-          });
-        }
-        
-        // Start blooming animation
-        setBloomingTaskId(pendingBloomTaskId);
+      // Scroll to center the blooming flower
+      if (scrollViewRef.current && completedTaskIndex !== -1) {
+        const taskPosition = completedTaskIndex * 200;
+        const centerOffset = taskPosition - (screenHeight / 2) + 100;
+        console.log('Scrolling to position:', centerOffset);
+        scrollViewRef.current.scrollTo({
+          y: Math.max(0, centerOffset),
+          animated: true
+        });
+      }
+      
+      setBloomingTaskId(pendingBloomTaskId);
 
-        // Update the task to completed
+      // Update the task to completed and trigger blooming animation
+      const completionTimeout = setTimeout(() => {
         console.log('=== EXECUTING PENDING TASK COMPLETION ===');
         console.log('Updating tasks, marking task', pendingBloomTaskId, 'as completed');
 
@@ -663,7 +706,7 @@ const ChildDashboard = () => {
           return updatedTasks;
         });
 
-        // Stay on blooming flower for extended time, then scroll to next task
+        // After blooming animation, scroll to next incomplete task
         setTimeout(() => {
           const currentTasks = tasksRef.current;
           const nextIncompleteIndex = currentTasks.findIndex(t => !t.completed);
@@ -671,24 +714,24 @@ const ChildDashboard = () => {
 
           if (scrollViewRef.current && nextIncompleteIndex !== -1) {
             const nextTaskPosition = nextIncompleteIndex * 200;
-            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 100;
+            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
             console.log('Scrolling to next task at position:', nextCenterOffset);
             scrollViewRef.current.scrollTo({
               y: Math.max(0, nextCenterOffset),
               animated: true
             });
           }
-        }, 3000); // Extended stay time on blooming flower
+        }, 2000);
 
-        // Clear the blooming and pending states after extended delay
+        // Clear the blooming and pending states after animation completes
         setTimeout(() => {
           console.log('Clearing blooming and pending states');
           setBloomingTaskId(null);
           setPendingBloomTaskId(null);
-        }, 4000); // Clear after extended stay time
-      }, 1500); // Longer delay after loading screen disappears for smoother transition
+        }, 2000);
+      }, 500); // Short delay to ensure UI is fully rendered
 
-      return () => clearTimeout(pendingBloomDelay);
+      return () => clearTimeout(completionTimeout);
     }
   }, [isLoading, pendingBloomTaskId, screenHeight]);
 
@@ -806,7 +849,12 @@ const ChildDashboard = () => {
         contentContainerStyle={styles.scrollContent}
         onLayout={() => {
           console.log('ScrollView layout completed');
-          // Layout callback - no longer tracking completion state
+          // Mark content layout as complete
+          if (!contentLayoutComplete) {
+            setTimeout(() => {
+              setContentLayoutComplete(true);
+            }, 300);
+          }
         }}
       >
         {/* Green Wave Path */}
@@ -920,12 +968,14 @@ const ChildDashboard = () => {
                 source={bodyImage}
                 style={styles.mascotImage}
                 resizeMode="contain"
+                onLoad={() => handleImageLoad('mascot-body')}
               />
               {accessoryImage && (
                 <Image
                   source={accessoryImage}
                   style={[styles.mascotImage, styles.mascotAccessory]}
                   resizeMode="contain"
+                  onLoad={() => handleImageLoad('mascot-accessory')}
                 />
               )}
             </>
@@ -969,7 +1019,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     filter: 'brightness(1.3)',
-    opacity: 0.3,
+    opacity: 0.5,
   },
 
   header: {
@@ -1031,13 +1081,13 @@ const styles = StyleSheet.create({
   },
   verticalScroll: {
     flex: 1,
-    marginTop: 10,
+    marginTop: 0,
   },
   scrollContent: {
     position: 'relative',
     height: '100%',
     left: -40,
-    top: 10,
+    top: 20,
   },
   sineWavePath: {
     position: 'absolute',
@@ -1131,7 +1181,7 @@ const styles = StyleSheet.create({
   },
   koalaContainer: {
     position: 'absolute',
-    bottom: 90,
+    bottom: 60,
     left: 90,
     height: 200,
     width: 400,
