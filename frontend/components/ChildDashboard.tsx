@@ -505,14 +505,15 @@ const ChildDashboard = () => {
         // Add a delay to ensure UI is fully rendered before scrolling
         const autoScrollTimeout = setTimeout(() => {
           const nextTaskPosition = nextIncompleteIndex * 200;
-          const centerOffset = nextTaskPosition - (screenHeight / 2) + 100;
-          console.log('Auto-centering to position:', centerOffset);
+          const centerOffset = nextTaskPosition - (screenHeight / 2) + 100 + 20; // Account for content top offset
+          console.log('Auto-centering to position:', centerOffset, 'for task index:', nextIncompleteIndex);
+          console.log('Task position:', nextTaskPosition, 'Screen height:', screenHeight);
           
           scrollViewRef.current?.scrollTo({
             y: Math.max(0, centerOffset),
             animated: true
           });
-        }, 500); // Small delay after loading completes
+        }, 1000); // Longer delay to ensure all layout is complete
         
         return () => clearTimeout(autoScrollTimeout);
       }
@@ -586,8 +587,8 @@ const ChildDashboard = () => {
 
           if (scrollViewRef.current && nextIncompleteIndex !== -1) {
             const nextTaskPosition = nextIncompleteIndex * 200;
-            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
-            console.log('Scrolling to next task at position:', nextCenterOffset);
+            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 120; // Account for content offset + center properly
+            console.log('Scrolling to next task at position:', nextCenterOffset, 'for index:', nextIncompleteIndex);
             scrollViewRef.current.scrollTo({
               y: Math.max(0, nextCenterOffset),
               animated: true
@@ -1085,7 +1086,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     position: 'relative',
-    height: '100%',
+    minHeight: '100%',
+    paddingBottom: 400,
     left: -40,
     top: 20,
   },
