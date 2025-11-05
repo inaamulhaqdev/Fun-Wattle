@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
 import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers';
-import { RecordingOptionsPresets } from 'expo-av/build/Audio';
 import { API_URL } from '../config/api';
-import { Platform } from 'react-native';
 import { useApp } from '@/context/AppContext';
 
 // Send the audio file as a POST request
 // Questions data
+/*
 const questions = [
   {
     id: 1,
@@ -37,6 +36,7 @@ const questions = [
     pointerPosition: null
   }
 ];
+*/
 
 // Mascot data interface
 interface MascotData {
@@ -44,7 +44,7 @@ interface MascotData {
   accessoryId?: number;
 }
 
-// Mascot image helper function
+
 const getMascotImages = (mascotData: MascotData) => {
   const bodyImages = {
     koala: require('@/assets/images/koala.png'),
@@ -130,6 +130,30 @@ const DescribeExercise = () => {
   const responseAnim = React.useRef(new Animated.Value(0)).current;
   const pointerAnim = React.useRef(new Animated.Value(1)).current;
 
+  //Fetch mascot data from backend
+  const fetchMascotData = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/${childId}/mascot`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.mascot) {
+          setMascotData(data.mascot);
+        }
+      } else {
+        console.warn('Failed to fetch mascot data:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching mascot data:', error);
+      // Keep default mascot on error
+    }
+  };
+
   // Load mascot data from route parameters
   useEffect(() => {
     if (bodyType || accessoryId) {
@@ -158,7 +182,7 @@ const DescribeExercise = () => {
 
   // Animate pointer pulsing effect
   useEffect(() => {
-    if (questions[currentQuestion].showPointer) {
+    if (DESCRIBE_EXERCISE.questions[currentQuestion].showPointer) {
       const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(pointerAnim, {
@@ -377,8 +401,8 @@ const DescribeExercise = () => {
 
     // Record the response (in real app, this would be transcribed audio)
     const responseData = {
-      questionId: questions[currentQuestion].id,
-      question: questions[currentQuestion].question,
+      questionId: DESCRIBE_EXERCISE.questions[currentQuestion].id,
+      question: DESCRIBE_EXERCISE.questions[currentQuestion].question,
       response: "Audio response transcription would go here", // TODO: Replace with actual transcription
       timeSpent: timeSpent,
       timestamp: currentTime
@@ -406,7 +430,7 @@ const DescribeExercise = () => {
 
   // Handle next question
   const handleNextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
+    if (currentQuestion < DESCRIBE_EXERCISE.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setQuestionStartTime(Date.now()); // Reset timer for next question
       speechBubbleAnim.setValue(0);
@@ -431,7 +455,7 @@ const DescribeExercise = () => {
     }
   };
 
-  const currentQ = questions[currentQuestion];
+  const currentQ = DESCRIBE_EXERCISE.questions[currentQuestion];
   const { bodyImage, accessoryImage } = getMascotImages(mascotData);
 
   if (isCompleted) {
@@ -447,7 +471,7 @@ const DescribeExercise = () => {
     <View style={styles.container}>
       {/* Progress indicator */}
       <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>Question {currentQuestion + 1} of {questions.length}</Text>
+        <Text style={styles.progressText}>Question {currentQuestion + 1} of {DESCRIBE_EXERCISE.questions.length}</Text>
         <View style={styles.progressBar}>
           <View
             style={[
@@ -580,7 +604,7 @@ const DescribeExercise = () => {
               styles.nextButtonText,
               !exerciseResponses.some(r => r.questionId === currentQ.id) && styles.nextButtonTextDisabled
             ]}>
-              {currentQuestion < questions.length - 1 ? "Next Question" : "Finish"}
+              {currentQuestion < DESCRIBE_EXERCISE.questions.length - 1 ? "Next Question" : "Finish"}
             </Text>
         </TouchableOpacity>
 

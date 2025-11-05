@@ -118,7 +118,7 @@ def unassign_learning_unit(request, child_id, learning_unit_id):
     assignment = Assignment.objects.filter(
         learning_unit=learning_unit,
         assigned_to=child_profile
-    )
+    ).first()
     if not assignment:
         return Response({'error': 'Assignment not found'}, status=404)
 
@@ -162,7 +162,7 @@ def results_for_exercise(request, child_id, exercise_id):
         assignment = Assignment.objects.filter(
             assigned_to=child_profile,
             learning_unit=exercise.learning_unit
-        )
+        ).first()
         if not assignment:
             return Response({'error': 'Assignment not found for this exercise and child'}, status=404)
 
