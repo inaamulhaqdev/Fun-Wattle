@@ -1,3 +1,4 @@
+from time import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from ..models import *
@@ -160,9 +161,6 @@ def results_for_exercise(request, child_id, exercise_id):
         return Response(serializer.data, status=200)
 
     elif request.method == 'POST':
-        time_spent = request.data.get('time_spent')
-        accuracy = request.data.get('accuracy')
-
         assignment = Assignment.objects.filter(
             assigned_to=child_profile,
             learning_unit=exercise.learning_unit
@@ -170,12 +168,21 @@ def results_for_exercise(request, child_id, exercise_id):
         if not assignment:
             return Response({'error': 'Assignment not found for this exercise and child'}, status=404)
 
-        result, created = Exercise_Result.objects.update_or_create(
+        exercise_result = Exercise_Result.objects.filter(
+            assignment=assignment,
+            exercise=exercise
+        ).first()
+        if not exercise_result:
+            return Response({'error': 'Cannot calculate accuracy and complete exercise if child has not completed any questions in this exercise'}, status=404)
+
+        accuracy = (exercise_result.num_correct / (exercise_result.num_correct + exercise_result.num_incorrect) * 100) if (exercise_result.num_correct + exercise_result.num_incorrect) > 0 else 0.0
+
+        result, created = Exercise_Result.objects.update(
             assignment=assignment,
             exercise=exercise,
             defaults={
-                'time_spent': time_spent,
-                'accuracy': accuracy
+                'accuracy': accuracy,
+                'completed_at': timezone.now()
             }
         )
         serializer = ExerciseResultSerializer(result)
@@ -212,6 +219,7 @@ def results_for_question(request, child_id, question_id):
         if not assignment:
             return Response({'error': 'Assignment not found for this question and child'}, status=404)
 
+        # Get or create Exercise_Result
         exercise_result, _ = Exercise_Result.objects.get_or_create(
             assignment=assignment,
             exercise=exercise
@@ -223,14 +231,14 @@ def results_for_question(request, child_id, question_id):
             question=question,
             defaults={
                 'num_incorrect': num_incorrect,
-                'num_correct': num_correct
+                'num_correct': num_correct,
+                'completed_at': timezone.now()
             }
         )
 
-        # Update Exercise_Result aggregates (time spent, num_correct, num_incorrect, accuracy)
+        # Update Exercise_Result aggregates (time spent, num_correct, num_incorrect)
         exercise_result.num_incorrect += num_incorrect
         exercise_result.num_correct += num_correct
-        exercise_result.accuracy = (exercise_result.num_correct / (exercise_result.num_correct + exercise_result.num_incorrect) * 100)
         exercise_result.save()
 
         serializer = QuestionResultSerializer(result)

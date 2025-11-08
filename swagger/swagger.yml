@@ -428,15 +428,6 @@ paths:
           application/json:
             schema:
               type: object
-              properties:
-                time_spent:
-                  type: integer
-                accuracy:
-                  type: number
-                  format: float
-              required:
-                - time_spent
-                - accuracy
       responses:
         '201':
           description: Result created
