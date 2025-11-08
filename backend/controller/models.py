@@ -88,6 +88,7 @@ class Question(models.Model):
     question_type = models.CharField(max_length=20, choices=(('multiple_drag', 'Multiple Drag'), ('multiple_select', 'Multiple Select'), ('ordered_drag', 'Ordered Drag'), ('speaking', 'Speaking')))
     order = models.IntegerField()
     question_data = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'Question'
@@ -100,6 +101,7 @@ class Assignment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     learning_unit = models.ForeignKey(Learning_Unit, on_delete=models.CASCADE, related_name='assignments')
     participation_type = models.CharField(max_length=15, choices=(('required', 'Required'), ('recommended', 'Recommended')))
+    num_question_attempts = models.IntegerField(default=2)
     assigned_to = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='assignments')
     assigned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_assignments')
     assigned_at = models.DateTimeField(auto_now_add=True)
@@ -134,8 +136,8 @@ class Question_Result(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     exercise_result = models.ForeignKey(Exercise_Result, on_delete=models.CASCADE, related_name='question_results')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='question_results')
-    num_attempts = models.IntegerField(null=True, blank=True)
-    correct = models.BooleanField(null=True, blank=True)
+    num_correct = models.IntegerField(null=True, blank=True)
+    num_incorrect = models.IntegerField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

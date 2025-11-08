@@ -77,6 +77,7 @@ def manage_assignment(request, child_id):
         learning_unit_id = request.data.get('learning_unit_id')
         user_id = request.data.get('user_id')
         participation_type = request.data.get('participation_type')
+        num_question_attempts = request.data.get('num_question_attempts', 2) # Default to 2 attempts
 
         if not all([learning_unit_id, child_id, user_id]):
             return Response({'error': 'learning_unit_id, child_id, and user_id are required'}, status=400)
@@ -101,6 +102,7 @@ def manage_assignment(request, child_id):
             defaults={
                 'participation_type': participation_type,
                 'assigned_by': user,
+                'num_question_attempts': num_question_attempts
             },
         )
         serializer = AssignmentSerializer(assignment)
@@ -178,6 +180,62 @@ def results_for_exercise(request, child_id, exercise_id):
         )
         serializer = ExerciseResultSerializer(result)
         return Response(serializer.data, status=201 if created else 200)
+
+
+@api_view(['GET', 'POST'])
+def results_for_question(request, child_id, question_id):
+    child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
+    if not child_profile:
+        return Response({'error': 'Child profile not found'}, status=404)
+
+    question = Question.objects.filter(id=question_id).first()
+    if not question:
+        return Response({'error': 'Question not found'}, status=404)
+
+    if request.method == 'GET':
+        results = Question_Result.objects.filter(
+            exercise_result__assignment__assigned_to=child_profile,
+            question=question
+        )
+        serializer = QuestionResultSerializer(results, many=True)
+        return Response(serializer.data, status=200)
+
+    elif request.method == 'POST':
+        num_incorrect = request.data.get('num_incorrect')
+        num_correct = request.data.get('num_correct')
+
+        exercise = question.exercise
+        assignment = Assignment.objects.filter(
+            assigned_to=child_profile,
+            learning_unit=exercise.learning_unit
+        ).first()
+        if not assignment:
+            return Response({'error': 'Assignment not found for this question and child'}, status=404)
+
+        exercise_result, _ = Exercise_Result.objects.get_or_create(
+            assignment=assignment,
+            exercise=exercise
+        )
+
+        # Update or create Question_Result
+        result, created = Question_Result.objects.update_or_create(
+            exercise_result=exercise_result,
+            question=question,
+            defaults={
+                'num_incorrect': num_incorrect,
+                'num_correct': num_correct
+            }
+        )
+
+        # Update Exercise_Result aggregates (time spent, num_correct, num_incorrect, accuracy)
+        exercise_result.num_incorrect += num_incorrect
+        exercise_result.num_correct += num_correct
+        exercise_result.accuracy = (exercise_result.num_correct / (exercise_result.num_correct + exercise_result.num_incorrect) * 100)
+        exercise_result.save()
+
+        serializer = QuestionResultSerializer(result)
+        return Response(serializer.data, status=201 if created else 200)
+
 
 AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "australiaeast")
@@ -279,11 +337,11 @@ def assess_speech(request):
 
         for label in labels_to_remove:
             feedback_text = re.sub(label, '', feedback_text, flags=re.IGNORECASE)
-        
-        # clean up gpt feedback 
-        feedback_text = re.sub(r'^\s*(?:\d+[\.\)]\s*|[-*•]\s*|[#*]+)\s*', '', feedback_text, flags=re.MULTILINE) 
-        feedback_text = re.sub(r'[^\w\s.,!?\'"]+', '', feedback_text)   
-        feedback_text = re.sub(r'\s+', ' ', feedback_text).strip()        
+
+        # clean up gpt feedback
+        feedback_text = re.sub(r'^\s*(?:\d+[\.\)]\s*|[-*•]\s*|[#*]+)\s*', '', feedback_text, flags=re.MULTILINE)
+        feedback_text = re.sub(r'[^\w\s.,!?\'"]+', '', feedback_text)
+        feedback_text = re.sub(r'\s+', ' ', feedback_text).strip()
 
         return Response({
             "transcript": result.text,

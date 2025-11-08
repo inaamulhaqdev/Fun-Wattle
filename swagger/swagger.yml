@@ -4,7 +4,7 @@ info:
   description: API for the Funwattle MVP app - a speech therapy assistance app
   version: 1.0.0
 servers:
-  - url: http://localhost:7000/api
+  - url: https://funwattle-web-service.onrender.com/api
     description: Backend Server
 
 paths:
@@ -311,6 +311,9 @@ paths:
                 participation_type:
                   type: string
                   enum: [required, recommended]
+                num_question_attempts:
+                  type: integer
+                  default: 2
               required:
                 - learning_unit_id
                 - user_id
@@ -393,7 +396,7 @@ paths:
             type: string
       responses:
         '200':
-          description: List of exercise results
+          description: Exercise results data
           content:
             application/json:
               schema:
@@ -443,6 +446,75 @@ paths:
                 $ref: '#/components/schemas/ExerciseResult'
         '404':
           description: Child profile, exercise, or assignment not found
+
+  /results/{child_id}/question/{question_id}/:
+    get:
+      summary: Get child's results for a specific question
+      description: Retrieve results for a specific question for a child
+      tags:
+        - Learning Unit
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: question_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Question results data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuestionResult'
+        '404':
+          description: Child profile or question not found
+
+    post:
+      summary: Create or update child's question result
+      description: Create or update a result for a specific question for a child
+      tags:
+        - Learning Unit
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: question_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                num_correct:
+                  type: integer
+                num_incorrect:
+                  type: integer
+              required:
+                - num_correct
+                - num_incorrect
+      responses:
+        '201':
+          description: Result created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionResult'
+        '404':
+          description: Child profile, question, or assignment not found
 
 components:
   schemas:
@@ -608,6 +680,25 @@ components:
         accuracy:
           type: number
           format: float
+        completed_at:
+          type: string
+          format: date-time
+
+    QuestionResult:
+      type: object
+      properties:
+        id:
+          type: string
+        exercise_result:
+          type: string
+          format: uuid
+        question:
+          type: string
+          format: uuid
+        num_correct:
+          type: integer
+        num_incorrect:
+          type: integer
         completed_at:
           type: string
           format: date-time

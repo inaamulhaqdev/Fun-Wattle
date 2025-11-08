@@ -40,3 +40,8 @@ class ExerciseResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exercise_Result
         fields = '__all__'
+
+class QuestionResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question_Result
+        fields = '__all__'

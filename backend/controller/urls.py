@@ -26,6 +26,7 @@ urlpatterns = [
     path('assignments/<str:child_id>/learning_unit/<str:learning_unit_id>/', unassign_learning_unit, name='unassign_learning_unit'), # DELETE
     path('results/<str:child_id>/', get_exercise_results, name='get_exercise_results'), # GET
     path('results/<str:child_id>/exercise/<str:exercise_id>/', results_for_exercise, name='results_for_exercise'), # POST, GET
+    path('results/<str:child_id>/question/<str:question_id>/', results_for_question, name='results_for_question'), # POST, GET
     path("assess/", assess_speech, name="assess_speech"), # POST
     path('text-to-speech/', text_to_speech), # POST
 
