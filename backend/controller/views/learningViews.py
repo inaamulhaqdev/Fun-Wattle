@@ -183,9 +183,13 @@ AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "australiaeast")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
+AZURE_OPENAI_EMB_ENDPOINT = "https://taker-mh6ts5xf-eastus2.cognitiveservices.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2023-05-15"
+
 @api_view(['POST'])
 def assess_speech(request):
     audio_file = request.FILES.get('file')
+    question_id = request.data.get('questionId')
+    question_text = request.data.get('questionText')
 
     if not audio_file:
         return Response({'error': 'audio file is required'}, status=400)
@@ -212,12 +216,6 @@ def assess_speech(request):
         if result.reason != speechsdk.ResultReason.RecognizedSpeech:
             return Response({'error': 'Speech recognition failed'}, status=400)
 
-        ###
-        ### response = client.embeddings.create(
-        ###     input = result.text,
-        ###     model= "text-embedding-3-small"
-        ### )
-
         # Pronunciation assessment
         pron_config = speechsdk.PronunciationAssessmentConfig(
             reference_text=result.text,
@@ -239,8 +237,40 @@ def assess_speech(request):
             "pronunciation_score": pron_result.pronunciation_score,
         }
 
+        emb_client = AzureOpenAI(
+            api_version="2024-12-01-preview",
+            azure_endpoint=AZURE_OPENAI_EMB_ENDPOINT,
+            api_key=AZURE_OPENAI_KEY
+        )
+
+        child_emb = emb_client.embeddings.create(
+            input=result.text,
+            model="text-embedding-3-small"
+        ).data[0].embedding
+
+        question_embeddings = Question_Embedding.objects.filter(question__id=question_id)
+        
+        vector_literal = f"[{','.join(str(x) for x in child_emb)}]"
+
+        # cosine distance → convert to similarity
+        similarities = question_embeddings.annotate(
+            cosine=RawSQL(
+                f"1 - (embedding <=> %s)",
+                (vector_literal,)
+            )
+        ).order_by('-cosine')
+
+        best = similarities.first()
+        if best is None:
+            return Response({"error": "No embeddings exist for this question"}, status=500)
+        best_score = best.cosine
+        best_answer = best.expected_answer_text
+        is_correct = best_score >= 0.80
+
+
+
         # GPT Feedback
-        client = AzureOpenAI(
+        gpt_client = AzureOpenAI(
             api_version="2024-12-01-preview",
             azure_endpoint=AZURE_OPENAI_ENDPOINT,
             api_key=AZURE_OPENAI_KEY,
@@ -248,8 +278,13 @@ def assess_speech(request):
 
         system_prompt = "You are an encouraging, friendly speech therapist helping children practice pronunciation. Ensure that you are providing constructive feedback on their pronunciation. Ensure you are following the professional and ethical speech pathologist guidelines when interacting with the child."
         user_prompt = f"""
-        Question asked: "{request.data.get('questionText')}"
+        Question asked: "{questionText}"
         Child's speech: "{result.text}"
+
+        Expected best match: "{best_answer}"
+        Cosine similarity: {best_score:.2f}
+        Correct: {is_correct}
+
         Pronunciation Assessment Results: {json.dumps(pron_data, indent=2)}
         Generate exactly three sentences giving feedback:
         - First sentence: encouraging and positive
@@ -259,7 +294,7 @@ def assess_speech(request):
         Output ONLY the sentences themselves, nothing else.
         """
 
-        response_gpt = client.chat.completions.create(
+        response_gpt = gpt_client.chat.completions.create(
             model="feedback-gpt4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -288,7 +323,10 @@ def assess_speech(request):
         return Response({
             "transcript": result.text,
             "pronunciation": pron_data,
-            "feedback": feedback_text
+            "feedback": feedback_text,
+            "is_correct": is_correct,
+            "similarity_score": best_score,
+            "matched_answer": best_answer,
         }, status=200)
 
     finally:
