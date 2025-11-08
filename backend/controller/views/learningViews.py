@@ -160,7 +160,7 @@ def results_for_exercise(request, child_id, exercise_id):
         serializer = ExerciseResultSerializer(results, many=True)
         return Response(serializer.data, status=200)
 
-    elif request.method == 'POST':
+    elif request.method == 'POST': # This post call is used to complete exercise
         assignment = Assignment.objects.filter(
             assigned_to=child_profile,
             learning_unit=exercise.learning_unit
@@ -173,20 +173,17 @@ def results_for_exercise(request, child_id, exercise_id):
             exercise=exercise
         ).first()
         if not exercise_result:
-            return Response({'error': 'Cannot calculate accuracy and complete exercise if child has not completed any questions in this exercise'}, status=404)
+            return Response({'error': 'Cannot complete exercise if child has not completed any questions in this exercise'}, status=404)
 
-        accuracy = (exercise_result.num_correct / (exercise_result.num_correct + exercise_result.num_incorrect) * 100) if (exercise_result.num_correct + exercise_result.num_incorrect) > 0 else 0.0
-
-        result, created = Exercise_Result.objects.update(
+        result = Exercise_Result.objects.update(
             assignment=assignment,
             exercise=exercise,
             defaults={
-                'accuracy': accuracy,
                 'completed_at': timezone.now()
             }
         )
         serializer = ExerciseResultSerializer(result)
-        return Response(serializer.data, status=201 if created else 200)
+        return Response(serializer.data, status=201)
 
 
 @api_view(['GET', 'POST'])
@@ -210,6 +207,9 @@ def results_for_question(request, child_id, question_id):
     elif request.method == 'POST':
         num_incorrect = request.data.get('num_incorrect')
         num_correct = request.data.get('num_correct')
+
+        if num_incorrect is None or num_correct is None:
+            return Response({'error': 'num_incorrect and num_correct are required'}, status=400)
 
         exercise = question.exercise
         assignment = Assignment.objects.filter(
@@ -239,6 +239,10 @@ def results_for_question(request, child_id, question_id):
         # Update Exercise_Result aggregates (time spent, num_correct, num_incorrect)
         exercise_result.num_incorrect += num_incorrect
         exercise_result.num_correct += num_correct
+        if exercise_result.num_correct + exercise_result.num_incorrect > 0:
+            exercise_result.accuracy = (exercise_result.num_correct / (exercise_result.num_correct + exercise_result.num_incorrect) * 100)
+        else:
+            exercise_result.accuracy = num_correct / (num_correct + num_incorrect) * 100
         exercise_result.save()
 
         serializer = QuestionResultSerializer(result)
