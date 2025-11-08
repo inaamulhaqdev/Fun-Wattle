@@ -19,7 +19,7 @@ const MascotCustomization = () => {
   //     return;
   //   }
   //   try {
-  //     const response = await fetch(`${API_URL}/api/children/current/mascot`, { // not sure about endpoint
+  //     const response = await fetch(`${API_URL}/children/current/mascot`, { // not sure about endpoint
   //       method: 'PUT',
   //       headers: {
   //         'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ const MascotCustomization = () => {
   //       Alert.alert('Error', 'You must be authorized to perform this action');
   //       return;
   //     }
-  //     const response = await fetch(`${API_URL}/api/children/current/coins`, {
+  //     const response = await fetch(`${API_URL}/children/current/coins`, {
   //       method: 'GET',
   //       headers: {
   //         'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ const MascotCustomization = () => {
   // Function to update child's coin balance in backend
   // const updateCoinBalance = async (newBalance: number) => {
   //   try {
-  //     const response = await fetch(`${API_URL}/api/children/current/coins`, {
+  //     const response = await fetch(`${API_URL}/children/current/coins`, {
   //       method: 'PUT',
   //       headers: {
   //         'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ const MascotCustomization = () => {
   // Function to fetch child's unlocked accessories from backend
   // const fetchUnlockedAccessories = async () => {
   //   try {
-  //     const response = await fetch(`${API_URL}/api/children/current/accessories`, {
+  //     const response = await fetch(`${API_URL}/children/current/accessories`, {
   //       method: 'GET',
   //       headers: {
   //         'Content-Type': 'application/json',

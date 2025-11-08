@@ -14,7 +14,7 @@ export const fetchUnitStats = async (
     if (!childId) throw new Error("childId is required");
 
     // Fetch all exercises
-    const exResp = await fetch(`${API_URL}/api/exercises/${learningUnitId}/`);
+    const exResp = await fetch(`${API_URL}/content/${learningUnitId}/exercises/`);
     if (!exResp.ok) throw new Error("Failed to fetch exercises");
 
     const exercisesData = await exResp.json();
@@ -24,7 +24,7 @@ export const fetchUnitStats = async (
     // Fetch all results
     const results = await Promise.all(
       exercises.map(async (ex) => {
-        const resResp = await fetch(`${API_URL}/api/results/${childId}/exercise/${ex.id}/`);
+        const resResp = await fetch(`${API_URL}/result/${childId}/exercise/${ex.id}/`);
         if (!resResp.ok) throw new Error("Failed to fetch results for exercises");
 
         const resJson = await resResp.json();
