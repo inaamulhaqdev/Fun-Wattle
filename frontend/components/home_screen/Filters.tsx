@@ -5,23 +5,40 @@ import TotalView from "./Total_View";
 import RequiredView from "./Required_View";
 import RecommendedView from "./Recommended_View";
 
-const segments = [
+export const segments = [
   { value: "total", label: "Total" },
   { value: "required", label: "Required" },
   { value: "recommended", label: "Recommended" },
 ];
 
-const Filters = () => {
+export type AssignedLearningUnit = {
+  assignmentId: string;
+  learningUnitId: string;
+  title: string;
+  category: string;
+  participationType: "required" | "recommended";
+  time?: number;
+  status?: string;
+};
+
+interface FiltersProps {
+  assignedUnits: AssignedLearningUnit[];
+}
+
+const Filters = ({ assignedUnits }: FiltersProps) => {
   const [selected, setSelected] = useState("total");
 
   const renderContent = () => {
+    const required = assignedUnits.filter((u) => u.participationType === "required");
+    const recommended = assignedUnits.filter((u) => u.participationType === "recommended");
+
     switch (selected) {
       case "total":
-        return <TotalView />;
+        return <TotalView units={assignedUnits} />;
       case "required":
-        return <RequiredView />;
+        return <RequiredView units={required} />;
       case "recommended":
-        return <RecommendedView />;
+        return <RecommendedView units={recommended} />;
       default:
         return null;
     }
@@ -30,17 +47,17 @@ const Filters = () => {
   return (
     <View style={styles.container}>
       <View style={styles.segmentContainer}>
-        {segments.map((segment) => (
+        {segments.map((seg) => (
           <Button
-            key={segment.value}
-            mode={selected === segment.value ? "contained" : "outlined"}
-            onPress={() => setSelected(segment.value)}
+            key={seg.value}
+            mode={selected === seg.value ? "contained" : "outlined"}
+            onPress={() => setSelected(seg.value)}
             style={styles.segment}
-            buttonColor={selected === segment.value ? "#48d1cc" : ""}
-            textColor="#000000"
-            labelStyle={{ fontSize: 13 }}
+            buttonColor={selected === seg.value ? "#fDD652" : ""}
+            textColor="#000"
+            labelStyle={{ fontSize: 12 }}
           >
-            {segment.label}
+            {seg.label}
           </Button>
         ))}
       </View>

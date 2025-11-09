@@ -21,7 +21,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ title, duration, progress, a
                     {duration}
                 </Chip>
                 <Text variant="labelLarge" style={{ fontWeight: "600" }}>
-                    {accuracy}
+                    {accuracy} correct
                 </Text>
                 
             </View>
