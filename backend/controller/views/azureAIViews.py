@@ -197,7 +197,7 @@ def text_to_speech(request):
            xmlns:mstts="https://www.w3.org/2001/mstts"
            xml:lang="en-AU">
         <voice name="{voice}">
-            <prosody volume="+6dB">
+            <prosody volume="150%">
                 <mstts:express-as style="{style}" styledegree="1.2">
                     {text}
                 </mstts:express-as>
