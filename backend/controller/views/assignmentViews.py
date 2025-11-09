@@ -33,11 +33,9 @@ def create_assignment(request):
     assignment = Assignment.objects.create(
         learning_unit=learning_unit,
         assigned_to=child_profile,
-        defaults={
-            'participation_type': participation_type,
-            'assigned_by': user,
-            'num_question_attempts': num_question_attempts
-        },
+        participation_type=participation_type,
+        assigned_by=user,
+        num_question_attempts=num_question_attempts
     )
     if not assignment:
         return Response({'error': 'Failed to create assignment'}, status=500)
