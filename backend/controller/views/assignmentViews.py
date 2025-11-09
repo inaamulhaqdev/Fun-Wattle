@@ -7,10 +7,6 @@ from time import timezone
 
 @api_view(['POST'])
 def create_assignment(request):
-    child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
-    if not child_profile:
-        return Response({'error': 'Child profile not found'}, status=404)
-
     child_id = request.data.get('child_id')
     learning_unit_id = request.data.get('learning_unit_id')
     user_id = request.data.get('user_id')
@@ -20,8 +16,8 @@ def create_assignment(request):
     if not all([learning_unit_id, child_id, user_id]):
         return Response({'error': 'learning_unit_id, child_id, and user_id are required'}, status=400)
 
-    learning_unit = Learning_Unit.objects.filter(id=learning_unit_id).first()
     child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
+    learning_unit = Learning_Unit.objects.filter(id=learning_unit_id).first()
     user = User.objects.filter(id=user_id).first()
 
     if not learning_unit:
