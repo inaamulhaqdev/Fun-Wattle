@@ -13,7 +13,7 @@ import { fetchUnitStats } from "@/components/util/fetchUnitStats";
 
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
-  
+
   return date.toLocaleDateString("en-AU", {
     day: "2-digit",
     month: "2-digit",
@@ -40,7 +40,7 @@ export default function TherapistDashboard() {
         }
 
         const user = session.user;
-        const response = await fetch(`${API_URL}/api/profiles/${user.id}/`, {
+        const response = await fetch(`${API_URL}/profile/${user.id}/list/`, {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`
           }
@@ -85,8 +85,8 @@ export default function TherapistDashboard() {
           setLoading(true);
 
           const [unitsResp, assignmentsResp] = await Promise.all([
-            fetch(`${API_URL}/api/learning_units/`),
-            fetch(`${API_URL}/api/activities/${userId}/`)
+            fetch(`${API_URL}/content/learning_units/`),
+            fetch(`${API_URL}/assignment/${userId}/assigned_by/`)
           ]);
 
           if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');

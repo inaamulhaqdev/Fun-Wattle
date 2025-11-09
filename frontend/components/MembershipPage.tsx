@@ -20,7 +20,7 @@ const MembershipPage = () => {
 
       if (type === 'free_trial') {
         // Save membership type (free), start (now) and end date (7 days from now)
-        const response = await fetch(`${API_URL}/api/subscribe/`, {
+        const response = await fetch(`${API_URL}/user/subscribe/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
           body: JSON.stringify({
@@ -38,7 +38,7 @@ const MembershipPage = () => {
         }
       } else if (type === 'paid') {
         // Save membership type (paid) and start date (now)
-        const response = await fetch(`${API_URL}/api/subscribe/`, {
+        const response = await fetch(`${API_URL}/user/subscribe/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
           body: JSON.stringify({

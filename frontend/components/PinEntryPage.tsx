@@ -54,7 +54,7 @@ const PinEntryPage = () => {
 
         try {
           // Get the stored PIN hash from the backend
-          const response = await fetch(`${API_URL}/api/profile/${profileId}/`, {
+          const response = await fetch(`${API_URL}/profile/${profileId}/data/`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${session?.access_token}`

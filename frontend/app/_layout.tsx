@@ -10,36 +10,36 @@ import { AppProvider } from '../context/AppContext';
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import { ActivityIndicator } from 'react-native';
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+// export const unstable_settings = {
+//   anchor: '(tabs)',
+// };
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   const [fontsLoaded] = useFonts({
-    Poppins_400Regular, 
+    Poppins_400Regular,
     Poppins_600SemiBold,
-  }); 
+  });
 
   if (!fontsLoaded) {
     return <ActivityIndicator style={{ flex: 1, justifyContent: 'center'}} />;
   }
 
   const paperTheme = {
-    ...MD3LightTheme, 
+    ...MD3LightTheme,
     fonts: {
-      ...MD3LightTheme.fonts, 
+      ...MD3LightTheme.fonts,
       bodyLarge: { ...MD3LightTheme.fonts.bodyLarge, fontFamily: 'Poppins_400Regular'},
       bodyMedium: { ...MD3LightTheme.fonts.bodyMedium, fontFamily: 'Poppins_400Regular'},
-      titleLarge: { ...MD3LightTheme.fonts.titleLarge, fontFamily: 'Poppins_600SemiBold'}, 
-      titleMedium: { ...MD3LightTheme.fonts.titleMedium, fontFamily: 'Poppins_600SemiBold'}, 
+      titleLarge: { ...MD3LightTheme.fonts.titleLarge, fontFamily: 'Poppins_600SemiBold'},
+      titleMedium: { ...MD3LightTheme.fonts.titleMedium, fontFamily: 'Poppins_600SemiBold'},
       labelLarge: { ...MD3LightTheme.fonts.labelLarge, fontFamily: 'Poppins_600SemiBold'},
       labelMedium: { ...MD3LightTheme.fonts.labelMedium, fontFamily: 'Poppins_600SemiBold'},
       labelSmall: { ...MD3LightTheme.fonts.labelSmall, fontFamily: 'Poppins_400Regular'},
 
     }
-  }; 
+  };
 
   const navTheme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
   const headerStyle = {
@@ -80,7 +80,7 @@ export default function RootLayout() {
           <Stack.Screen name="child-stats" options={{ headerShown: false }} />
           <Stack.Screen name="activity" options={{ headerShown: false }} />
           <Stack.Screen name="multiple_drag_exercise" options={{ headerShown: false }} />
-          <Stack.Screen name="describing_pictures" options={{ headerShown: false }} />
+          <Stack.Screen name="describe_exercise" options={{ headerShown: false }} />
           <Stack.Screen name="mascot-customization" options={{ headerShown: false }} />
           <Stack.Screen name="(therapist-tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

@@ -41,7 +41,7 @@ export default function ParentDashboard() {
         }
 
         // Get parent profile
-        const parentProfileResponse = await fetch(`${API_URL}/api/profile/${profileId}/`, {
+        const parentProfileResponse = await fetch(`${API_URL}/profile/${profileId}/data/`, {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`
           }
@@ -53,7 +53,7 @@ export default function ParentDashboard() {
         setParentName(parentProfileData.name);
 
         // Get selected child profile
-        const selectedChildResponse = await fetch(`${API_URL}/api/profile/${childId}/`, {
+        const selectedChildResponse = await fetch(`${API_URL}/profile/${childId}/data/`, {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`
           }

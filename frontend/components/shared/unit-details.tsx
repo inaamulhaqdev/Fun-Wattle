@@ -38,7 +38,7 @@ export default function DetailView({
       return;
     }
 
-    const response = await fetch(`${API_URL}/api/assignments/${childId}`, {
+    const response = await fetch(`${API_URL}/assignment/${childId}/assigned_to/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ export default function DetailView({
       return;
     }
 
-    const response = await fetch(`${API_URL}/api/assignments/${childId}/learning_unit/${learningUnitId}/`, {
+    const response = await fetch(`${API_URL}/assignment/${childId}/unassign/${learningUnitId}/`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ export default function DetailView({
   useEffect(() => {
     const fetchExercises = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/exercises/${selectedItem.id}/`, {
+        const response = await fetch(`${API_URL}/content/${selectedItem.id}/exercises/`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -176,48 +176,48 @@ export default function DetailView({
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 16, 
-    backgroundColor: '#fff' 
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff'
   },
-  backButton: { 
-    marginTop: 40, 
-    alignSelf: 'flex-start' 
+  backButton: {
+    marginTop: 40,
+    alignSelf: 'flex-start'
   },
-  title: { 
-    fontSize: 25, 
-    marginTop: 30, 
-    fontWeight: '600', 
-    color: '#000' 
+  title: {
+    fontSize: 25,
+    marginTop: 30,
+    fontWeight: '600',
+    color: '#000'
   },
-  category: { 
-    fontSize: 20, 
-    padding: 10, 
-    color: '#000' 
+  category: {
+    fontSize: 20,
+    padding: 10,
+    color: '#000'
   },
-  heading: { 
-    fontSize: 20, 
-    padding: 10, 
-    color: '#000', 
+  heading: {
+    fontSize: 20,
+    padding: 10,
+    color: '#000',
     paddingBottom: 20 },
-  description: { 
-    fontSize: 15, 
-    padding: 10, 
-    color: '#000', 
+  description: {
+    fontSize: 15,
+    padding: 10,
+    color: '#000',
     paddingBottom: 15 },
-  divider: { 
-    height: 1, 
-    backgroundColor: 'black', 
+  divider: {
+    height: 1,
+    backgroundColor: 'black',
     marginVertical: 2 },
-  scrollArea: { 
-    flex: 1 
+  scrollArea: {
+    flex: 1
   },
-  scrollContent: { 
-    paddingBottom: 50 
+  scrollContent: {
+    paddingBottom: 50
   },
-  buttonWrapper: { 
-    marginBottom: 50, 
-    alignItems: 'center' 
+  buttonWrapper: {
+    marginBottom: 50,
+    alignItems: 'center'
   },
 });
