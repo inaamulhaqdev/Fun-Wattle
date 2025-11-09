@@ -11,68 +11,6 @@ import { API_URL } from '@/config/api';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
 
-const assignLearningUnit = async (
-  learningUnitId: string,
-  childId: string,
-  userId: string,
-  participationType: 'required' | 'recommended'
-) => {
-  if (!session?.access_token) {
-    Alert.alert('Error', 'You must be authorized to perform this action');
-    return;
-  }
-
-  const response = await fetch(`${API_URL}/api/assignments/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session?.access_token}`,
-    },
-    body: JSON.stringify({
-      learning_unit_id: learningUnitId,
-      child_id: childId,
-      user_id: userId,
-      participation_type: participationType,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to assign learning unit (${response.status})`);
-  }
-
-  return await response.json();
-};
-
-const unassignLearningUnit = async (
-  learningUnitId: string,
-  childId: string,
-  userId: string
-) => {
-  if (!session?.access_token) {
-    Alert.alert('Error', 'You must be authorized to perform this action');
-    return;
-  }
-
-  const response = await fetch(`${API_URL}/api/assignments/`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session?.access_token}`,
-    },
-    body: JSON.stringify({
-      learning_unit_id: learningUnitId,
-      child_id: childId,
-      user_id: userId,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to unassign learning unit (${response.status})`);
-  }
-
-  return await response.json();
-};
-
 function matchesFilters(
   item: LearningUnit,
   searchQuery: string,
@@ -116,6 +54,63 @@ export default function LearningLibrary({ data }: LibraryProps) {
       }
       return category;
     });
+  };
+
+  const assignLearningUnit = async (
+    learningUnitId: string,
+    childId: string,
+    userId: string,
+    participationType: 'required' | 'recommended'
+  ) => {
+    if (!session?.access_token) {
+      Alert.alert('Error', 'You must be authorized to perform this action');
+      return;
+    }
+
+    const response = await fetch(`${API_URL}/assignment/create/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify({
+        learning_unit_id: learningUnitId,
+        child_id: childId,
+        user_id: userId,
+        participation_type: participationType,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to assign learning unit (${response.status})`);
+    }
+
+    return await response.json();
+  };
+
+  const unassignLearningUnit = async (
+    learningUnitId: string,
+    childId: string,
+    userId: string
+  ) => {
+    if (!session?.access_token) {
+      Alert.alert('Error', 'You must be authorized to perform this action');
+      return;
+    }
+
+    const response = await fetch(`${API_URL}/assignment/${childId}/unassign/${learningUnitId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to unassign learning unit (${response.status})`);
+    }
+
+    return await response.json();
   };
 
   const navigation = useNavigation();
