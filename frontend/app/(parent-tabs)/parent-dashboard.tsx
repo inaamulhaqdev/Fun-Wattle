@@ -12,7 +12,7 @@ import { fetchUnitStats } from "@/components/util/fetchUnitStats";
 
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
-  
+
   return date.toLocaleDateString("en-AU", {
     day: "2-digit",
     month: "2-digit",
@@ -40,7 +40,7 @@ export default function ParentDashboard() {
         }
 
         // Get parent profile
-        const parentProfileResponse = await fetch(`${API_URL}/api/profile/${profileId}/`, {
+        const parentProfileResponse = await fetch(`${API_URL}/profile/${profileId}/data/`, {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`
           }
@@ -52,7 +52,7 @@ export default function ParentDashboard() {
         setParentName(parentProfileData.name);
 
         // Get selected child profile
-        const selectedChildResponse = await fetch(`${API_URL}/api/profile/${childId}/`, {
+        const selectedChildResponse = await fetch(`${API_URL}/profile/${childId}/data/`, {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`
           }
@@ -81,8 +81,8 @@ export default function ParentDashboard() {
           setLoading(true);
 
           const [unitsResp, assignmentsResp] = await Promise.all([
-            fetch(`${API_URL}/api/learning_units/`),
-            fetch(`${API_URL}/api/activities/${userId}/`)
+            fetch(`${API_URL}/content/learning_units/`),
+            fetch(`${API_URL}/assignment/${userId}/assigned_by/`)
           ]);
 
           if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');

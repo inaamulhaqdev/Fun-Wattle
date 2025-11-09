@@ -53,7 +53,7 @@ const AccountSelectionPage = () => {
 
         const user = session.user;
 
-        const response = await fetch(`${API_URL}/api/profiles/${user.id}/`, {
+        const response = await fetch(`${API_URL}/profile/${user.id}/list/`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${session?.access_token}`

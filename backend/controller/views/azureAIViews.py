@@ -14,170 +14,6 @@ from django.http import HttpResponse
 import re
 
 
-@api_view(['GET'])
-def get_all_learning_units(request):
-	child_id = request.query_params.get('child_id')
-	learning_units = Learning_Unit.objects.all()
-	serializer = LearningUnitSerializer(
-    	learning_units,
-    	many=True,
-    	context={'child_id': child_id}
-	)
-	return Response(serializer.data, status=200)
-
-
-@api_view(['GET'])
-def get_exercises_for_learning_unit(request, learning_unit_id):
-	try:
-		learning_unit = Learning_Unit.objects.get(id=learning_unit_id)
-	except Learning_Unit.DoesNotExist:
-		return Response({'error': 'Learning unit not found'}, status=404)
-
-	exercises = Exercise.objects.filter(learning_unit=learning_unit)
-	serializer = ExerciseSerializer(exercises, many=True)
-	return Response(serializer.data, status=200)
-
-
-@api_view(['GET'])
-def get_questions_for_exercise(request, exercise_id):
-    try:
-        exercise = Exercise.objects.get(id=exercise_id)
-    except Exercise.DoesNotExist:
-        return Response({'error': 'Exercise not found'}, status=404)
-
-    questions = Question.objects.filter(exercise=exercise)
-    serializer = QuestionSerializer(questions, many=True)
-    return Response(serializer.data, status=200)
-
-
-@api_view(['GET'])
-def get_assigned(request, user_id):
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return Response({'error': 'User not found'}, status=404)
-
-    assigned_activities = Assignment.objects.filter(assigned_by=user)
-    serializer = AssignmentSerializer(assigned_activities, many=True)
-    return Response(serializer.data, status=200)
-
-
-@api_view(['GET', 'POST'])
-def manage_assignment(request, child_id):
-    if request.method == 'GET':
-        child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
-        if not child_profile:
-            return Response({'error': 'Child profile not found'}, status=404)
-
-        assignments = Assignment.objects.filter(assigned_to=child_profile)
-        serializer = AssignmentSerializer(assignments, many=True)
-        return Response(serializer.data)
-
-    elif request.method == 'POST':
-        learning_unit_id = request.data.get('learning_unit_id')
-        user_id = request.data.get('user_id')
-        participation_type = request.data.get('participation_type')
-
-        if not all([learning_unit_id, child_id, user_id]):
-            return Response({'error': 'learning_unit_id, child_id, and user_id are required'}, status=400)
-
-        learning_unit = Learning_Unit.objects.filter(id=learning_unit_id).first()
-        child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
-        user = User.objects.filter(id=user_id).first()
-
-        if not learning_unit:
-            return Response({'error': 'Learning unit not found'}, status=404)
-        if not child_profile:
-            return Response({'error': 'Child profile not found'}, status=404)
-        if not user:
-            return Response({'error': 'User not found'}, status=404)
-
-        if participation_type not in ['required', 'recommended']:
-            return Response({'error': 'participation_type must be "required" or "recommended"'}, status=400)
-
-        assignment, created = Assignment.objects.update_or_create(
-            learning_unit=learning_unit,
-            assigned_to=child_profile,
-            defaults={
-                'participation_type': participation_type,
-                'assigned_by': user,
-            },
-        )
-        serializer = AssignmentSerializer(assignment)
-        return Response(serializer.data, status=201 if created else 200)
-
-
-@api_view(['DELETE'])
-def unassign_learning_unit(request, child_id, learning_unit_id):
-    child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
-    if not child_profile:
-        return Response({'error': 'Child profile not found'}, status=404)
-
-    learning_unit = Learning_Unit.objects.filter(id=learning_unit_id).first()
-    if not learning_unit:
-        return Response({'error': 'Learning unit not found'}, status=404)
-
-    assignment = Assignment.objects.filter(
-        learning_unit=learning_unit,
-        assigned_to=child_profile
-    ).first()
-    if not assignment:
-        return Response({'error': 'Assignment not found'}, status=404)
-
-    assignment.delete()
-    return Response({'message': 'Assignment removed successfully'}, status=200)
-
-
-@api_view(['GET'])
-def get_exercise_results(request, child_id):
-    child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
-    if not child_profile:
-        return Response({'error': 'Child profile not found'}, status=404)
-
-    results = Exercise_Result.objects.filter(profile=child_profile)
-    serializer = ExerciseResultSerializer(results, many=True)
-    return Response(serializer.data, status=200)
-
-
-@api_view(['GET', 'POST'])
-def results_for_exercise(request, child_id, exercise_id):
-    child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
-    if not child_profile:
-        return Response({'error': 'Child profile not found'}, status=404)
-
-    exercise = Exercise.objects.filter(id=exercise_id).first()
-    if not exercise:
-        return Response({'error': 'Exercise not found'}, status=404)
-
-    if request.method == 'GET':
-        results = Exercise_Result.objects.filter(
-            assignment__assigned_to=child_profile,
-            exercise=exercise
-        )
-        serializer = ExerciseResultSerializer(results, many=True)
-        return Response(serializer.data, status=200)
-
-    elif request.method == 'POST':
-        time_spent = request.data.get('time_spent')
-        accuracy = request.data.get('accuracy')
-
-        assignment = Assignment.objects.filter(
-            assigned_to=child_profile,
-            learning_unit=exercise.learning_unit
-        ).first()
-        if not assignment:
-            return Response({'error': 'Assignment not found for this exercise and child'}, status=404)
-
-        result, created = Exercise_Result.objects.update_or_create(
-            assignment=assignment,
-            exercise=exercise,
-            defaults={
-                'time_spent': time_spent,
-                'accuracy': accuracy
-            }
-        )
-        serializer = ExerciseResultSerializer(result)
-        return Response(serializer.data, status=201 if created else 200)
 
 AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "australiaeast")
@@ -314,11 +150,11 @@ def assess_speech(request):
 
         for label in labels_to_remove:
             feedback_text = re.sub(label, '', feedback_text, flags=re.IGNORECASE)
-        
-        # clean up gpt feedback 
-        feedback_text = re.sub(r'^\s*(?:\d+[\.\)]\s*|[-*•]\s*|[#*]+)\s*', '', feedback_text, flags=re.MULTILINE) 
-        feedback_text = re.sub(r'[^\w\s.,!?\'"]+', '', feedback_text)   
-        feedback_text = re.sub(r'\s+', ' ', feedback_text).strip()        
+
+        # clean up gpt feedback
+        feedback_text = re.sub(r'^\s*(?:\d+[\.\)]\s*|[-*•]\s*|[#*]+)\s*', '', feedback_text, flags=re.MULTILINE)
+        feedback_text = re.sub(r'[^\w\s.,!?\'"]+', '', feedback_text)
+        feedback_text = re.sub(r'\s+', ' ', feedback_text).strip()
 
         return Response({
             "transcript": result.text,

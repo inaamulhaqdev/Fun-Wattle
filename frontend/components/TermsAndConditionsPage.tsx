@@ -43,7 +43,7 @@ const TermsAndConditionsPage = () => {
       const user = data.user;
 
       // Save user information to postgres via backend API
-      await fetch(`${API_URL}/api/create/`, {
+      await fetch(`${API_URL}/user/create/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
