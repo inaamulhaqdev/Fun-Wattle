@@ -22,12 +22,16 @@ const formatDate = (isoString: string): string => {
 
 export default function ParentDashboard() {
   const { profileId, childId, session } = useApp();
-  const [loading, setLoading] = useState(true);
+
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [parentName, setParentName] = useState('');
   const [selectedChildName, setSelectedChildName] = useState('');
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
 
   const userId = session.user.id;
+
+  const loading = loadingProfiles || loadingAssignments;
 
   // Get profiles
   useEffect(() => {
@@ -66,20 +70,18 @@ export default function ParentDashboard() {
       } catch (error: any) {
         Alert.alert('Error', error.message);
       } finally {
-        setLoading(false);
+        setLoadingProfiles(false);
       }
     };
 
     fetchProfiles();
-  }, []);
+  }, [childId]);
 
   // Get assignments
   useFocusEffect(
     React.useCallback(() => {
       const fetchAssignments = async () => {
         try {
-          setLoading(true);
-
           const [unitsResp, assignmentsResp] = await Promise.all([
             fetch(`${API_URL}/api/learning_units/`),
             fetch(`${API_URL}/api/activities/${userId}/`)
@@ -121,7 +123,7 @@ export default function ParentDashboard() {
           console.error(err);
           Alert.alert('Error', 'Failed to load learning units.');
         } finally {
-          setLoading(false);
+          setLoadingAssignments(false);
         }
       };
 
