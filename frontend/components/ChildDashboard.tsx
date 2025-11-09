@@ -494,6 +494,32 @@ const ChildDashboard = () => {
     //fetchStreakCount(childId, setStreakCount);
   }, [childId, contextChildId]);
 
+  // Auto-scroll to center the next incomplete task when dashboard loads (NOT during completion)
+  useEffect(() => {
+    if (!isLoading && tasks.length > 0 && !completedTaskId && !bloomingTaskId) {
+      // Find the next incomplete task
+      const nextIncompleteIndex = tasks.findIndex(t => !t.completed);
+      console.log('Dashboard loaded - auto centering next incomplete task at index:', nextIncompleteIndex);
+      
+      if (scrollViewRef.current && nextIncompleteIndex !== -1) {
+        // Add a delay to ensure UI is fully rendered before scrolling
+        const autoScrollTimeout = setTimeout(() => {
+          const nextTaskPosition = nextIncompleteIndex * 400;
+          const centerOffset = nextTaskPosition - (screenHeight / 2) + 100 + 20; // Account for content top offset
+          console.log('Initial auto-centering to position:', centerOffset, 'for task index:', nextIncompleteIndex);
+          console.log('Task position:', nextTaskPosition, 'Screen height:', screenHeight);
+          
+          scrollViewRef.current?.scrollTo({
+            y: Math.max(0, centerOffset),
+            animated: true
+          });
+        }, 1000); // Longer delay to ensure all layout is complete
+        
+        return () => clearTimeout(autoScrollTimeout);
+      }
+    }
+  }, [isLoading, tasks, screenHeight, completedTaskId, bloomingTaskId]);
+
   // Handle task completion from activity page with blooming animation
   useEffect(() => {
     console.log('=== COMPLETION EFFECT TRIGGERED ===');
@@ -561,8 +587,8 @@ const ChildDashboard = () => {
 
           if (scrollViewRef.current && nextIncompleteIndex !== -1) {
             const nextTaskPosition = nextIncompleteIndex * 200;
-            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 250;
-            console.log('Scrolling to next task at position:', nextCenterOffset);
+            const nextCenterOffset = nextTaskPosition - (screenHeight / 2) + 120; // Account for content offset + center properly
+            console.log('Scrolling to next task at position:', nextCenterOffset, 'for index:', nextIncompleteIndex);
             scrollViewRef.current.scrollTo({
               y: Math.max(0, nextCenterOffset),
               animated: true
@@ -575,7 +601,7 @@ const ChildDashboard = () => {
           console.log('Clearing blooming state');
           setBloomingTaskId(null);
         }, 2000);
-      }, 1000);
+      }, 5000);
 
       return () => clearTimeout(completionTimeout);
     }
@@ -609,7 +635,7 @@ const ChildDashboard = () => {
         const bufferTimeout = setTimeout(() => {
           console.log('Critical elements loaded, adding UI render buffer');
           completeLoading();
-        }, 1500); // Longer buffer to ensure all UI elements finish rendering
+        }, 3000); // Longer buffer to ensure all UI elements finish rendering
         return () => clearTimeout(bufferTimeout);
       } else {
         // Fallback timeout in case elements don't fire events
@@ -1056,13 +1082,14 @@ const styles = StyleSheet.create({
   },
   verticalScroll: {
     flex: 1,
-    marginTop: '10%',
+    marginTop: 0,
   },
   scrollContent: {
     position: 'relative',
-    height: '100%',
+    minHeight: '100%',
+    paddingBottom: 400,
     left: -40,
-    top: -10,
+    top: 20,
   },
   sineWavePath: {
     position: 'absolute',

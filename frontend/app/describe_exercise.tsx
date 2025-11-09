@@ -936,6 +936,10 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   controlsContainer: {
+    position: 'absolute',
+    bottom: 10,
+    left: 0,
+    right: 0,
     padding: 20,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
