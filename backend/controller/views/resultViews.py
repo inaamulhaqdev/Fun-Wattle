@@ -49,8 +49,7 @@ def results_for_exercise(request, child_id, exercise_id):
                 'completed_at': timezone.now()
             }
         )
-        serializer = ExerciseResultSerializer(result)
-        return Response(serializer.data, status=201)
+        return Response({'message': 'Exercise marked as completed'}, status=200)
 
 
 @api_view(['GET', 'POST'])

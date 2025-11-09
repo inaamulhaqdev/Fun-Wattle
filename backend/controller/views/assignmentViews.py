@@ -5,29 +5,6 @@ from ..serializers import *
 from time import timezone
 
 
-@api_view(['GET'])
-def assigned_by_assignments(request, user_id):
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return Response({'error': 'User not found'}, status=404)
-
-    assigned_activities = Assignment.objects.filter(assigned_by=user)
-    serializer = AssignmentSerializer(assigned_activities, many=True)
-    return Response(serializer.data, status=200)
-
-
-@api_view(['GET'])
-def assigned_to_assignments(request, child_id):
-    child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
-    if not child_profile:
-        return Response({'error': 'Child profile not found'}, status=404)
-
-    assignments = Assignment.objects.filter(assigned_to=child_profile)
-    serializer = AssignmentSerializer(assignments, many=True)
-    return Response(serializer.data)
-
-
 @api_view(['POST'])
 def create_assignment(request):
     child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
@@ -57,7 +34,7 @@ def create_assignment(request):
     if participation_type not in ['required', 'recommended']:
         return Response({'error': 'participation_type must be "required" or "recommended"'}, status=400)
 
-    assignment, created = Assignment.objects.update_or_create(
+    assignment = Assignment.objects.create(
         learning_unit=learning_unit,
         assigned_to=child_profile,
         defaults={
@@ -66,8 +43,10 @@ def create_assignment(request):
             'num_question_attempts': num_question_attempts
         },
     )
-    serializer = AssignmentSerializer(assignment)
-    return Response(serializer.data, status=201 if created else 200)
+    if not assignment:
+        return Response({'error': 'Failed to create assignment'}, status=500)
+
+    return Response({'message': 'Assignment created successfully'}, status=201)
 
 
 @api_view(['POST'])
@@ -97,7 +76,31 @@ def complete_assignment(request):
 
     assignment.completed_at = timezone.now()
     assignment.save()
-    return Response({'message': 'Assignment marked as completed'}, status=200)
+
+    return Response({'message': 'Assignment completed successfully'}, status=200)
+
+
+@api_view(['GET'])
+def assigned_by_assignments(request, user_id):
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+    assigned_learning_units = Assignment.objects.filter(assigned_by=user)
+    serializer = AssignmentSerializer(assigned_learning_units, many=True)
+    return Response(serializer.data, status=200)
+
+
+@api_view(['GET'])
+def assigned_to_assignments(request, child_id):
+    child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
+    if not child_profile:
+        return Response({'error': 'Child profile not found'}, status=404)
+
+    assignments = Assignment.objects.filter(assigned_to=child_profile)
+    serializer = AssignmentSerializer(assignments, many=True)
+    return Response(serializer.data)
 
 
 @api_view(['DELETE'])

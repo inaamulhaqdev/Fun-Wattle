@@ -136,6 +136,7 @@ class Question_Result(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     exercise_result = models.ForeignKey(Exercise_Result, on_delete=models.CASCADE, related_name='question_results')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='question_results')
+    time_spent = models.IntegerField(null=True, blank=True)
     num_correct = models.IntegerField(null=True, blank=True)
     num_incorrect = models.IntegerField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
