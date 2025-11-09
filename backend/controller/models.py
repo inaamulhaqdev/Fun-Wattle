@@ -119,10 +119,10 @@ class Exercise_Result(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='exercise_results')
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='exercise_results')
-    time_spent = models.IntegerField(null=True, blank=True)
-    num_correct = models.IntegerField(null=True, blank=True)
-    num_incorrect = models.IntegerField(null=True, blank=True)
-    accuracy = models.FloatField(null=True, blank=True)
+    time_spent = models.IntegerField(default=0)
+    num_correct = models.IntegerField(default=0)
+    num_incorrect = models.IntegerField(default=0)
+    accuracy = models.FloatField(default=0.0)
     completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -136,9 +136,9 @@ class Question_Result(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     exercise_result = models.ForeignKey(Exercise_Result, on_delete=models.CASCADE, related_name='question_results')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='question_results')
-    time_spent = models.IntegerField(null=True, blank=True)
-    num_correct = models.IntegerField(null=True, blank=True)
-    num_incorrect = models.IntegerField(null=True, blank=True)
+    time_spent = models.IntegerField(default=0)
+    num_correct = models.IntegerField(default=0)
+    num_incorrect = models.IntegerField(default=0)
     completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

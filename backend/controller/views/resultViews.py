@@ -73,9 +73,10 @@ def results_for_question(request, child_id, question_id):
     elif request.method == 'POST':
         num_incorrect = request.data.get('num_incorrect')
         num_correct = request.data.get('num_correct')
+        time_spent = request.data.get('time_spent')
 
-        if num_incorrect is None or num_correct is None:
-            return Response({'error': 'num_incorrect and num_correct are required'}, status=400)
+        if not all([num_incorrect, num_correct, time_spent]):
+            return Response({'error': 'num_incorrect, num_correct, and time_spent are required'}, status=400)
 
         exercise = question.exercise
         assignment = Assignment.objects.filter(
@@ -98,6 +99,7 @@ def results_for_question(request, child_id, question_id):
             defaults={
                 'num_incorrect': num_incorrect,
                 'num_correct': num_correct,
+                'time_spent': time_spent,
                 'completed_at': timezone.now()
             }
         )
@@ -105,10 +107,15 @@ def results_for_question(request, child_id, question_id):
         # Update Exercise_Result aggregates (time spent, num_correct, num_incorrect)
         exercise_result.num_incorrect += num_incorrect
         exercise_result.num_correct += num_correct
-        if exercise_result.num_correct + exercise_result.num_incorrect > 0:
-            exercise_result.accuracy = (exercise_result.num_correct / (exercise_result.num_correct + exercise_result.num_incorrect) * 100)
+        exercise_result.time_spent += time_spent
+
+        # Recompute accuracy of child's Exercise_Result from aggregated totals
+        total_answers = exercise_result.num_correct + exercise_result.num_incorrect
+        if total_answers > 0:
+            exercise_result.accuracy = (exercise_result.num_correct / total_answers * 100)
         else:
-            exercise_result.accuracy = num_correct / (num_correct + num_incorrect) * 100
+            exercise_result.accuracy = 0.0
+
         exercise_result.save()
 
         serializer = QuestionResultSerializer(result)

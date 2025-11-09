@@ -499,9 +499,12 @@ paths:
                   type: integer
                 num_incorrect:
                   type: integer
+                time_spent:
+                  type: integer
               required:
                 - num_correct
                 - num_incorrect
+                - time_spent
       responses:
         '201':
           description: Result created
@@ -509,6 +512,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Question_Result'
+        '400':
+          description: Missing required fields
         '404':
           description: Child profile, question, or assignment not found
 
