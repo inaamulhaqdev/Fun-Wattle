@@ -9,10 +9,11 @@ import { useApp } from '@/context/AppContext';
 import { router, useFocusEffect } from "expo-router";
 import { AssignedLearningUnit } from "@/types/learningUnitTypes";
 import { fetchUnitStats } from "@/components/util/fetchUnitStats";
+import { supabase } from "@/config/supabase";
 
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
-  
+
   return date.toLocaleDateString("en-AU", {
     day: "2-digit",
     month: "2-digit",
@@ -73,60 +74,84 @@ export default function ParentDashboard() {
     fetchProfiles();
   }, []);
 
-  // Get assignments
+  const fetchAssignments = React.useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [unitsResp, assignmentsResp] = await Promise.all([
+        fetch(`${API_URL}/api/learning_units/`),
+        fetch(`${API_URL}/api/activities/${userId}/`)
+      ]);
+
+      if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');
+
+      const allUnits = await unitsResp.json();
+      const assignments = await assignmentsResp.json();
+
+      const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
+
+      const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => {
+        const unit = allUnits.find((unit: any) => unit.id === assignment.learning_unit);
+        return {
+          assignmentId: assignment.id,
+          learningUnitId: assignment.learning_unit,
+          title: unit.title || '',
+          category: unit.category || '',
+          participationType: assignment.participation_type,
+          assignedDate: formatDate(assignment.assigned_at),
+        };
+      });
+
+      const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
+        assignedUnitsDetails.map(async (unit) => {
+          const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, childId);
+          return {
+            ...unit,
+            time: totalDuration,
+            status,
+          };
+        })
+      );
+
+      setData(assignedUnitsWithStats);
+
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to load learning units.');
+    } finally {
+      setLoading(false);
+    }
+  }, [childId, userId]);
+
+  // Subscribe to Supabase changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (insert, update, delete)
+          schema: 'public',
+          table: 'Exercise_Result'
+        },
+        () => {
+          // Refresh assignments when Exercise_Result table changes
+          fetchAssignments();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [fetchAssignments]);
+
+  // Get assignments on focus
   useFocusEffect(
     React.useCallback(() => {
-      const fetchAssignments = async () => {
-        try {
-          setLoading(true);
-
-          const [unitsResp, assignmentsResp] = await Promise.all([
-            fetch(`${API_URL}/api/learning_units/`),
-            fetch(`${API_URL}/api/activities/${userId}/`)
-          ]);
-
-          if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');
-
-          const allUnits = await unitsResp.json();
-          const assignments = await assignmentsResp.json();
-
-          const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
-
-          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => {
-            const unit = allUnits.find((unit: any) => unit.id === assignment.learning_unit);
-            return {
-              assignmentId: assignment.id,
-              learningUnitId: assignment.learning_unit,
-              title: unit.title || '',
-              category: unit.category || '',
-              participationType: assignment.participation_type,
-              assignedDate: formatDate(assignment.assigned_at),
-            };
-          });
-
-          const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
-            assignedUnitsDetails.map(async (unit) => {
-              const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, childId);
-              return {
-                ...unit,
-                time: totalDuration,
-                status,
-              };
-            })
-          );
-
-          setData(assignedUnitsWithStats);
-
-        } catch (err) {
-          console.error(err);
-          Alert.alert('Error', 'Failed to load learning units.');
-        } finally {
-          setLoading(false);
-        }
-      };
-
       fetchAssignments();
-    }, [childId, userId])
+    }, [fetchAssignments])
   );
 
   if (loading) {
