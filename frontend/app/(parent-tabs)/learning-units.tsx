@@ -19,7 +19,7 @@ export default function LearningUnits() {
     React.useCallback(() => {
       const fetchModules = async () => {
         try {
-          const response = await fetch(`${API_URL}/api/learning_units/`, {
+          const response = await fetch(`${API_URL}/content/learning_units/`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${session?.access_token}`

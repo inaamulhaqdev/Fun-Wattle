@@ -51,7 +51,7 @@ export default function LearningUnitDetails() {
       setLoading(true);
       try {
         // Fetch all exercises for this unit and their respective results
-        const resp = await fetch(`${API_URL}/api/exercises/${id}/`);
+        const resp = await fetch(`${API_URL}/content/${id}/exercises/`);
         if (!resp.ok) throw new Error("Failed to fetch exercises");
 
         const data = await resp.json();
@@ -61,7 +61,7 @@ export default function LearningUnitDetails() {
 
         const results = await Promise.all(
           sorted.map(async (ex) => {
-            const resResp = await fetch(`${API_URL}/api/results/${childId}/exercise/${ex.id}/`);
+            const resResp = await fetch(`${API_URL}/result/${childId}/exercise/${ex.id}/`);
             if (!resResp.ok) throw new Error('Failed to fetch result details.');
 
             const resJson = await resResp.json();

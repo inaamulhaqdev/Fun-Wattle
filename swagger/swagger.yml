@@ -4,11 +4,11 @@ info:
   description: API for the Funwattle MVP app - a speech therapy assistance app
   version: 1.0.0
 servers:
-  - url: http://localhost:7000/api
+  - url: https://funwattle-web-service.onrender.com/api
     description: Backend Server
 
 paths:
-  /create/:
+  /user/create/:
     post:
       summary: Register a new user
       description: Register a new user (Parent or Therapist)
@@ -42,7 +42,7 @@ paths:
         '400':
           description: Missing required fields or invalid user type
 
-  /subscribe/:
+  /user/subscribe/:
     post:
       summary: Update user subscription
       description: Update a user's subscription status and type
@@ -76,7 +76,8 @@ paths:
           description: Missing required fields
         '404':
           description: User not found
-  /profile/:
+
+  /profile/create/:
     post:
       summary: Create a new profile
       description: Create a new profile for a user
@@ -117,35 +118,13 @@ paths:
                   profile:
                     $ref: '#/components/schemas/Profile'
                   user_profile:
-                    $ref: '#/components/schemas/UserProfile'
+                    $ref: '#/components/schemas/User_Profile'
         '400':
           description: Missing required fields
         '404':
           description: User not found
 
-  /profile/{profile_id}/:
-    get:
-      summary: Get profile by ID
-      description: Retrieve a specific profile by its ID
-      tags:
-        - Profiles
-      parameters:
-        - name: profile_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Profile found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Profile'
-        '404':
-          description: Profile not found
-
-  /profiles/{user_id}/:
+  /profile/{user_id}/list/:
     get:
       summary: Get all profiles for a user
       description: Retrieve all profiles associated with a user
@@ -169,18 +148,34 @@ paths:
         '404':
           description: User not found
 
-  /learning_units/:
+  /profile/{profile_id}/data/:
+    get:
+      summary: Get profile information for a specific profile
+      description: Retrieve profile information by profile ID
+      tags:
+        - Profiles
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Profile found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '404':
+          description: Profile not found
+
+  /content/learning_units/:
     get:
       summary: Get all learning units
       description: Retrieve all available learning units
       tags:
-        - Learning Unit
-      parameters:
-        - name: child_id
-          in: query
-          required: false
-          schema:
-            type: string
+        - Content Library
       responses:
         '200':
           description: List of learning units
@@ -189,14 +184,14 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/LearningUnit'
+                  $ref: '#/components/schemas/Learning_Unit'
 
-  /exercises/{learning_unit_id}/:
+  /content/{learning_unit_id}/exercises/:
     get:
       summary: Get exercises for a learning unit
       description: Retrieve all exercises for a specific learning unit
       tags:
-        - Learning Unit
+        - Content Library
       parameters:
         - name: learning_unit_id
           in: path
@@ -215,12 +210,12 @@ paths:
         '404':
           description: Learning unit not found
 
-  /questions/{exercise_id}/:
+  /content/{exercise_id}/questions/:
     get:
       summary: Get questions for an exercise
       description: Retrieve all questions for a specific exercise
       tags:
-        - Learning Unit
+        - Content Library
       parameters:
         - name: exercise_id
           in: path
@@ -238,12 +233,78 @@ paths:
                   $ref: '#/components/schemas/Question'
         '404':
           description: Exercise not found
-  /activities/{user_id}/:
+
+  /assignment/create/:
+    post:
+      summary: Assign a learning unit to a child
+      description: Create a new assignment of a learning unit to a child
+      tags:
+        - Assignments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                child_id:
+                  type: string
+                learning_unit_id:
+                  type: string
+                user_id:
+                  type: string
+                participation_type:
+                  type: string
+                  enum: [required, recommended]
+              required:
+                - child_id
+                - learning_unit_id
+                - user_id
+                - participation_type
+      responses:
+        '201':
+          description: Assignment created successfully
+        '400':
+          description: Missing required fields
+        '404':
+          description: Child profile, user, or learning unit not found
+        '500':
+          description: Failed to create assignment
+
+  /assignment/complete/:
+    post:
+      summary: Mark a learning unit assignment as completed for a child
+      description: Mark a specific learning unit assignment as completed for a child
+      tags:
+        - Assignments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                child_id:
+                  type: string
+                learning_unit_id:
+                  type: string
+              required:
+                - child_id
+                - learning_unit_id
+      responses:
+        '200':
+          description: Assignment completed successfully
+        '400':
+          description: Missing required fields
+        '404':
+          description: Assignment, child profile, or learning unit not found
+
+  /assignment/{user_id}/assigned_by/:
     get:
       summary: Get all learning units a user has assigned
       description: Retrieve all learning units assigned by a user
       tags:
-        - Learning Unit
+        - Assignments
       parameters:
         - name: user_id
           in: path
@@ -262,12 +323,12 @@ paths:
         '404':
           description: User not found
 
-  /assignments/{child_id}/:
+  /assignment/{child_id}/assigned_to/:
     get:
       summary: Get all learning units a child has been assigned
       description: Retrieve all assignments for a specific child
       tags:
-        - Learning Unit
+        - Assignments
       parameters:
         - name: child_id
           in: path
@@ -286,53 +347,12 @@ paths:
         '404':
           description: Child profile not found
 
-    post:
-      summary: Create or update a child's learning unit assignment
-      description: Create or update an assignment for a child
-      tags:
-        - Learning Unit
-      parameters:
-        - name: child_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                learning_unit_id:
-                  type: string
-                user_id:
-                  type: string
-                participation_type:
-                  type: string
-                  enum: [required, recommended]
-              required:
-                - learning_unit_id
-                - user_id
-                - participation_type
-      responses:
-        '201':
-          description: Assignment created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Assignment'
-        '400':
-          description: Missing required fields or invalid participation type
-        '404':
-          description: Child profile, learning unit, or user not found
-
-  /assignments/{child_id}/learning_unit/{learning_unit_id}/:
+  /assignment/{child_id}/unassign/{learning_unit_id}/:
     delete:
-      summary: Remove a child's learning unit assignment
-      description: Remove a learning unit assignment from a child
+      summary: Unassign a learning unit from a child
+      description: Unassign a learning unit from a child
       tags:
-        - Learning Unit
+        - Assignments
       parameters:
         - name: child_id
           in: path
@@ -350,12 +370,12 @@ paths:
         '404':
           description: Assignment, child profile, or learning unit not found
 
-  /results/{child_id}/:
+  /result/{child_id}/:
     get:
       summary: Get all exercise results for a child
       description: Retrieve all exercise results for a child
       tags:
-        - Learning Unit
+        - Child Results
       parameters:
         - name: child_id
           in: path
@@ -370,16 +390,16 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ExerciseResult'
+                  $ref: '#/components/schemas/Exercise_Result'
         '404':
           description: Child profile not found
 
-  /results/{child_id}/exercise/{exercise_id}/:
+  /result/{child_id}/exercise/{exercise_id}/:
     get:
       summary: Get child's results for a specific exercise
       description: Retrieve results for a specific exercise for a child
       tags:
-        - Learning Unit
+        - Child Results
       parameters:
         - name: child_id
           in: path
@@ -393,21 +413,20 @@ paths:
             type: string
       responses:
         '200':
-          description: List of exercise results
+          description: Exercise results data
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ExerciseResult'
+                  $ref: '#/components/schemas/Exercise_Result'
         '404':
           description: Child profile or exercise not found
-
     post:
-      summary: Create or update child's exercise result
-      description: Create or update a result for a specific exercise for a child
+      summary: Mark a child's exercise result as completed
+      description: Mark a specific exercise result as completed for a child
       tags:
-        - Learning Unit
+        - Child Results
       parameters:
         - name: child_id
           in: path
@@ -415,6 +434,56 @@ paths:
           schema:
             type: string
         - name: exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Exercise marked as completed
+        '404':
+          description: Child profile, exercise, or assignment not found
+
+  /result/{child_id}/question/{question_id}/:
+    get:
+      summary: Get child's results for a specific question
+      description: Retrieve results for a specific question for a child
+      tags:
+        - Child Results
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: question_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Question results data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Question_Result'
+        '404':
+          description: Child profile or question not found
+    post:
+      summary: Create or update child's question result
+      description: Create or update a result for a specific question for a child
+      tags:
+        - Child Results
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: question_id
           in: path
           required: true
           schema:
@@ -426,23 +495,87 @@ paths:
             schema:
               type: object
               properties:
+                num_correct:
+                  type: integer
+                num_incorrect:
+                  type: integer
                 time_spent:
                   type: integer
-                accuracy:
-                  type: number
-                  format: float
               required:
+                - num_correct
+                - num_incorrect
                 - time_spent
-                - accuracy
       responses:
         '201':
           description: Result created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExerciseResult'
+                $ref: '#/components/schemas/Question_Result'
+        '400':
+          description: Missing required fields
         '404':
-          description: Child profile, exercise, or assignment not found
+          description: Child profile, question, or assignment not found
+
+  /AI/assess_speech/:
+    post:
+      summary: Assess speech using Azure AI
+      description: Analyze and assess speech audio using Azure AI services
+      tags:
+        - Azure AI
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                audio_file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Speech assessment result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  score:
+                    type: number
+                    format: float
+                  feedback:
+                    type: string
+        '400':
+          description: Invalid input data
+
+  /AI/text_to_speech/:
+    post:
+      summary: Convert text to speech using Azure AI
+      description: Generate speech audio from text using Azure AI services
+      tags:
+        - Azure AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+              required:
+                - text
+      responses:
+        '200':
+          description: Generated speech audio
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid input data
 
 components:
   schemas:
@@ -460,6 +593,11 @@ components:
           type: string
           nullable: true
           description: Type of subscription. Can be null for users without an active subscription.
+        subscription_start:
+          type: string
+          format: date-time
+          nullable: true
+          description: Start date of the subscription. Can be null for users without an active subscription.
         subscription_end:
           type: string
           format: date-time
@@ -491,23 +629,21 @@ components:
           type: string
           format: date-time
 
-    UserProfile:
+    User_Profile:
       type: object
       properties:
         id:
           type: string
           format: uuid
         user:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/User'
         profile:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/Profile'
         created_at:
           type: string
           format: date-time
 
-    LearningUnit:
+    Learning_Unit:
       type: object
       properties:
         id:
@@ -553,15 +689,18 @@ components:
         exercise:
           type: string
           format: uuid
-        order:
-          type: integer
-        exercise_type:
+        question_type:
           type: string
           enum: [multiple_drag, multiple_select, ordered_drag, speaking]
+        order:
+          type: integer
         question_data:
           type: string
           format: JSON
           description: This will be JSON data
+        created_at:
+          type: string
+          format: date-time
 
     Assignment:
       type: object
@@ -569,17 +708,16 @@ components:
         id:
           type: string
         learning_unit:
-          type: string
-          format: uuid
-        assigned_to:
-          type: string
-          format: uuid
-        assigned_by:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/Learning_Unit'
         participation_type:
           type: string
           enum: [required, recommended]
+        num_question_attempts:
+          type: integer
+        assigned_to:
+          $ref: '#/components/schemas/Profile'
+        assigned_by:
+          $ref: '#/components/schemas/User'
         assigned_at:
           type: string
           format: date-time
@@ -592,7 +730,7 @@ components:
           format: date-time
           nullable: true
 
-    ExerciseResult:
+    Exercise_Result:
       type: object
       properties:
         id:
@@ -601,13 +739,90 @@ components:
           type: string
           format: uuid
         exercise:
-          type: string
-          format: uuid
+          $ref: '#/components/schemas/Exercise'
         time_spent:
+          type: integer
+        num_correct:
+          type: integer
+        num_incorrect:
           type: integer
         accuracy:
           type: number
           format: float
         completed_at:
+          type: string
+          format: date-time
+
+    Question_Result:
+      type: object
+      properties:
+        id:
+          type: string
+        exercise_result:
+          $ref: '#/components/schemas/Exercise_Result'
+        question:
+          $ref: '#/components/schemas/Question'
+        time_spent:
+          type: integer
+        num_correct:
+          type: integer
+        num_incorrect:
+          type: integer
+        completed_at:
+          type: string
+          format: date-time
+
+    Child_Embedding:
+      type: object
+      properties:
+        id:
+          type: string
+        child_profile:
+          type: string
+          format: uuid
+        question:
+          type: string
+          format: uuid
+        child_input_text:
+          type: string
+        embedding:
+          type: string
+          format: JSON
+        created_at:
+          type: string
+          format: date-time
+
+    Question_Embedding:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+          format: uuid
+        expected_answer_text:
+          type: string
+        embedding:
+          type: string
+          format: JSON
+        created_at:
+          type: string
+          format: date-time
+
+    Rag_Context:
+      type: object
+      properties:
+        id:
+          type: string
+        source_name:
+          type: string
+        source_url:
+          type: string
+        content_chunk:
+          type: string
+        embedding:
+          type: string
+          format: JSON
+        created_at:
           type: string
           format: date-time
