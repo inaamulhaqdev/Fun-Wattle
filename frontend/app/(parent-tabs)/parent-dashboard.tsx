@@ -82,7 +82,7 @@ export default function ParentDashboard() {
 
           const [unitsResp, assignmentsResp] = await Promise.all([
             fetch(`${API_URL}/content/learning_units/`),
-            fetch(`${API_URL}/${userId}/assigned_by/`)
+            fetch(`${API_URL}/assignment/${userId}/assigned_by/`)
           ]);
 
           if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');
