@@ -143,7 +143,7 @@ export default function DetailView({
           visible={showOverlay}
           status={selectedItem.status}
           onClose={() => setShowOverlay(false)}
-          onSelect={async (newStatus) => {
+          onSelect={async (newStatus, retries) => {
             try {
               if (!childId || !userId) {
                 Alert.alert('Error', 'Missing user or child information');

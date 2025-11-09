@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { IconButton, Divider } from 'react-native-paper';
-import RepetitionCounter from './RepeatAssignmentPillButton';
+import Counter from './AssignmentPillButton';
 
 interface AssignmentStatusProps {
   visible: boolean;
   onClose: () => void;
-  onSelect: (status: string) => void;
+  onSelect: (status: string, retries: number) => void;
   options?: string[];
   status: string;
   repetitions?: number;
+  retries?: number;
 }
 
 export default function AssignmentStatus({
@@ -19,9 +20,11 @@ export default function AssignmentStatus({
   options = ['Unassigned', 'Assigned as Recommended', 'Assigned as Required'],
   status,
   repetitions: initialReps = 1,
+  retries: initialRetries = 2,
 }: AssignmentStatusProps) {
   const [selected, setSelected] = useState(status || null);
   const [repetitions, setRepetitions] = useState(initialReps);
+  const [retries, setRetries] = useState(initialRetries);
 
   return (
     <Modal transparent visible={visible} animationType="fade">
@@ -43,7 +46,7 @@ export default function AssignmentStatus({
                 style={styles.optionContainer}
                 onPress={() => {
                   setSelected(option);
-                  onSelect(option);
+                  onSelect(option, retries);
                 }}
               >
                 <Text style={styles.optionText}>{option}</Text>
@@ -51,7 +54,10 @@ export default function AssignmentStatus({
               </TouchableOpacity>
 
               {option === 'Assigned as Required' && selected === 'Assigned as Required' && (
-                <RepetitionCounter value={repetitions} onChange={setRepetitions} />
+                <View style={{ marginTop: 5 }}>
+                  <Counter value={repetitions} onChange={setRepetitions} type="repetitions"/>
+                  <Counter value={retries} onChange={setRetries} type="question retries"/>
+                </View>              
               )}
             </View>
           ))}

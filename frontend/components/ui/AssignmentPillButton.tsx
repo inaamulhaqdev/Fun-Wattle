@@ -1,15 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-interface RepetitionCounterProps {
+interface CounterProps {
   value: number;
+  type: string;
   onChange: (newValue: number) => void;
 }
 
-export default function RepetitionCounter({ value, onChange }: RepetitionCounterProps) {
+export default function Counter({ value, onChange, type }: CounterProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Number of repetitions</Text>
+      <Text style={styles.label}>Number of {type}</Text>
       <View style={styles.counter}>
 
         {/* Decrement */}
