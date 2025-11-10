@@ -63,7 +63,8 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
 // Function to fetch exercises for a learning unit
 const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: string): Promise<any[]> => {
   try {
-    const url = `${API_URL}/exercises/${learningUnitId}/`;
+    const url = `${API_URL}/content/${learningUnitId}/exercises/`;
+    //const url = `${API_URL}/exercises/${learningUnitId}/`;
     console.log('Fetching exercises from URL:', url);
 
     const response = await fetch(url, {
@@ -81,7 +82,8 @@ const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: st
       // Create all completion check promises at once for parallel execution
       const completionCheckPromises = exercises.map(async (exercise: any) => {
         try {
-          const resultResponse = await fetch(`${API_URL}/api/exercise-results/?child_id=${childId}&exercise_id=${exercise.id}`, {
+          //const resultResponse = await fetch(`${API_URL}/api/exercise-results/?child_id=${childId}&exercise_id=${exercise.id}`, {
+          const resultResponse = await fetch(`${API_URL}/result/${childId}/exercise/${exercise.id}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });
@@ -157,7 +159,7 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
     }
 
     // Extract unique learning unit IDs from assignments
-    const learningUnitIds = [...new Set(assignmentsData.map((assignment: any) => assignment.learning_unit))];
+    const learningUnitIds = [...new Set(assignmentsData.map((assignment: any) => assignment.learning_unit.id))];
     console.log('Learning unit IDs found:', learningUnitIds);
 
     // Fetch exercises for all learning units in parallel
@@ -283,7 +285,8 @@ const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
         top: 30,   // Move slightly lower
       }}>
         {/* Shadow layer - black silhouette offset behind */}
-        <Image
+        {/* COMMENTED OUT FOR PERFORMANCE - Shadow effects are expensive */}
+        {/* <Image
           source={require('@/assets/images/completed_task.png')}
           style={{
             width: size * 1.3,
@@ -297,7 +300,7 @@ const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
           // Apply black tint to create shadow effect
           // Note: tintColor works on iOS, for Android we rely on the opacity + positioning
           tintColor="#000000"
-        />
+        /> */}
         {/* Main flower on top */}
         <Image
           source={require('@/assets/images/completed_task.png')}
@@ -1032,7 +1035,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
     height: '100%',
-    filter: 'brightness(1.3)',
+    //filter: 'brightness(1.3)',
     opacity: 0.5,
   },
 
