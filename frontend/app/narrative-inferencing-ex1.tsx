@@ -4,24 +4,25 @@ import { Text, Provider as PaperProvider, ActivityIndicator } from "react-native
 import { OptionCard } from "@/components/ui/OptionCard";
 import { FeedbackIndicator } from "@/components/ui/ExerciseFeedback";
 import { router } from "expo-router";
-import { API_URL } from "@/config/api"; 
+import { API_URL } from "@/config/api";
 
 export const NarrativeInferencingEx1 = () => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currIndex, setCurrIndex] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
-  const [retryCount, setRetryCount] = useState(0); // adding in "a child can try a question up to two times" functionality 
+  const [retryCount, setRetryCount] = useState(0); // adding in "a child can try a question up to two times" functionality
 
-  // Fetch learning unit 
+  // Fetch learning unit
   useEffect(() => {
     const fetchExercise = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/learning-units/narrative-inferencing/ex1/`); 
+        // COME BACK HERE - NOT SURE IF ENDPOINT IS CORRECT
+        const response = await fetch(`${API_URL}/learning-units/narrative-inferencing/ex1/`);
         if (!response.ok) {
-          throw new Error(`Failed to fetch exercise (${response.status})`); 
+          throw new Error(`Failed to fetch exercise (${response.status})`);
         }
-        const data = await response.json(); 
+        const data = await response.json();
         console.log("Fetched data:", data);
 
         const formatted = data.map((q: any) => ({
@@ -36,25 +37,25 @@ export const NarrativeInferencingEx1 = () => {
           })),
         }));
 
-        setQuestions(formatted); 
+        setQuestions(formatted);
       } catch (error:any) {
         Alert.alert("Error", error.message);
       } finally {
         setLoading(false);
       }
-    }; 
-    fetchExercise(); 
+    };
+    fetchExercise();
   }, []);
 
   const currentQuestion = questions[currIndex] || {};
 
   const goToNextQuestion = () => {
-    setRetryCount(0); 
+    setRetryCount(0);
     if (currIndex < questions.length - 1) {
       setCurrIndex((prev) => prev + 1);
     } else {
-      // finish exercise if on last question 
-      Alert.alert("Great job!", "You have finished all the questions!"); 
+      // finish exercise if on last question
+      Alert.alert("Great job!", "You have finished all the questions!");
       // navigate to exercise 2
       router.push('/narrative-inferencing-ex2');
     }
@@ -66,20 +67,20 @@ export const NarrativeInferencingEx1 = () => {
       setTimeout(() => {
       setFeedback(null);
       goToNextQuestion();
-      }, 1200); 
+      }, 1200);
     } else {
       if (retryCount < 1) {
         // first wrong attempt, retry
-        setFeedback("incorrect"); 
-        setRetryCount(retryCount + 1); 
+        setFeedback("incorrect");
+        setRetryCount(retryCount + 1);
         setTimeout(() => setFeedback(null), 1200);
       } else {
         // second wring attempt, move onto next question (finish if last)
-        setFeedback("incorrect"); 
+        setFeedback("incorrect");
         setTimeout(() => {
         setFeedback(null);
         goToNextQuestion();
-      }, 1200); 
+      }, 1200);
     }
   }
  };

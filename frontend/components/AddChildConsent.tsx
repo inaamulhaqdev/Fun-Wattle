@@ -37,7 +37,7 @@ export default function AddChildExtraQs() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/profile/`, {
+      const response = await fetch(`${API_URL}/profile/create/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

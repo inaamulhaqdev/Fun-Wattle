@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather, FontAwesome5, FontAwesome6, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { API_URL } from '../config/api';
+import { useApp } from "@/context/AppContext";
+
+// Task data structure
+interface Task {
+  id: string;
+  name: string;
+  completed: boolean;
+  description: string;
+}
 
 const StatsPage = () => {
   const navigation = useNavigation();
@@ -13,7 +23,7 @@ const StatsPage = () => {
       navigation.getParent()?.setOptions({
         tabBarStyle: { display: 'none' }
       });
-      
+
       // Show tab bar when leaving this screen
       return () => {
         navigation.getParent()?.setOptions({
@@ -34,6 +44,55 @@ const StatsPage = () => {
   const handleSettings = () => {
     router.push('/child-settings');
   };
+
+  const { childId } = useApp();
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // Fetch recommended tasks assigned to the child
+  useEffect(() => {
+    const fetchAssignedTasks = async () => {
+      try {
+        const [unitsResp, assignmentsResp] = await Promise.all([
+          fetch(`${API_URL}/content/learning_units/`),
+          fetch(`${API_URL}/assignment/${childId}`)
+        ]);
+
+        if (!unitsResp.ok || !assignmentsResp.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const allUnits = await unitsResp.json();
+        const childAssignments = await assignmentsResp.json();
+
+        const unitMap: Record<string, any> = {};
+        allUnits.forEach((unit: any) => {
+          unitMap[unit.id] = unit;
+        });
+
+        // Filter for recommended units and format accordingly
+        const requiredAssignments = childAssignments.filter(
+          (a: any) => a.participation_type === 'recommended'
+        );
+
+        const formattedTasks: Task[] = requiredAssignments.map((assignment: any) => {
+          const unit = unitMap[assignment.learning_unit];
+          return {
+            id: unit.id,
+            name: unit.title,
+            completed: assignment.completed_at !== null,
+            description: unit.description
+          };
+        });
+
+        setTasks(formattedTasks);
+
+      } catch (err) {
+        console.error('Error fetching assigned tasks:', err);
+      }
+    };
+
+    fetchAssignedTasks();
+  }, [childId]);
 
   const StatCard = ({ title, value, subtitle, icon, backgroundColor }: {
     title: string;
@@ -65,8 +124,8 @@ const StatsPage = () => {
         <Text style={styles.exerciseTitle}>{title}</Text>
         <Text style={styles.exerciseDescription}>{description}</Text>
         <View style={styles.exerciseFooter}>
-          <View style={[styles.difficultyBadge, 
-            { backgroundColor: difficulty === 'Easy' ? '#4CAF50' : 
+          <View style={[styles.difficultyBadge,
+            { backgroundColor: difficulty === 'Easy' ? '#4CAF50' :
               difficulty === 'Medium' ? '#FF9800' : '#F44336' }
           ]}>
             <Text style={styles.difficultyText}>{difficulty}</Text>
@@ -161,36 +220,48 @@ const StatsPage = () => {
 
           {/* Recommended Exercises */}
           <View style={styles.recommendedSection}>
+          <Text style={styles.sectionTitle}>Recommended for You</Text>
+            {tasks.map((task) => (
+              <RecommendedExercise
+                key={task.id}
+                title={task.name}
+                description={task.description}
+                difficulty={"Medium"}
+                onPress={() => console.log(task.name)}
+              />
+            ))}
+          </View>
+          {/* <View style={styles.recommendedSection}>
             <Text style={styles.sectionTitle}>Recommended for You</Text>
-            
+
             <RecommendedExercise
               title="Advanced Phonics"
               description="Practice complex letter sounds and word building"
               difficulty="Medium"
               onPress={() => console.log('Navigate to Advanced Phonics')}
             />
-            
+
             <RecommendedExercise
               title="Story Comprehension"
               description="Read short stories and answer questions"
               difficulty="Easy"
               onPress={() => console.log('Navigate to Story Comprehension')}
             />
-            
+
             <RecommendedExercise
               title="Grammar Fundamentals"
               description="Learn about nouns, verbs, and sentence structure"
               difficulty="Hard"
               onPress={() => console.log('Navigate to Grammar Fundamentals')}
             />
-            
+
             <RecommendedExercise
               title="Creative Writing"
               description="Express yourself through guided writing prompts"
               difficulty="Medium"
               onPress={() => console.log('Navigate to Creative Writing')}
             />
-          </View>
+          </View> */}
 
           {/* Bottom padding for scroll */}
           <View style={{ height: 100 }} />
@@ -201,15 +272,15 @@ const StatsPage = () => {
           <AnimatedNavButton style={styles.navButton} onPress={handleHome}>
             <FontAwesome6 name="house-chimney-window" size={40} color="white" />
           </AnimatedNavButton>
-          
+
           <AnimatedNavButton style={styles.navButton}>
             <FontAwesome5 name="trophy" size={40} color="#FFD700" />
           </AnimatedNavButton>
-          
+
           <AnimatedNavButton style={styles.navButton} onPress={handleMascotCustomization}>
             <MaterialCommunityIcons name="koala" size={60} color="white" />
           </AnimatedNavButton>
-          
+
           <AnimatedNavButton style={styles.navButton} onPress={handleSettings}>
             <FontAwesome5 name="cog" size={40} color="white" />
           </AnimatedNavButton>

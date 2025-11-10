@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Animated, Alert } from 'react-native';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -26,19 +26,19 @@ interface MascotData {
 }
 
 // Default tasks (fallback if API fails)
-const defaultTasks: Task[] = [
+/* const defaultTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
   { id: '2', name: 'multiple_drag_exercise', completed: false },
   { id: '3', name: 'describe_exercise', completed: false },
   { id: '4', name: 'activity4', completed: false },
   { id: '5', name: 'activity5', completed: false },
-];
+]; */
 
 // Function to fetch child's coin balance from backend
 /*
 const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: number) => void) => {
   try {
-    const response = await fetch(`${API_URL}/api/coins/${childId}`, {
+    const response = await fetch(`${API_URL}/coins/${childId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -63,9 +63,9 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
 // Function to fetch exercises for a learning unit
 const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: string): Promise<any[]> => {
   try {
-    const url = `${API_URL}/api/exercises/${learningUnitId}/`;
+    const url = `${API_URL}/exercises/${learningUnitId}/`;
     console.log('Fetching exercises from URL:', url);
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -76,7 +76,7 @@ const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: st
     if (response.ok) {
       const exercises = await response.json();
       console.log('Exercises fetched for learning unit', learningUnitId, ':', exercises);
-      
+
       // For each exercise, check if it has results (meaning it's completed)
       // Create all completion check promises at once for parallel execution
       const completionCheckPromises = exercises.map(async (exercise: any) => {
@@ -123,11 +123,11 @@ const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: st
 
 // Function to fetch assigned learning units from backend
 const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task[]) => void, setIsDataLoaded: (loaded: boolean) => void) => {
-  console.log('fetching assigned learning units for childId:', childId); 
+  console.log('fetching assigned learning units for childId:', childId);
   console.log('API_URL:', API_URL);
-  
+
   try {
-    const assignmentsResponse = await fetch(`${API_URL}/api/assignments/${childId}`, {
+    const assignmentsResponse = await fetch(`${API_URL}/assignment/${childId}/assigned_to/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -219,7 +219,7 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
 /*
 const fetchStreakCount = async (childId: string, setStreakCount: (count: number) => void) => {
   try {
-    const response = await fetch(`${API_URL}/api/streak/${childId}`, {
+    const response = await fetch(`${API_URL}/streak/${childId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -422,17 +422,17 @@ const getMascotImages = (mascotData: MascotData) => {
 const ChildDashboard = () => {
   const { completedTaskId, bodyType, accessoryId } = useLocalSearchParams();
   const { childId: contextChildId } = useApp();
-  
+
   // Fallback childId for testing if context doesn't provide one (must be a valid UUID)
   const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; // Valid UUID format for testing
   const childId = contextChildId || fallbackChildId;
-  
+
   console.log('=== CHILDDASHBOARD COMPONENT LOADED ===');
   console.log('Context childId:', contextChildId);
   console.log('Fallback childId:', fallbackChildId);
   console.log('Final childId being used:', childId);
-  
-  const [tasks, setTasks] = useState<Task[]>(defaultTasks);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
   // const [streakCount, setStreakCount] = useState(0);
@@ -446,7 +446,7 @@ const ChildDashboard = () => {
   const [contentLayoutComplete, setContentLayoutComplete] = useState(false);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const tasksRef = React.useRef<Task[]>(defaultTasks);
+  const tasksRef = React.useRef<Task[]>([]);
 
   // Keep tasksRef in sync with tasks state
   React.useEffect(() => {
@@ -457,7 +457,7 @@ const ChildDashboard = () => {
   /*
   const fetchMascotData = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/mascot/${childId}`, {
+      const response = await fetch(`${API_URL}/mascot/${childId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -499,7 +499,7 @@ const ChildDashboard = () => {
     console.log('childId type:', typeof childId);
     console.log('Context childId:', contextChildId);
     console.log('Using fallback?', !contextChildId);
-    
+
     // Now childId will always have a value (either from context or fallback)
     console.log('Calling fetchAssignedLearningUnit with childId:', childId);
     fetchAssignedLearningUnit(childId, setTasks, setIsDataLoaded);
@@ -625,24 +625,24 @@ const ChildDashboard = () => {
     if (isDataLoaded && !isUIReady) {
       // Wait for critical images to load (background + mascot) + extra time for UI rendering
       const expectedImages = mascotData.accessoryId ? 3 : 2; // background + mascot + optional accessory
-      
+
       const completeLoading = () => {
         const elapsedTime = Date.now() - loadingStartTime;
         const minimumLoadingTime = 1500; // Reduced to 1.5 seconds for faster loading
         const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
-        
+
         setTimeout(() => {
           console.log('Loading completed after minimum time with UI buffer');
           setIsUIReady(true);
           setIsLoading(false);
         }, remainingTime);
       };
-      
+
       // Check if critical images and content layout are ready
-      const criticalElementsReady = 
-        loadedImagesCount >= expectedImages && 
+      const criticalElementsReady =
+        loadedImagesCount >= expectedImages &&
         contentLayoutComplete;
-      
+
       if (criticalElementsReady) {
         // Critical elements loaded, but ensure minimum loading time + UI render buffer
         const bufferTimeout = setTimeout(() => {
@@ -684,7 +684,7 @@ const ChildDashboard = () => {
   useEffect(() => {
     if (!isLoading && pendingBloomTaskId) {
       console.log('Loading completed, triggering pending bloom animation for:', pendingBloomTaskId);
-      
+
       // Find the completed task index for scrolling
       const completedTaskIndex = tasksRef.current.findIndex(task => task.id === pendingBloomTaskId);
       console.log('Task index found:', completedTaskIndex);
@@ -699,7 +699,7 @@ const ChildDashboard = () => {
           animated: true
         });
       }
-      
+
       setBloomingTaskId(pendingBloomTaskId);
 
       // Update the task to completed and trigger blooming animation
@@ -753,12 +753,12 @@ const ChildDashboard = () => {
 
   const handleTaskPress = async (task: Task) => {
     if (task.completed) return;
-    
+
     console.log('=== TASK PRESSED ===');
     console.log('Task:', task);
     console.log('Exercise type:', task.exerciseType);
     console.log('Exercise ID:', task.exerciseId);
-    
+
     // Determine the route based on exercise type
     let routePath = '/multiple_drag_exercise'; // default
     if (task.exerciseType) {

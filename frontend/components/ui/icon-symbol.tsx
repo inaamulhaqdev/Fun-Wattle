@@ -21,6 +21,7 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'book.fill':'menu-book',
   'document.text':'description',
+  'gearshape.fill': 'settings',
 } as unknown as IconMapping;
 
 /**

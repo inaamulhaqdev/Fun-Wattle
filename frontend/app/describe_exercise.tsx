@@ -38,11 +38,11 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeE
   console.log('=== FETCHING DESCRIBE EXERCISE QUESTIONS ===');
   console.log('Exercise ID:', exerciseId);
   console.log('API_URL:', API_URL);
-  
+
   try {
-    const url = `${API_URL}/api/questions/${exerciseId}/`;
+    const url = `${API_URL}/questions/${exerciseId}/`;
     console.log('Fetching questions from URL:', url);
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -55,14 +55,14 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeE
 
     if (!response.ok) {
       console.error('Failed to fetch questions:', response.status, response.statusText);
-      
+
       try {
         const errorText = await response.text();
         console.error('Error response body:', errorText);
       } catch (bodyError) {
         console.error('Could not read error response body:', bodyError);
       }
-      
+
       return null;
     }
 
@@ -87,7 +87,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeE
             questionData = apiQuestion.question_data;
           }
           console.log(`Question ${index + 1} data:`, questionData);
-          
+
           return {
             id: index + 1,
             question: questionData.question || 'Question not available',
@@ -199,7 +199,7 @@ const getMascotImages = (mascotData: MascotData) => {
 //     return;
 //   }
 //   try {
-//     const response = await fetch(`${API_URL}/api/children/current/mascot`, {
+//     const response = await fetch(`${API_URL}/children/current/mascot`, {
 //       method: 'GET',
 //       headers: {
 //          'Content-Type': 'application/json',
@@ -224,11 +224,11 @@ const getMascotImages = (mascotData: MascotData) => {
 const DescribeExerciseComponent = () => {
   const { taskId, bodyType, accessoryId, exerciseId } = useLocalSearchParams();
   const { childId: contextChildId } = useApp();
-  
+
   // Fallback childId for testing if context doesn't provide one
   const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
   const childId = contextChildId || fallbackChildId;
-  
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [showMascotResponse, setShowMascotResponse] = useState(false);
@@ -261,7 +261,7 @@ const DescribeExerciseComponent = () => {
   /*
   const fetchMascotData = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/profile/${childId}/mascot`, {
+      const response = await fetch(`${API_URL}/profile/${childId}/mascot`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -288,14 +288,14 @@ const DescribeExerciseComponent = () => {
     const loadExerciseData = async () => {
       console.log('Loading exercise data - exerciseId:', exerciseId);
       console.log('Loading exercise data - childId:', childId);
-      
+
       setIsLoading(true);
-      
+
       // Try to fetch questions by exerciseId first
       if (exerciseId) {
         console.log('exerciseId exists, fetching questions by exercise ID:', exerciseId);
         const fetchedExercise = await fetchQuestionsByExerciseId(exerciseId as string);
-        
+
         if (fetchedExercise) {
           console.log('Successfully loaded exercise data:', fetchedExercise);
           setExercise(fetchedExercise);
@@ -305,7 +305,7 @@ const DescribeExerciseComponent = () => {
           console.warn('Failed to load exercise data, using fallback');
         }
       }
-      
+
       // Use fallback data if API fetch failed
       console.log('Using fallback exercise data');
       setExercise(fallbackExercise);
@@ -369,9 +369,18 @@ const DescribeExerciseComponent = () => {
 
   useEffect(() => {
     if (gptFeedback) {
-      handlePlayFeedback();
+      handlePlayAudio(gptFeedback);
     }
   }, [gptFeedback]);
+
+  useEffect(() => {
+    if (!exercise || !exercise.questions) return;
+
+    const currentQ = exercise.questions[currentQuestion];
+    if (!currentQ?.question) return;
+
+    handlePlayAudio(currentQ.question);
+  }, [currentQuestion, exercise]);
 
   // const submitExerciseResults = async () => {
   //   const sessionEndTime = Date.now();
@@ -486,7 +495,7 @@ const DescribeExerciseComponent = () => {
           Alert.alert('Error', 'You must be authorized to perform this action');
           return;
         }
-        const response = await fetch(`${API_URL}/api/assess/`, {
+        const response = await fetch(`${API_URL}/AI/assess_speech/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -508,7 +517,7 @@ const DescribeExerciseComponent = () => {
   }
 
   try {
-    const res = await fetch(`${API_URL}/api/assess/`, { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` }, body: formData });
+    const res = await fetch(`${API_URL}/AI/assess_speech/`, { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` }, body: formData });
     console.log('Status:', res.status);
     console.log('Text:', await res.text());
   } catch (err) {
@@ -557,18 +566,18 @@ const DescribeExerciseComponent = () => {
     }
   };
 
-  const handlePlayFeedback = async () => {
-    if (!gptFeedback) return;
+  const handlePlayAudio = async (text: string) => {
+    if (!text) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/text-to-speech/`, {
+      const response = await fetch(`${API_URL}/AI/text_to_speech/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text: gptFeedback,
+          text: text,
           voice: 'en-AU-NatashaNeural',
         }),
       });
