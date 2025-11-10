@@ -26,4 +26,5 @@ export interface LearningUnit {
 
 export interface LibraryProps {
   data: LearningUnit[];
+  onRefresh?: () => void;
 }

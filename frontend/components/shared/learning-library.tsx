@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Card, IconButton, Divider, Text, Searchbar, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { LearningUnit, Exercise, LibraryProps } from '../../types/learningUnitTypes';
 import { useApp } from '../../context/AppContext';
 import { API_URL } from '@/config/api';
+import { supabase } from '@/config/supabase';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
 
@@ -29,7 +30,7 @@ function matchesFilters(
   return false;
 }
 
-export default function LearningLibrary({ data }: LibraryProps) {
+export default function LearningLibrary({ data, onRefresh }: LibraryProps) {
   const { childId, session } = useApp();
   const userId = session?.user?.id;
 
@@ -114,6 +115,34 @@ export default function LearningLibrary({ data }: LibraryProps) {
   };
 
   const navigation = useNavigation();
+
+  // Subscribe to Supabase Exercise_Result changes and call optional onRefresh
+  useEffect(() => {
+    if (!onRefresh) return;
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Exercise_Result',
+        },
+        () => {
+          try {
+            onRefresh();
+          } catch (err) {
+            console.error('Error calling onRefresh from Supabase subscription', err);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [onRefresh]);
 
   // Detail view
   if (selectedItem) {
