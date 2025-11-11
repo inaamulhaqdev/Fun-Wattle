@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -12,6 +12,7 @@ export default function SplashScreen() {
   const logoTranslateY = useRef(new Animated.Value(40)).current;
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
   const subtitleTranslateY = useRef(new Animated.Value(50)).current;
+  const autoNavigateTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const animateIn = () => {
@@ -63,9 +64,27 @@ export default function SplashScreen() {
     };
 
     animateIn();
+    
+    // Auto-navigate after 10 seconds
+    autoNavigateTimeoutRef.current = setTimeout(() => {
+      navigateToWelcome();
+    }, 10000);
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (autoNavigateTimeoutRef.current) {
+        clearTimeout(autoNavigateTimeoutRef.current);
+      }
+    };
   }, [titleOpacity, titleTranslateY, logoOpacity, logoTranslateY, subtitleOpacity, subtitleTranslateY]);
 
-  const navigateToWelcome = () => {
+  const navigateToWelcome = useCallback(() => {
+    // Clear the auto-navigate timeout if user manually navigates
+    if (autoNavigateTimeoutRef.current) {
+      clearTimeout(autoNavigateTimeoutRef.current);
+      autoNavigateTimeoutRef.current = null;
+    }
+    
     // Animate out before navigating
     const animateOut = () => {
       Animated.parallel([
@@ -105,7 +124,7 @@ export default function SplashScreen() {
     };
 
     animateOut();
-  };
+  }, [titleOpacity, titleTranslateY, subtitleOpacity, subtitleTranslateY]);
 
   return (
     <Pressable style={styles.container} onPress={navigateToWelcome}>
