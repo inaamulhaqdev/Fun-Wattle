@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LearningUnit } from '../../types/learningUnitTypes';
 import { API_URL } from '../../config/api';
 import { useApp } from '../../context/AppContext';
+import LoginScreen from '../login';
 
 export default function LearningUnits() {
   const [data, setData] = useState<LearningUnit[]>([]);
@@ -12,7 +13,7 @@ export default function LearningUnits() {
 
   if (!session?.access_token) {
     Alert.alert('Error', 'You must be authorized to perform this action');
-    return;
+    return <LoginScreen />;
   }
 
   useFocusEffect(
