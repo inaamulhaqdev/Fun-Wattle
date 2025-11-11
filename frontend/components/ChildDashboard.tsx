@@ -776,7 +776,7 @@ const ChildDashboard = () => {
           routePath = '/describe_exercise';
           break;
         case 'ordered_drag':
-          routePath = '/narrative-inferencing-ex2';
+          routePath = '/ordered_drag_exercise';
           break;
         default:
           console.warn('Unknown exercise type:', task.exerciseType, 'using default route');
