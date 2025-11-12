@@ -372,7 +372,7 @@ paths:
         '404':
           description: Assignment, child profile, or learning unit not found
 
-  /result/{child_id}/:
+  /result/{child_id}/all/:
     get:
       summary: Get all exercise results for a child
       description: Retrieve all exercise results for a child
@@ -393,6 +393,41 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Exercise_Result'
+        '404':
+          description: Child profile not found
+
+  /result/{child_id}/learning_unit_overall/{participation_type}/:
+    get:
+      summary: Get overall results for a child's learning unit assignments based on participation type
+      description: Retrieve overall results for a child's learning unit assignments based on participation type
+      tags:
+        - Child Results
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: participation_type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [required, recommended]
+      responses:
+        '200':
+          description: Overall results data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_exercises:
+                    type: integer
+                  completed_exercises:
+                    type: integer
+                  total_time_spent:
+                    type: integer
         '404':
           description: Child profile not found
 
