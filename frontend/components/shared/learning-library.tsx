@@ -152,26 +152,21 @@ export default function LearningLibrary({ data }: LibraryProps) {
       <FlatList
         data={filteredData}
         keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/${item.image}` : null;
+        renderItem={({ item }) => {
+        const imageUrl = item.image ? `${item.image}` : null;
 
-          return (
-          <Card style={styles.card} onPress={() => setSelectedItem(item)}> {/* Replace uri with image ri from Supabase*/}
-          
-            <Card.Cover source={
-              imageUrl
-              ? { uri: imageUrl }
-              : require(placeholder)
-
-            } 
-            />
-            <Card.Title title={item.title} />
-            <Card.Content>
-              <Text>{item.category}</Text>
-            </Card.Content>
-          </Card>
-          );
-        )}
+        return (
+          <Card style={styles.card} onPress={() => setSelectedItem(item)}>
+                {imageUrl && (
+      <Card.Cover source={{ uri: imageUrl }} />
+    )}
+                <Card.Title title={item.title} />
+                <Card.Content>
+                  <Text>{item.category}</Text>
+                </Card.Content>
+              </Card>
+        );
+      }}
       />
     </View>
   );
