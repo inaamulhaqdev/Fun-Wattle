@@ -48,7 +48,7 @@ const AddChildDetails = () => {
           style={styles.backButton}
         />
 
-        <Text variant="titleLarge" style={styles.title}>Child's Details</Text>
+        <Text variant="titleLarge" style={styles.title}>Child&apos;s Details</Text>
 
         {/* First Name Input */}
         <TextInput
