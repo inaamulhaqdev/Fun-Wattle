@@ -15,7 +15,7 @@ function matchesFilters(
   statusFilter: 'All Units' | 'Assigned' | 'Completed',
   categoryFilter: string | null,
   assignedUnitIds: Set<string>,
-  completedUnitIds: Set<string>
+  completedUnitIds: Set<string>,
 ) {
   const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
   const matchesCategory = !categoryFilter || item.category === categoryFilter;
@@ -50,14 +50,14 @@ export default function LearningLibrary({ data }: LibraryProps) {
     React.useCallback(() => {
       const fetchAssignments = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/activities/${userId}/`, { method: 'GET' });
+        const response = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`, { method: 'GET' });
         if (!response.ok) throw new Error(`Failed to fetch assignments (${response.status})`);
 
         const assignments = await response.json();
 
-        const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
+        const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
 
-        const assignedIds = childAssignments.map((a: any) => a.learning_unit);
+        const assignedIds = childAssignments.map((a: any) => a.learning_unit.id);
         setAssignedUnitIds(new Set(assignedIds));
 
         const completedIds = childAssignments
@@ -76,7 +76,6 @@ export default function LearningLibrary({ data }: LibraryProps) {
   const filteredData = data.filter(item =>
     matchesFilters(item, searchQuery, statusFilter, categoryFilter, assignedUnitIds, completedUnitIds)
   );
-
 
   const toggleCategory = (category: string) => {
     setCategoryFilter(currentCategory => {
@@ -203,8 +202,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   categoryButtonActive: {
-    backgroundColor: '#fD902B',
-    borderColor: '#fD902B',
+    backgroundColor: '#FF6B35',
+    borderColor: '#FF6B35',
   },
   categoryUnselected: {
     color: '#000',
