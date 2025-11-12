@@ -32,8 +32,6 @@ export default function ParentDashboard() {
 
   const userId = session.user.id;
 
-  const loading = loadingProfiles || loadingAssignments;
-
   // Get profiles
   useEffect(() => {
     const fetchProfiles = async () => {

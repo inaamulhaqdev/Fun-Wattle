@@ -25,7 +25,7 @@ export default function AddChildSuccess() {
           textColor="black"
         >
           Continue
-        </Button>
+      </Button>
     </ScrollView>
   );
 }

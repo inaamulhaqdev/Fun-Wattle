@@ -31,6 +31,7 @@ export default function DetailView({
     learningUnitId: string,
     childId: string,
     userId: string,
+    retries: number,
     participationType: 'required' | 'recommended',
   ) => {
     if (!session?.access_token) {
@@ -49,6 +50,7 @@ export default function DetailView({
         child_id: childId,
         user_id: userId,
         participation_type: participationType,
+        num_attempts: retries
       }),
     });
 
@@ -161,13 +163,10 @@ export default function DetailView({
                 await unassignLearningUnit(selectedItem.id, childId);
                 setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
               } else if (newStatus === 'Assigned as Required') {
-                console.log("Unit id:", selectedItem.id);
-                console.log("Child id:", childId);
-                console.log("userId", userId);
-                await assignLearningUnit(selectedItem.id, childId, userId, 'required');
+                await assignLearningUnit(selectedItem.id, childId, userId, retries, 'required');
                 setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
               } else if (newStatus === 'Assigned as Recommended') {
-                await assignLearningUnit(selectedItem.id, childId, userId, 'recommended');
+                await assignLearningUnit(selectedItem.id, childId, userId, retries, 'recommended');
                 setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
               }
 

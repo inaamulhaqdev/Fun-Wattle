@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
-import { IconButton, Divider } from 'react-native-paper';
+import { Button, IconButton, Divider } from 'react-native-paper';
 import Counter from './AssignmentPillButton';
 
 interface AssignmentStatusProps {
@@ -9,7 +9,6 @@ interface AssignmentStatusProps {
   onSelect: (status: string, retries: number) => void;
   options?: string[];
   status: string;
-  repetitions?: number;
   retries?: number;
 }
 
@@ -19,11 +18,9 @@ export default function AssignmentStatus({
   onSelect,
   options = ['Unassigned', 'Assigned as Recommended', 'Assigned as Required'],
   status,
-  repetitions: initialReps = 1,
   retries: initialRetries = 2,
 }: AssignmentStatusProps) {
-  const [selected, setSelected] = useState(status || null);
-  const [repetitions, setRepetitions] = useState(initialReps);
+  const [selected, setSelected] = useState(status || "");
   const [retries, setRetries] = useState(initialRetries);
 
   return (
@@ -46,21 +43,28 @@ export default function AssignmentStatus({
                 style={styles.optionContainer}
                 onPress={() => {
                   setSelected(option);
-                  onSelect(option, retries);
                 }}
               >
                 <Text style={styles.optionText}>{option}</Text>
                 {selected === option && <Text style={styles.tick}>✓</Text>}
               </TouchableOpacity>
-
-              {option === 'Assigned as Required' && selected === 'Assigned as Required' && (
-                <View style={{ marginTop: 5 }}>
-                  <Counter value={repetitions} onChange={setRepetitions} type="repetitions"/>
-                  <Counter value={retries} onChange={setRetries} type="question retries"/>
-                </View>              
-              )}
             </View>
           ))}
+
+          <View style={{ marginTop: 5 }}>
+            <Counter value={retries} onChange={setRetries} type="question retries"/>
+            <Button
+              mode="contained"
+              onPress={() => {
+                onSelect(selected, retries);
+              }}
+              style={styles.confirmButton}
+              contentStyle={{ paddingVertical: 8 }}
+              textColor="black"
+            >
+              Continue
+            </Button>
+          </View>  
         </View>
       </View>
     </Modal>
@@ -140,5 +144,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     fontSize: 16,
     textAlign: 'center',
+  },
+  confirmButton: {
+    backgroundColor: "#FDD652",
+    paddingTop: 30,
   },
 });
