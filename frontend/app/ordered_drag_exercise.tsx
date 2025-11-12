@@ -292,20 +292,35 @@ export const OrderedDragExercise = () => {
       const url = `${API_URL}/result/${childId}/question/${questionId}/`;
       console.log('Submitting question result to:', url);
 
+      // Try different field order and ensure proper types
       const resultData = {
-        num_incorrect: correct ? attempts - 1 : attempts,
         num_correct: correct ? 1 : 0,
-        time_spent: timeSpent
+        num_incorrect: correct ? attempts - 1 : attempts,
+        time_spent: parseInt(timeSpent.toString()) // Ensure it's an integer
       };
 
       console.log('Submitting result data:', resultData);
+      console.log('XXXXX SESSION DEBUG XXXXX:', session);
+      console.log('XXXXX ACCESS TOKEN XXXXX:', session?.access_token);
+      console.log('XXXXX STRINGIFIED DATA XXXXX:', JSON.stringify(resultData));
+
+      // Prepare headers - only add Authorization if we have a valid token
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+
+      // Temporarily disable Authorization to test if that's the issue
+      // if (session?.access_token) {
+      //   headers['Authorization'] = `Bearer ${session.access_token}`;
+      //   console.log('🔍 Adding Authorization header');
+      // } else {
+      //   console.log('⚠️ No access token found, sending without Authorization');
+      // }
+      console.log('🧪 TESTING: Sending without Authorization header to debug');
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
+        headers: headers,
         body: JSON.stringify(resultData),
       });
 
