@@ -10,6 +10,9 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Check if all fields are filled
+  const isFormValid = email.trim() !== '' && password.trim() !== '';
+
   // Clear form when component mounts
   useEffect(() => {
     setEmail('');
@@ -81,6 +84,9 @@ const LoginPage = () => {
             placeholder=""
             value={email}
             onChangeText={setEmail}
+            // Web specific props for demo b
+            inputMode="email"
+            enterKeyHint="next"
           />
         </View>
 
@@ -116,11 +122,18 @@ const LoginPage = () => {
 
         {/* Login Button */}
         <TouchableOpacity
-          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+          style={[
+            styles.loginButton, 
+            isFormValid && !loading && styles.loginButtonActive,
+            loading && styles.loginButtonDisabled
+          ]}
           onPress={handleLogin}
-          disabled={loading}
+          disabled={loading || !isFormValid}
         >
-          <Text style={styles.loginButtonText}>
+          <Text style={[
+            styles.loginButtonText,
+            isFormValid && !loading && styles.loginButtonTextActive
+          ]}>
             {loading ? 'Logging in...' : 'Log In'}
           </Text>
         </TouchableOpacity>
@@ -220,6 +233,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
+  loginButtonActive: {
+    backgroundColor: '#007AFF', // Blue color when form is valid
+  },
   loginButtonDisabled: {
     backgroundColor: '#eee',
   },
@@ -227,6 +243,9 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loginButtonTextActive: {
+    color: '#fff', // White text when button is active
   },
   signUpContainer: {
     flexDirection: 'row',

@@ -42,11 +42,11 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
   console.log('=== FETCHING QUESTIONS BY EXERCISE ID ===');
   console.log('Exercise ID:', exerciseId);
   console.log('API_URL:', API_URL);
-  
+
   try {
-    const url = `${API_URL}/api/questions/${exerciseId}/`;
+    const url = `${API_URL}/questions/${exerciseId}/`;
     console.log('Fetching questions from URL:', url);
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -59,14 +59,14 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
 
     if (!response.ok) {
       console.error('Failed to fetch questions:', response.status, response.statusText);
-      
+
       try {
         const errorText = await response.text();
         console.error('Error response body:', errorText);
       } catch (bodyError) {
         console.error('Could not read error response body:', bodyError);
       }
-      
+
       return null;
     }
 
@@ -91,16 +91,16 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
             questionData = apiQuestion.question_data;
           }
           console.log(`Question ${index + 1} data:`, questionData);
-          
+
           // Extract options text from the nested structure
           const optionTexts = questionData.options?.map((option: any) => option.text) || [];
           console.log(`Question ${index + 1} option texts:`, optionTexts);
-          
+
           // Find the correct answer from the options
           const correctOption = questionData.options?.find((option: any) => option.correct === true);
           const correctAnswer = correctOption?.text || optionTexts[0] || 'No answer';
           console.log(`Question ${index + 1} correct answer:`, correctAnswer);
-          
+
           return {
             id: index + 1,
             question: questionData.question || 'Question not available',
@@ -302,7 +302,7 @@ export default function MultipleDragExercise() {
   const { childId, session } = useApp();
   const params = useLocalSearchParams();
   const exerciseId = params.exerciseId as string;
-  
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
@@ -316,7 +316,7 @@ export default function MultipleDragExercise() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showProgressExitModal, setShowProgressExitModal] = useState(false);
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
-  
+
   const [sessionStartTime] = useState(Date.now());
 
   // Fallback exercise data
@@ -347,7 +347,7 @@ export default function MultipleDragExercise() {
 
   // Use dynamic exercise data or fallback to static data
   const currentExercise = exercise || fallbackExercise;
-  
+
   // Safe access to current question
   const question = currentExercise?.questions?.[currentQuestion] || null;
 
@@ -382,14 +382,14 @@ export default function MultipleDragExercise() {
     const loadExerciseData = async () => {
       console.log('useEffect running - exerciseId:', exerciseId);
       console.log('useEffect running - childId:', childId);
-      
+
       setIsLoading(true);
-      
+
       // Try to fetch questions by exerciseId first
       if (exerciseId) {
         console.log('exerciseId exists, fetching questions by exercise ID:', exerciseId);
         const fetchedExercise = await fetchQuestionsByExerciseId(exerciseId);
-        
+
         if (fetchedExercise) {
           console.log('Successfully loaded exercise data:', fetchedExercise);
           setExercise(fetchedExercise);
@@ -399,11 +399,11 @@ export default function MultipleDragExercise() {
           console.warn('Failed to load exercise data, trying fallback method');
         }
       }
-      
+
       // Use fallback data if API fetch failed
       console.log('Using fallback exercise data');
       setExercise(fallbackExercise);
-      
+
       setIsLoading(false);
     };
 
@@ -415,23 +415,23 @@ export default function MultipleDragExercise() {
     console.log('answered:', answered);
     console.log('question:', question);
     console.log('retryCount:', retryCount);
-    
+
     if (answered) return;
-    
+
     // Safety check for question
     if (!question) {
       console.error('Question is null or undefined');
       return;
     }
-    
-    const droppedOption = question.options.find(opt => 
+
+    const droppedOption = question.options.find(opt =>
       isCorrect ? opt === question.correctAnswer : opt !== question.correctAnswer
     );
 
     console.log('droppedOption:', droppedOption);
     setSelectedOption(droppedOption || null);
     setAnswered(true);
-    
+
     if (isCorrect) {
       setScore(score + 10);
       setShowCelebration(true);
@@ -447,12 +447,12 @@ export default function MultipleDragExercise() {
         console.log(`Allowing retry - attempt ${retryCount + 1} of 3`);
         // Show retry modal
         setShowRetryModal(true);
-      
+
       } else {
         console.log('Max retries reached - showing correct answer');
         // Show correct answer modal after 2 failed attempts
         setShowCorrectAnswerModal(true);
-        
+
       }
     }
   };
@@ -477,10 +477,10 @@ export default function MultipleDragExercise() {
     // Calculate correct answers from score (score is 10 points per correct answer)
     const correctAnswers = score / 10;
     const totalQuestions = currentExercise.questions.length;
-    
+
     const accuracy = Math.max(0, Math.min(1, correctAnswers / totalQuestions));
     const timeSpent = Math.max(0, Math.round(totalSessionTime / 60000));
-    
+
     const exerciseSubmission = {
       accuracy: accuracy,
       time_spent: timeSpent,
@@ -489,8 +489,8 @@ export default function MultipleDragExercise() {
     console.log('Submitting exercise results:', exerciseSubmission);
     console.log('Child ID:', childId);
     console.log('Exercise ID:', exerciseId);
-    console.log('API URL:', `${API_URL}/api/results/${childId}/exercise/${exerciseId}/`);
-    
+    console.log('API URL:', `${API_URL}/results/${childId}/exercise/${exerciseId}/`);
+
     // Validate IDs are not null/undefined
     if (!childId || !exerciseId) {
       console.error('Missing required IDs:', { childId, exerciseId });
@@ -504,7 +504,7 @@ export default function MultipleDragExercise() {
 
     // Submit to backend
     try {
-      const response = await fetch(`${API_URL}/api/results/${childId}/exercise/${exerciseId}/`, {
+      const response = await fetch(`${API_URL}/result/${childId}/exercise/${exerciseId}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -531,7 +531,7 @@ export default function MultipleDragExercise() {
     } catch (error) {
       console.error('Error submitting exercise:', error);
     }
-    
+
 
 
     // Navigate back to dashboard after submission (regardless of API success for now)
@@ -541,7 +541,7 @@ export default function MultipleDragExercise() {
       params: { completedTaskId: exerciseId }
     });
     */
-    
+
   };
 
   const completeActivity = () => {
@@ -657,9 +657,9 @@ export default function MultipleDragExercise() {
           <View style={styles.progressBar}>
             <View
               style={[
-                styles.progressFill, 
+                styles.progressFill,
                 { width: `${((currentQuestion + 1) / currentExercise.questions.length) * 100}%` }
-              ]} 
+              ]}
             />
           </View>
         </View>
@@ -785,16 +785,16 @@ export default function MultipleDragExercise() {
           <View style={styles.completionContent}>
             {/* Mascot Koala */}
             <View style={styles.mascotContainer}>
-              <Image 
-                source={require('@/assets/images/koala.png')} 
+              <Image
+                source={require('@/assets/images/koala.png')}
                 style={styles.mascotImage}
                 resizeMode="contain"
               />
             </View>
-            
+
             {/* Completion Message */}
             <Text style={styles.completionMessage}>{getCompletionData().message}</Text>
-            
+
             {/* Score Display */}
             <View style={styles.scoreDisplay}>
               <Text style={styles.scoreLabel}>Your Score</Text>
@@ -809,14 +809,14 @@ export default function MultipleDragExercise() {
               {getCompletionData().showTryAgain ? (
                 // Almost There - show Try Again and Go Back
                 <>
-                  <TouchableOpacity 
-                    style={[styles.completionButton, styles.tryAgainButton]} 
+                  <TouchableOpacity
+                    style={[styles.completionButton, styles.tryAgainButton]}
                     onPress={handleTryAgainFromCompletion}
                   >
                     <Text style={styles.tryAgainButtonText}>Try Again</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.completionButton, styles.goBackButton]} 
+                  <TouchableOpacity
+                    style={[styles.completionButton, styles.goBackButton]}
                     onPress={handleGoBackFromCompletion}
                   >
                     <Text style={styles.goBackButtonText}>Go Back</Text>
@@ -824,8 +824,8 @@ export default function MultipleDragExercise() {
                 </>
               ) : (
                 // Good Work / Excellent - show Continue
-                <TouchableOpacity 
-                  style={[styles.completionButton, styles.continueButton]} 
+                <TouchableOpacity
+                  style={[styles.completionButton, styles.continueButton]}
                   onPress={handleContinueFromCompletion}
                 >
                   <Text style={styles.continueButtonText}>Continue</Text>

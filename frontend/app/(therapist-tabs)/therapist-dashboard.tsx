@@ -13,7 +13,7 @@ import { fetchUnitStats } from "@/components/util/fetchUnitStats";
 
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
-  
+
   return date.toLocaleDateString("en-AU", {
     day: "2-digit",
     month: "2-digit",
@@ -23,12 +23,15 @@ const formatDate = (isoString: string): string => {
 
 export default function TherapistDashboard() {
   const { childId, session } = useApp();
-  const [loading, setLoading] = useState(true);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [therapistName, setTherapistName] = useState('');
   const [childList, setChildList] = useState<string[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
+
+  const loading = loadingProfiles || loadingAssignments;
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -40,7 +43,7 @@ export default function TherapistDashboard() {
         }
 
         const user = session.user;
-        const response = await fetch(`${API_URL}/api/profiles/${user.id}/`, {
+        const response = await fetch(`${API_URL}/profile/${user.id}/list/`, {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`
           }
@@ -68,7 +71,7 @@ export default function TherapistDashboard() {
         console.error('Error fetching profiles:', error);
         Alert.alert('Error', 'Failed to load profiles. Please try again.');
       } finally {
-        setLoading(false);
+        setLoadingProfiles(false);
       }
     };
 
@@ -82,31 +85,22 @@ export default function TherapistDashboard() {
     React.useCallback(() => {
       const fetchAssignments = async () => {
         try {
-          setLoading(true);
+          const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
+          
+          if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
 
-          const [unitsResp, assignmentsResp] = await Promise.all([
-            fetch(`${API_URL}/api/learning_units/`),
-            fetch(`${API_URL}/api/activities/${userId}/`)
-          ]);
-
-          if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');
-
-          const allUnits = await unitsResp.json();
           const assignments = await assignmentsResp.json();
 
-          const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
+          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
 
-          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => {
-            const unit = allUnits.find((unit: any) => unit.id === assignment.learning_unit);
-            return {
-              assignmentId: assignment.id,
-              learningUnitId: assignment.learning_unit,
-              title: unit.title || '',
-              category: unit.category || '',
-              participationType: assignment.participation_type,
-              assignedDate: formatDate(assignment.assigned_at),
-            };
-          });
+          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
+            assignmentId: assignment.id,
+            learningUnitId: assignment.learning_unit.id,
+            title: assignment.learning_unit.title || '',
+            category: assignment.learning_unit.category || '',
+            participationType: assignment.participation_type,
+            assignedDate: formatDate(assignment.assigned_at),
+          }));
 
           const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
             assignedUnitsDetails.map(async (unit) => {
@@ -125,7 +119,7 @@ export default function TherapistDashboard() {
           console.error(err);
           Alert.alert('Error', 'Failed to load learning units.');
         } finally {
-          setLoading(false);
+          setLoadingAssignments(false);
         }
       };
 

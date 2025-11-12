@@ -12,7 +12,7 @@ import { fetchUnitStats } from "@/components/util/fetchUnitStats";
 
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
-  
+
   return date.toLocaleDateString("en-AU", {
     day: "2-digit",
     month: "2-digit",
@@ -22,10 +22,13 @@ const formatDate = (isoString: string): string => {
 
 export default function ParentDashboard() {
   const { profileId, childId, session } = useApp();
-  const [loading, setLoading] = useState(true);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [parentName, setParentName] = useState('');
   const [selectedChildName, setSelectedChildName] = useState('');
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
+
+  const loading = loadingProfiles || loadingAssignments;
 
   const userId = session.user.id;
 
@@ -40,7 +43,7 @@ export default function ParentDashboard() {
         }
 
         // Get parent profile
-        const parentProfileResponse = await fetch(`${API_URL}/api/profile/${profileId}/`, {
+        const parentProfileResponse = await fetch(`${API_URL}/profile/${profileId}/data/`, {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`
           }
@@ -52,7 +55,7 @@ export default function ParentDashboard() {
         setParentName(parentProfileData.name);
 
         // Get selected child profile
-        const selectedChildResponse = await fetch(`${API_URL}/api/profile/${childId}/`, {
+        const selectedChildResponse = await fetch(`${API_URL}/profile/${childId}/data/`, {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`
           }
@@ -66,43 +69,34 @@ export default function ParentDashboard() {
       } catch (error: any) {
         Alert.alert('Error', error.message);
       } finally {
-        setLoading(false);
+        setLoadingProfiles(false);
       }
     };
 
     fetchProfiles();
-  }, []);
+  }, [childId]);
 
   // Get assignments
   useFocusEffect(
     React.useCallback(() => {
       const fetchAssignments = async () => {
         try {
-          setLoading(true);
+          const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
 
-          const [unitsResp, assignmentsResp] = await Promise.all([
-            fetch(`${API_URL}/api/learning_units/`),
-            fetch(`${API_URL}/api/activities/${userId}/`)
-          ]);
+          if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
 
-          if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');
-
-          const allUnits = await unitsResp.json();
           const assignments = await assignmentsResp.json();
 
-          const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
+          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
 
-          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => {
-            const unit = allUnits.find((unit: any) => unit.id === assignment.learning_unit);
-            return {
-              assignmentId: assignment.id,
-              learningUnitId: assignment.learning_unit,
-              title: unit.title || '',
-              category: unit.category || '',
-              participationType: assignment.participation_type,
-              assignedDate: formatDate(assignment.assigned_at),
-            };
-          });
+          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
+            assignmentId: assignment.id,
+            learningUnitId: assignment.learning_unit.id,
+            title: assignment.learning_unit.title || '',
+            category: assignment.learning_unit.category || '',
+            participationType: assignment.participation_type,
+            assignedDate: formatDate(assignment.assigned_at),
+          }));
 
           const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
             assignedUnitsDetails.map(async (unit) => {
@@ -121,7 +115,7 @@ export default function ParentDashboard() {
           console.error(err);
           Alert.alert('Error', 'Failed to load learning units.');
         } finally {
-          setLoading(false);
+          setLoadingAssignments(false);
         }
       };
 

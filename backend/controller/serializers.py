@@ -12,6 +12,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class User_ProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    profile = ProfileSerializer(read_only=True)
+
     class Meta:
         model = User_Profile
         fields = '__all__'
@@ -32,11 +35,25 @@ class QuestionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AssignmentSerializer(serializers.ModelSerializer):
+    learning_unit = LearningUnitSerializer(read_only=True)
+    assigned_to = ProfileSerializer(read_only=True)
+    assigned_by = UserSerializer(read_only=True)
+
     class Meta:
         model = Assignment
         fields = '__all__'
 
 class ExerciseResultSerializer(serializers.ModelSerializer):
+    exercise = ExerciseSerializer(read_only=True)
+
     class Meta:
         model = Exercise_Result
+        fields = '__all__'
+
+class QuestionResultSerializer(serializers.ModelSerializer):
+    exercise_result = ExerciseResultSerializer(read_only=True)
+    question = QuestionSerializer(read_only=True)
+
+    class Meta:
+        model = Question_Result
         fields = '__all__'
