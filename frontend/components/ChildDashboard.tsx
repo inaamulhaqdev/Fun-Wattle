@@ -113,8 +113,17 @@ const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: st
       });
 
       // Execute all completion checks in parallel
-      const exercisesWithCompletionStatus = await Promise.all(completionCheckPromises);      console.log('Exercises with completion status:', exercisesWithCompletionStatus);
-      return exercisesWithCompletionStatus;
+      const exercisesWithCompletionStatus = await Promise.all(completionCheckPromises);
+      
+      // Sort exercises by their order field
+      const sortedExercises = exercisesWithCompletionStatus.sort((a, b) => {
+        const orderA = a.order || 0;
+        const orderB = b.order || 0;
+        return orderA - orderB;
+      });
+      
+      console.log('Exercises with completion status (sorted by order):', sortedExercises);
+      return sortedExercises;
     } else {
       console.error('Failed to fetch exercises for learning unit', learningUnitId, ':', response.status);
       return [];
