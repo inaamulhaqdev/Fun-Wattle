@@ -25,6 +25,8 @@ interface MascotData {
   accessoryId?: number;
 }
 
+const childId = 'some-child-id';
+
 // Default tasks (fallback if API fails)
 /* const defaultTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
@@ -64,6 +66,7 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
 const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: string): Promise<any[]> => {
   try {
     const url = `${API_URL}/content/${learningUnitId}/exercises/`;
+    //const url = `${API_URL}/exercises/${learningUnitId}/`;
     console.log('Fetching exercises from URL:', url);
 
     const response = await fetch(url, {
@@ -78,44 +81,39 @@ const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: st
       console.log('Exercises fetched for learning unit', learningUnitId, ':', exercises);
 
       // For each exercise, check if it has results (meaning it's completed)
-      const exercisesWithCompletionStatus = await Promise.all(
-        exercises.map(async (exercise: any) => {
-          try {
-            const resultsUrl = `${API_URL}/results/${childId}/exercise/${exercise.id}/`;
-            console.log('Checking completion status for exercise:', exercise.id, 'at URL:', resultsUrl);
+      // Create all completion check promises at once for parallel execution
+      const completionCheckPromises = exercises.map(async (exercise: any) => {
+        try {
+          //const resultResponse = await fetch(`${API_URL}/api/exercise-results/?child_id=${childId}&exercise_id=${exercise.id}`, {
+          const resultResponse = await fetch(`${API_URL}/result/${childId}/exercise/${exercise.id}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
 
-            const resultsResponse = await fetch(resultsUrl, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-
-            let isCompleted = false;
-            if (resultsResponse.ok) {
-              const results = await resultsResponse.json();
-              // If there are any results, the exercise is completed
-              isCompleted = Array.isArray(results) && results.length > 0;
-              console.log('Exercise', exercise.id, 'completion status:', isCompleted, 'Results:', results);
-            } else {
-              console.log('No results found for exercise', exercise.id, '- treating as incomplete');
-            }
-
-            return {
-              ...exercise,
-              completed: isCompleted
-            };
-          } catch (error) {
-            console.error('Error checking completion status for exercise', exercise.id, ':', error);
-            return {
-              ...exercise,
-              completed: false
-            };
+          let isCompleted = false;
+          if (resultResponse.ok) {
+            const results = await resultResponse.json();
+            isCompleted = Array.isArray(results) && results.length > 0;
+            console.log('Exercise', exercise.id, 'completion status:', isCompleted, '(', results.length, 'results found)');
+          } else {
+            console.log('No results found for exercise', exercise.id, '- treating as incomplete');
           }
-        })
-      );
 
-      console.log('Exercises with completion status:', exercisesWithCompletionStatus);
+          return {
+            ...exercise,
+            completed: isCompleted
+          };
+        } catch (error) {
+          console.error('Error checking completion status for exercise', exercise.id, ':', error);
+          return {
+            ...exercise,
+            completed: false
+          };
+        }
+      });
+
+      // Execute all completion checks in parallel
+      const exercisesWithCompletionStatus = await Promise.all(completionCheckPromises);      console.log('Exercises with completion status:', exercisesWithCompletionStatus);
       return exercisesWithCompletionStatus;
     } else {
       console.error('Failed to fetch exercises for learning unit', learningUnitId, ':', response.status);
@@ -163,40 +161,59 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
     }
 
     // Extract unique learning unit IDs from assignments
-    const learningUnitIds = [...new Set(assignmentsData.map((assignment: any) => assignment.learning_unit))];
+    const learningUnitIds = [...new Set(assignmentsData.map((assignment: any) => assignment.learning_unit.id))];
     console.log('Learning unit IDs found:', learningUnitIds);
 
-    // Fetch exercises for each learning unit
+    // Fetch exercises for all learning units in parallel
     const allExercises: any[] = [];
-    for (const learningUnitId of learningUnitIds) {
-      const exercises = await fetchExercisesForLearningUnit(learningUnitId, childId);
-      allExercises.push(...exercises);
-    }
+    const exercisePromises = learningUnitIds.map(learningUnitId => 
+      fetchExercisesForLearningUnit(learningUnitId, childId)
+    );
+    const exerciseResults = await Promise.all(exercisePromises);
+    exerciseResults.forEach(exercises => allExercises.push(...exercises));
 
     console.log('All exercises fetched:', allExercises);
 
     // Transform exercises to Task format
     if (allExercises.length > 0) {
-      const transformedTasks: Task[] = allExercises.map((exercise: any, index: number) => ({
+      // First, set tasks with basic data for immediate UI display
+      const basicTasks: Task[] = allExercises.map((exercise: any, index: number) => ({
         id: exercise.id || `exercise-${index}`,
         name: exercise.title || 'Untitled Exercise',
-        completed: exercise.completed || false,
+        completed: false, // Default to incomplete for faster loading
         exerciseType: exercise.exercise_type || 'multiple_drag',
         exerciseId: exercise.id,
         description: exercise.description || ''
       }));
-
-      setTasks(transformedTasks);
-      console.log('Exercises transformed to tasks successfully:', transformedTasks);
+      
+      setTasks(basicTasks);
+      setIsDataLoaded(true); // Allow UI to show immediately
+      console.log('Basic tasks set for immediate display:', basicTasks);
+      
+      // Then update with actual completion status in background
+      setTimeout(async () => {
+        const transformedTasks: Task[] = allExercises.map((exercise: any, index: number) => ({
+          id: exercise.id || `exercise-${index}`,
+          name: exercise.title || 'Untitled Exercise',
+          completed: exercise.completed || false,
+          exerciseType: exercise.exercise_type || 'multiple_drag',
+          exerciseId: exercise.id,
+          description: exercise.description || ''
+        }));
+        
+        setTasks(transformedTasks);
+        console.log('Tasks updated with completion status:', transformedTasks);
+      }, 0);
     } else {
       console.warn('No exercises found for assigned learning units, using default tasks');
+      setIsDataLoaded(true);
     }
 
   } catch (error) {
     console.error('Network error fetching assigned activities:', error);
     console.log('Using default tasks due to network error');
   } finally {
-    // Set data loaded to true when data fetching is complete
+    // Ensure data loaded is set even if there were errors
     setIsDataLoaded(true);
     console.log('Data loading completed');
   }
@@ -270,7 +287,8 @@ const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
         top: 30,   // Move slightly lower
       }}>
         {/* Shadow layer - black silhouette offset behind */}
-        <Image
+        {/* COMMENTED OUT FOR PERFORMANCE - Shadow effects are expensive */}
+        {/* <Image
           source={require('@/assets/images/completed_task.png')}
           style={{
             width: size * 1.3,
@@ -284,7 +302,7 @@ const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
           // Apply black tint to create shadow effect
           // Note: tintColor works on iOS, for Android we rely on the opacity + positioning
           tintColor="#000000"
-        />
+        /> */}
         {/* Main flower on top */}
         <Image
           source={require('@/assets/images/completed_task.png')}
@@ -406,24 +424,32 @@ const getMascotImages = (mascotData: MascotData) => {
   return { bodyImage, accessoryImage };
 };
 
+// Global childId variable - initialized with fallback, updated when component mounts
+let globalChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; // Fallback UUID for testing
+
+// Export function to get the current global childId
+export const getGlobalChildId = () => globalChildId;
+
 const ChildDashboard = () => {
   const { completedTaskId, bodyType, accessoryId } = useLocalSearchParams();
   const { childId: contextChildId } = useApp();
 
-  // Fallback childId for testing if context doesn't provide one (must be a valid UUID)
-  const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; // Valid UUID format for testing
-  const childId = contextChildId || fallbackChildId;
-
-  console.log('=== CHILDDASHBOARD COMPONENT LOADED ===');
-  console.log('Context childId:', contextChildId);
-  console.log('Fallback childId:', fallbackChildId);
-  console.log('Final childId being used:', childId);
+  // Update global childId with context value or keep fallback
+  const childId = contextChildId || globalChildId;
+  
+  // Update the global variable so other parts of the app can access it
+  React.useEffect(() => {
+    if (contextChildId) {
+      globalChildId = contextChildId;
+      console.log('Global childId updated to:', globalChildId);
+    }
+  }, [contextChildId]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
-  const [streakCount, setStreakCount] = useState(0);
-  const [coinBalance, setCoinBalance] = useState(0);
+  // const [streakCount, setStreakCount] = useState(0);
+  // const [coinBalance, setCoinBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isUIReady, setIsUIReady] = useState(false);
@@ -513,8 +539,8 @@ const ChildDashboard = () => {
             y: Math.max(0, centerOffset),
             animated: true
           });
-        }, 1000); // Longer delay to ensure all layout is complete
-
+        }, 500); // Reduced delay for faster responsiveness
+        
         return () => clearTimeout(autoScrollTimeout);
       }
     }
@@ -615,7 +641,7 @@ const ChildDashboard = () => {
 
       const completeLoading = () => {
         const elapsedTime = Date.now() - loadingStartTime;
-        const minimumLoadingTime = 3000; // 3 seconds minimum to allow for full UI rendering
+        const minimumLoadingTime = 1500; // Reduced to 1.5 seconds for faster loading
         const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
 
         setTimeout(() => {
@@ -635,7 +661,7 @@ const ChildDashboard = () => {
         const bufferTimeout = setTimeout(() => {
           console.log('Critical elements loaded, adding UI render buffer');
           completeLoading();
-        }, 3000); // Longer buffer to ensure all UI elements finish rendering
+        }, 1000); // Reduced buffer time for faster loading
         return () => clearTimeout(bufferTimeout);
       } else {
         // Fallback timeout in case elements don't fire events
@@ -643,7 +669,7 @@ const ChildDashboard = () => {
           console.log('Fallback timeout - assuming UI is ready');
           console.log('Status: images:', loadedImagesCount, 'expected:', expectedImages, 'layout:', contentLayoutComplete);
           completeLoading();
-        }, 6000); // Even longer fallback to be safe
+        }, 3000); // Reduced fallback timeout for faster loading
         return () => clearTimeout(fallbackTimeout);
       }
     }
@@ -738,7 +764,7 @@ const ChildDashboard = () => {
 
 
 
-  const handleTaskPress = async (task: Task) => {
+  const handleTaskPress = async (task: Task, child_id: string) => {
     if (task.completed) return;
 
     console.log('=== TASK PRESSED ===');
@@ -760,7 +786,7 @@ const ChildDashboard = () => {
           routePath = '/describe_exercise';
           break;
         case 'ordered_drag':
-          routePath = '/narrative-inferencing-ex2';
+          routePath = '/ordered_drag_exercise';
           break;
         default:
           console.warn('Unknown exercise type:', task.exerciseType, 'using default route');
@@ -768,16 +794,21 @@ const ChildDashboard = () => {
       }
     }
     console.log('Navigating to:', routePath);
+    console.log('Using global childId for navigation:', globalChildId);
+
+    const navigationParams = {
+      exerciseId: task.exerciseId || task.id,
+      childId: globalChildId, // Use global childId
+      taskId: task.id,
+      taskName: task.name,
+      bodyType: mascotData.bodyType,
+      accessoryId: mascotData.accessoryId?.toString() || ''
+    };
+        
     // Navigate to the exercise with exercise ID and mascot data
     router.push({
       pathname: routePath as any,
-      params: {
-        exerciseId: task.exerciseId || task.id,
-        taskId: task.id,
-        taskName: task.name,
-        bodyType: mascotData.bodyType,
-        accessoryId: mascotData.accessoryId?.toString() || ''
-      }
+      params: navigationParams
     });
   };
 
@@ -833,11 +864,11 @@ const ChildDashboard = () => {
         <View style={styles.headerRight}>
           <View style={styles.streakContainer}>
             <FontAwesome6 name="fire" size={24} color="#FF4500" />
-            <Text style={styles.streakText}>{streakCount}</Text>
+            <Text style={styles.streakText}>5</Text>
           </View>
           <View style={styles.starContainer}>
             <MaterialCommunityIcons name="star-circle" size={24} color="#007ae6ff" />
-            <Text style={styles.starText}>{coinBalance}</Text>
+            <Text style={styles.starText}>150</Text>
           </View>
         </View>
       </View>
@@ -940,7 +971,7 @@ const ChildDashboard = () => {
               {/* Task flower/circle */}
               <View style={styles.taskFlowerContainer}>
                 <TouchableOpacity
-                  onPress={() => handleTaskPress(task)}
+                  onPress={() => handleTaskPress(task, childId)}
                   disabled={task.completed || isAfterNextTask}
                 >
                   {task.completed ? (
@@ -1019,7 +1050,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
     height: '100%',
-    filter: 'brightness(1.3)',
+    //filter: 'brightness(1.3)',
     opacity: 0.5,
   },
 
