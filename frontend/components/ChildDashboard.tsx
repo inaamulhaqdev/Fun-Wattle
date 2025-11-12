@@ -526,7 +526,7 @@ const ChildDashboard = () => {
       // Find the next incomplete task
       const nextIncompleteIndex = tasks.findIndex(t => !t.completed);
       console.log('Dashboard loaded - auto centering next incomplete task at index:', nextIncompleteIndex);
-      
+
       if (scrollViewRef.current && nextIncompleteIndex !== -1) {
         // Add a delay to ensure UI is fully rendered before scrolling
         const autoScrollTimeout = setTimeout(() => {
@@ -534,7 +534,7 @@ const ChildDashboard = () => {
           const centerOffset = nextTaskPosition - (screenHeight / 2) + 100 + 20; // Account for content top offset
           console.log('Initial auto-centering to position:', centerOffset, 'for task index:', nextIncompleteIndex);
           console.log('Task position:', nextTaskPosition, 'Screen height:', screenHeight);
-          
+
           scrollViewRef.current?.scrollTo({
             y: Math.max(0, centerOffset),
             animated: true

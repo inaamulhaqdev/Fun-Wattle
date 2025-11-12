@@ -68,6 +68,8 @@ export default function TotalView({ units }: TotalViewProps) {
     assigned_date: unit.assignedDate || ""
   }));       
 
+  console.log("Tasks for filter view (total):", tasks);
+
   return (
     <View style={styles.container}>
       <StatsGrid stats={stats} loading={loading} />
