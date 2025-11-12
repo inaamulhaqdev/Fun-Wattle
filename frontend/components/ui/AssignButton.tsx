@@ -10,7 +10,7 @@ const AssignButton = ({ onPress }: AssignButtonProps) => (
   <View style={styles.container}>
     <Button
       textColor="black"
-      buttonColor="#FDD652"
+      buttonColor="#FF6B35"
       mode="contained"
       onPress={onPress}
       contentStyle={{ paddingVertical: 10, paddingHorizontal: 20 }}

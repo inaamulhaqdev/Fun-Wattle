@@ -138,7 +138,7 @@ export default function LearningLibrary({ data }: LibraryProps) {
           {selectedItem.description}
         </Text>
 
-        <Text variant="titleMedium" style={styles.heading}>Activities</Text>
+        <Text variant="titleMedium" style={styles.heading}>Exercises</Text>
         <Divider style={styles.divider} />
 
         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
@@ -270,7 +270,8 @@ export default function LearningLibrary({ data }: LibraryProps) {
         data={filteredData}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <Card style={styles.card} onPress={() => setSelectedItem(item)}>
+          <Card style={styles.card} onPress={() => setSelectedItem(item)}> {/* Replace uri with image ri from Supabase*/}
+            <Card.Cover source={{ uri: 'https://picsum.photos/700' }} />
             <Card.Title title={item.title} />
             <Card.Content>
               <Text>{item.category}</Text>
