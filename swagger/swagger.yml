@@ -267,7 +267,7 @@ paths:
         '201':
           description: Assignment created successfully
         '400':
-          description: Missing required fields
+          description: Missing required fields or assignment already exists
         '404':
           description: Child profile, user, or learning unit not found
         '500':
