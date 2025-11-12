@@ -41,15 +41,15 @@ export default function AddChildInstructions() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={styles.headerRow}>
-          <IconButton
-            icon="arrow-left"
-            size={28}
-            onPress={handleBack}
-          />
-          <Text style={styles.title}>Ability to follow instructions</Text>
-        </View>
+        <IconButton
+          icon="arrow-left"
+          size={28}
+          onPress={handleBack}
+        />
+        <Text style={styles.title}>Ability to follow instructions</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text variant="headlineSmall" style={styles.question}>Can {childName} follow simple instructions on digital devices? (E.g., "Tap the blue circle", "Match the picture")</Text>
+        <Text variant="headlineSmall" style={styles.question}>Can {childName} follow simple instructions on digital devices? (E.g., &quot;Tap the blue circle&quot;, &quot;Match the picture&quot;)</Text>
 
         <RadioButton.Group onValueChange={value => setValue(value)} value={value}>
           {radioOptions.map((option) => (
@@ -62,18 +62,18 @@ export default function AddChildInstructions() {
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
               mode="android"
             />
-        ))}
+          ))}
         </RadioButton.Group>
 
         <Button
-            mode="contained"
-            style={styles.nextButton}
-            onPress={handleNext}
-            contentStyle={{ paddingVertical: 8 }}
-            textColor="black"
-          >
-            Next
-          </Button>
+          mode="contained"
+          style={styles.nextButton}
+          onPress={handleNext}
+          contentStyle={{ paddingVertical: 8 }}
+          textColor="black"
+        >
+          Next
+        </Button>
       </ScrollView>
     </View>
   );
