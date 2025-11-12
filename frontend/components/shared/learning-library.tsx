@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Card, Text, Searchbar } from 'react-native-paper';
 import DetailView from './unit-details';
@@ -6,7 +6,6 @@ import { useFocusEffect } from 'expo-router';
 import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
 import { useApp } from '../../context/AppContext';
 import { API_URL } from '@/config/api';
-import { supabase } from '@/config/supabase';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
 
@@ -34,7 +33,7 @@ function matchesFilters(
   return false;
 }
 
-export default function LearningLibrary({ data, onRefresh }: LibraryProps) {
+export default function LearningLibrary({ data }: LibraryProps) {
   const { childId, session } = useApp();
   const userId = session?.user?.id;
 
