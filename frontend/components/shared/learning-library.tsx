@@ -5,7 +5,7 @@ import DetailView from './unit-details';
 import { useFocusEffect } from 'expo-router';
 import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
 import { useApp } from '../../context/AppContext';
-import { API_URL } from '@/config/api';
+import { API_URL, SUPABASE_URL } from '@/config/api';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
 
@@ -45,6 +45,7 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
   const [assignedUnitIds, setAssignedUnitIds] = useState<Set<string>>(new Set());
   const [completedUnitIds, setCompletedUnitIds] = useState<Set<string>>(new Set());
+  
 
   useFocusEffect(
     React.useCallback(() => {
@@ -152,13 +153,24 @@ export default function LearningLibrary({ data }: LibraryProps) {
         data={filteredData}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
+          const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/${item.image}` : null;
+
+          return (
           <Card style={styles.card} onPress={() => setSelectedItem(item)}> {/* Replace uri with image ri from Supabase*/}
-            <Card.Cover source={{ uri: 'https://picsum.photos/700' }} />
+          
+            <Card.Cover source={
+              imageUrl
+              ? { uri: imageUrl }
+              : require(placeholder)
+
+            } 
+            />
             <Card.Title title={item.title} />
             <Card.Content>
               <Text>{item.category}</Text>
             </Card.Content>
           </Card>
+          );
         )}
       />
     </View>
