@@ -38,7 +38,7 @@ export default function DetailView({
       return;
     }
 
-    const response = await fetch(`${API_URL}/assignment/${childId}/assigned_to/`, {
+    const response = await fetch(`${API_URL}/assignment/create/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ export default function DetailView({
       },
       body: JSON.stringify({
         learning_unit_id: learningUnitId,
-        // child_id: childId,
+        child_id: childId,
         user_id: userId,
         participation_type: participationType,
       }),
@@ -62,7 +62,6 @@ export default function DetailView({
   const unassignLearningUnit = async (
     learningUnitId: string,
     childId: string,
-    // userId: string
   ) => {
     if (!session?.access_token) {
       Alert.alert('Error', 'You must be authorized to perform this action');
@@ -86,10 +85,18 @@ export default function DetailView({
 
   useEffect(() => {
     const fetchExercises = async () => {
+      if (!session?.access_token) {
+        Alert.alert('Error', 'You must be authorized to perform this action');
+        return;
+      }
+      
       try {
         const response = await fetch(`${API_URL}/content/${selectedItem.id}/exercises/`, {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
         });
 
         if (!response.ok) throw new Error(`Failed to fetch exercises (${response.status})`);
@@ -154,6 +161,9 @@ export default function DetailView({
                 await unassignLearningUnit(selectedItem.id, childId);
                 setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
               } else if (newStatus === 'Assigned as Required') {
+                console.log("Unit id:", selectedItem.id);
+                console.log("Child id:", childId);
+                console.log("userId", userId);
                 await assignLearningUnit(selectedItem.id, childId, userId, 'required');
                 setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
               } else if (newStatus === 'Assigned as Recommended') {

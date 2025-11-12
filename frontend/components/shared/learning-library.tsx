@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { Card, IconButton, Divider, Text, Searchbar, Snackbar } from 'react-native-paper';
-import AssignButton from '../ui/AssignButton';
-import AssignmentStatus from '../ui/AssignmentOverlay';
-import { useNavigation } from '@react-navigation/native';
-import { router } from 'expo-router';
-import { LearningUnit, Exercise, LibraryProps } from '../../types/learningUnitTypes';
+import { Card, Text, Searchbar } from 'react-native-paper';
+import DetailView from './unit-details';
+import { useFocusEffect } from 'expo-router';
+import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
 import { useApp } from '../../context/AppContext';
 import { API_URL } from '@/config/api';
 
@@ -15,16 +13,22 @@ function matchesFilters(
   item: LearningUnit,
   searchQuery: string,
   statusFilter: 'All Units' | 'Assigned' | 'Completed',
-  categoryFilter: string | null
+  categoryFilter: string | null,
+  assignedUnitIds: Set<string>,
+  completedUnitIds: Set<string>,
 ) {
   const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
   const matchesCategory = !categoryFilter || item.category === categoryFilter;
 
   if (statusFilter === 'All Units') return matchesSearch && matchesCategory;
-  if (statusFilter === 'Assigned')
-    return matchesSearch && matchesCategory && /^assigned/i.test(item.status);
-  if (statusFilter === 'Completed')
-    return matchesSearch && matchesCategory && item.status.toLowerCase().includes('completed');
+
+  if (statusFilter === 'Assigned') {
+    return matchesSearch && matchesCategory && assignedUnitIds.has(item.id);
+  }
+
+  if (statusFilter === 'Completed') {
+    return matchesSearch && matchesCategory && completedUnitIds.has(item.id);
+  }
 
   return false;
 }
@@ -34,17 +38,43 @@ export default function LearningLibrary({ data }: LibraryProps) {
   const userId = session?.user?.id;
 
   const [selectedItem, setSelectedItem] = useState<LearningUnit | null>(null);
-  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showOverlay, setShowOverlay] = useState(false);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<'All Units' | 'Assigned' | 'Completed'>('All Units');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
+  const [assignedUnitIds, setAssignedUnitIds] = useState<Set<string>>(new Set());
+  const [completedUnitIds, setCompletedUnitIds] = useState<Set<string>>(new Set());
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchAssignments = async () => {
+      try {
+        const response = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`, { method: 'GET' });
+        if (!response.ok) throw new Error(`Failed to fetch assignments (${response.status})`);
+
+        const assignments = await response.json();
+
+        const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
+
+        const assignedIds = childAssignments.map((a: any) => a.learning_unit.id);
+        setAssignedUnitIds(new Set(assignedIds));
+
+        const completedIds = childAssignments
+          .filter((a: any) => a.completed_at !== null)
+          .map((a: any) => a.learning_unit);
+        setCompletedUnitIds(new Set(completedIds));
+      } catch (err) {
+        console.error('Error fetching assignments:', err);
+        Alert.alert('Error', 'Failed to load assigned learning units.');
+      }
+    };
+      fetchAssignments();
+    }, [childId, userId])
+  );
+
   const filteredData = data.filter(item =>
-    matchesFilters(item, searchQuery, statusFilter, categoryFilter)
+    matchesFilters(item, searchQuery, statusFilter, categoryFilter, assignedUnitIds, completedUnitIds)
   );
 
   const toggleCategory = (category: string) => {
@@ -56,163 +86,15 @@ export default function LearningLibrary({ data }: LibraryProps) {
     });
   };
 
-  const assignLearningUnit = async (
-    learningUnitId: string,
-    childId: string,
-    userId: string,
-    participationType: 'required' | 'recommended'
-  ) => {
-    if (!session?.access_token) {
-      Alert.alert('Error', 'You must be authorized to perform this action');
-      return;
-    }
-
-    const response = await fetch(`${API_URL}/assignment/create/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token}`,
-      },
-      body: JSON.stringify({
-        learning_unit_id: learningUnitId,
-        child_id: childId,
-        user_id: userId,
-        participation_type: participationType,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to assign learning unit (${response.status})`);
-    }
-
-    return await response.json();
-  };
-
-  const unassignLearningUnit = async (
-    learningUnitId: string,
-    childId: string,
-    userId: string
-  ) => {
-    if (!session?.access_token) {
-      Alert.alert('Error', 'You must be authorized to perform this action');
-      return;
-    }
-
-    const response = await fetch(`${API_URL}/assignment/${childId}/unassign/${learningUnitId}/`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token}`,
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to unassign learning unit (${response.status})`);
-    }
-
-    return await response.json();
-  };
-
-  const navigation = useNavigation();
-
   // Detail view
   if (selectedItem) {
     return (
-      <ScrollView style={styles.container}>
-        <View style={styles.backButton}>
-          <IconButton
-            icon="arrow-left"
-            size={30}
-            onPress={() => {
-              setSelectedItem(null);
-              setCurrentExercise(null);
-              setSnackbarVisible(false);
-            }}
-          />
-        </View>
-
-        <Text variant="headlineMedium" style={styles.title}>{selectedItem.title}</Text>
-        <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
-
-        <Text variant="bodyMedium" style={styles.description}>
-          {selectedItem.description}
-        </Text>
-
-        <Text variant="titleMedium" style={styles.heading}>Activities</Text>
-        <Divider style={styles.divider} />
-
-        <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
-          {selectedItem.exercises?.map((exercise, index) => (
-            <Card
-              key={index}
-              onPress={() =>
-                router.push({
-                  pathname: '/exercise-screen',
-                  params: { title: exercise.title, component: exercise.title?.replace(" ", "") },
-                })
-              }
-            >
-              <Card.Title title={exercise.title} />
-              <Card.Content>
-                <Text variant="bodyMedium" style={styles.description}>
-                  {exercise.description}
-                </Text>
-              </Card.Content>
-            </Card>
-          ))}
-        </ScrollView>
-
-        <View style={styles.buttonWrapper}>
-          <AssignButton onPress={() => setShowOverlay(true)} />
-          <AssignmentStatus
-            visible={showOverlay}
-            status={selectedItem.status}
-            onClose={() => {
-              setShowOverlay(false);
-              if (selectedItem.status === 'Assigned as Required' || selectedItem.status === 'Assigned as Recommended') {
-                setSnackbarMessage(`"${selectedItem.title}" ${selectedItem.status.toLowerCase()}`);
-                setSnackbarVisible(true);
-              }
-            }}
-            onSelect={async (newStatus) => {
-              try {
-                if (!childId || !userId) {
-                  Alert.alert('Error', 'Missing user or child information');
-                  return;
-                }
-
-                if (newStatus === 'Unassigned') {
-                  await unassignLearningUnit(selectedItem.id, childId, userId);
-                } else if (newStatus === 'Assigned as Required') {
-                  await assignLearningUnit(selectedItem.id, childId, userId, 'required');
-                } else if (newStatus === 'Assigned as Recommended') {
-                  await assignLearningUnit(selectedItem.id, childId, userId, 'recommended');
-                }
-
-                setSelectedItem(prev => prev ? { ...prev, status: newStatus } : prev);
-
-                Alert.alert('Success', `Learning unit ${newStatus.toLowerCase()} successfully!`);
-
-              } catch (error) {
-                console.error('Error updating assignment:', error);
-                Alert.alert('Error', 'Failed to update assignment. Please try again.');
-              }
-            }}
-          />
-
-          <Snackbar
-            visible={snackbarVisible}
-            onDismiss={() => setSnackbarVisible(false)}
-            duration={3000}
-            action={{
-              label: '✓',
-              onPress: () => setSnackbarVisible(false),
-            }}
-          >
-            {snackbarMessage}
-          </Snackbar>
-        </View>
-      </ScrollView>
+      <DetailView
+        selectedItem={selectedItem}
+        assignedUnitIds={assignedUnitIds}
+        setAssignedUnitIds={setAssignedUnitIds}
+        onBack={() => setSelectedItem(null)}
+      />
     );
   }
 
