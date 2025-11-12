@@ -124,7 +124,7 @@ export default function TherapistDashboard() {
       console.error(err);
       Alert.alert('Error', 'Failed to load learning units.');
     } finally {
-      setLoading(false);
+      setLoadingAssignments(false);
     }
   }, [childId, userId]);
 
