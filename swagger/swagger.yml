@@ -256,6 +256,8 @@ paths:
                 participation_type:
                   type: string
                   enum: [required, recommended]
+                num_question_attempts:
+                  type: integer
               required:
                 - child_id
                 - learning_unit_id

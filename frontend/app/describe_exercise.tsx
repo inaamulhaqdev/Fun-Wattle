@@ -369,9 +369,18 @@ const DescribeExerciseComponent = () => {
 
   useEffect(() => {
     if (gptFeedback) {
-      handlePlayFeedback();
+      handlePlayAudio(gptFeedback);
     }
   }, [gptFeedback]);
+
+  useEffect(() => {
+    if (!exercise || !exercise.questions) return;
+
+    const currentQ = exercise.questions[currentQuestion];
+    if (!currentQ?.question) return;
+
+    handlePlayAudio(currentQ.question);
+  }, [currentQuestion, exercise]);
 
   // const submitExerciseResults = async () => {
   //   const sessionEndTime = Date.now();
@@ -557,8 +566,8 @@ const DescribeExerciseComponent = () => {
     }
   };
 
-  const handlePlayFeedback = async () => {
-    if (!gptFeedback) return;
+  const handlePlayAudio = async (text: string) => {
+    if (!text) return;
 
     try {
       const response = await fetch(`${API_URL}/AI/text_to_speech/`, {
@@ -568,7 +577,7 @@ const DescribeExerciseComponent = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text: gptFeedback,
+          text: text,
           voice: 'en-AU-NatashaNeural',
         }),
       });
