@@ -23,12 +23,15 @@ const formatDate = (isoString: string): string => {
 
 export default function TherapistDashboard() {
   const { childId, session } = useApp();
-  const [loading, setLoading] = useState(true);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [therapistName, setTherapistName] = useState('');
   const [childList, setChildList] = useState<string[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
+
+  const loading = loadingProfiles || loadingAssignments;
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -68,7 +71,7 @@ export default function TherapistDashboard() {
         console.error('Error fetching profiles:', error);
         Alert.alert('Error', 'Failed to load profiles. Please try again.');
       } finally {
-        setLoading(false);
+        setLoadingProfiles(false);
       }
     };
 
@@ -149,6 +152,46 @@ export default function TherapistDashboard() {
   // Get assignments on focus
   useFocusEffect(
     React.useCallback(() => {
+      const fetchAssignments = async () => {
+        try {
+          const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
+
+          if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
+
+          const assignments = await assignmentsResp.json();
+
+          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
+
+          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
+            assignmentId: assignment.id,
+            learningUnitId: assignment.learning_unit.id,
+            title: assignment.learning_unit.title || '',
+            category: assignment.learning_unit.category || '',
+            participationType: assignment.participation_type,
+            assignedDate: formatDate(assignment.assigned_at),
+          }));
+
+          const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
+            assignedUnitsDetails.map(async (unit) => {
+              const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, childId);
+              return {
+                ...unit,
+                time: totalDuration,
+                status,
+              };
+            })
+          );
+
+          setData(assignedUnitsWithStats);
+
+        } catch (err) {
+          console.error(err);
+          Alert.alert('Error', 'Failed to load learning units.');
+        } finally {
+          setLoadingAssignments(false);
+        }
+      };
+
       fetchAssignments();
     }, [fetchAssignments])
   );

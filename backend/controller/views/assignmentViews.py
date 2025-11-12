@@ -27,6 +27,13 @@ def create_assignment(request):
     if not user:
         return Response({'error': 'User not found'}, status=404)
 
+    pre_existing_assignment = Assignment.objects.filter(
+        learning_unit=learning_unit,
+        assigned_to=child_profile
+    ).first()
+    if pre_existing_assignment:
+        return Response({'error': 'Assignment already exists for this child and learning unit'}, status=400)
+
     if participation_type not in ['required', 'recommended']:
         return Response({'error': 'participation_type must be "required" or "recommended"'}, status=400)
 

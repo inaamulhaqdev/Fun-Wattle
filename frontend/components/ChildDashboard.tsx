@@ -63,7 +63,7 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
 // Function to fetch exercises for a learning unit
 const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: string): Promise<any[]> => {
   try {
-    const url = `${API_URL}/exercises/${learningUnitId}/`;
+    const url = `${API_URL}/content/${learningUnitId}/exercises/`;
     console.log('Fetching exercises from URL:', url);
 
     const response = await fetch(url, {
@@ -500,7 +500,7 @@ const ChildDashboard = () => {
       // Find the next incomplete task
       const nextIncompleteIndex = tasks.findIndex(t => !t.completed);
       console.log('Dashboard loaded - auto centering next incomplete task at index:', nextIncompleteIndex);
-      
+
       if (scrollViewRef.current && nextIncompleteIndex !== -1) {
         // Add a delay to ensure UI is fully rendered before scrolling
         const autoScrollTimeout = setTimeout(() => {
@@ -508,13 +508,13 @@ const ChildDashboard = () => {
           const centerOffset = nextTaskPosition - (screenHeight / 2) + 100 + 20; // Account for content top offset
           console.log('Initial auto-centering to position:', centerOffset, 'for task index:', nextIncompleteIndex);
           console.log('Task position:', nextTaskPosition, 'Screen height:', screenHeight);
-          
+
           scrollViewRef.current?.scrollTo({
             y: Math.max(0, centerOffset),
             animated: true
           });
         }, 1000); // Longer delay to ensure all layout is complete
-        
+
         return () => clearTimeout(autoScrollTimeout);
       }
     }

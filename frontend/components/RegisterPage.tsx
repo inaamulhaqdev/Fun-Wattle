@@ -10,6 +10,9 @@ const RegisterPage = () => {
   const { email, setEmail, password, setPassword, userType, setUserType } = useRegistration();
   const [showPassword, setShowPassword] = useState(false);
 
+  // Check if all fields are filled
+  const isFormValid = email.trim() !== '' && password.trim() !== '' && userType !== null;
+
   // Clear form when component mounts
   useEffect(() => {
     setEmail('');
@@ -133,10 +136,17 @@ const RegisterPage = () => {
 
         {/* Sign Up Button */}
         <TouchableOpacity
-          style={styles.signUpButton}
+          style={[
+            styles.signUpButton,
+            isFormValid && styles.signUpButtonActive
+          ]}
           onPress={handleRegister}
+          disabled={!isFormValid}
         >
-          <Text style={styles.signUpButtonText}>
+          <Text style={[
+            styles.signUpButtonText,
+            isFormValid && styles.signUpButtonTextActive
+          ]}>
             Sign Up
           </Text>
         </TouchableOpacity>
@@ -257,6 +267,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 30,
   },
+  signUpButtonActive: {
+    backgroundColor: '#007AFF', // Blue color when form is valid
+  },
   signUpButtonDisabled: {
     backgroundColor: '#eee',
   },
@@ -264,6 +277,9 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 16,
     fontWeight: '600',
+  },
+  signUpButtonTextActive: {
+    color: '#fff', // White text when button is active
   },
 });
 
