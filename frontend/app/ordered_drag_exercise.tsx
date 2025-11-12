@@ -4,6 +4,7 @@ import { Provider as PaperProvider } from "react-native-paper";
 import { FeedbackIndicator } from "../components/ui/ExerciseFeedback";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { API_URL } from '@/config/api';
+import { useApp } from '@/context/AppContext';
 
 interface Option {
   id: string;
@@ -16,7 +17,6 @@ interface QuestionData {
   id: number;
   image?: string;
   question: string;
-  correctSeq?: string[];
   options: Option[];
 }
 
@@ -41,7 +41,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
   console.log('API_URL:', API_URL);
 
   try {
-    const url = `${API_URL}/questions/${exerciseId}/`;
+    const url = `${API_URL}/content/${exerciseId}/questions/`;
     console.log('Fetching questions from URL:', url);
 
     const response = await fetch(url, {
@@ -93,7 +93,6 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
             id: index + 1,
             image: questionData.image || undefined,
             question: questionData.question || 'Question not available',
-            correctSeq: questionData.correctSeq || [],
             options: questionData.options || []
           };
         } catch (parseError) {
@@ -101,7 +100,6 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
           return {
             id: index + 1,
             question: 'Error loading question',
-            correctSeq: [],
             options: []
           };
         }
@@ -131,7 +129,6 @@ const fallbackExercise: Exercise = {
       id: 1,
       image: "https://cvchwjconynpzhktnuxn.supabase.co/storage/v1/object/public/Images_Units/semantics-ex1-q4.png",
       question: "What is the woman doing?",
-      correctSeq: ["The woman", "is baking", "a cake"],
       options: [
         {
           id: "A",
@@ -158,7 +155,20 @@ const fallbackExercise: Exercise = {
 
 export const OrderedDragExercise = () => {
   const router = useRouter();
-  const { exerciseId, childId } = useLocalSearchParams<{ exerciseId: string; childId: string }>();
+  const { childId: contextChildId } = useApp();
+  const { exerciseId, childId: paramChildId } = useLocalSearchParams<{ exerciseId: string, childId: string }>();
+  
+  // Fallback childId for testing if neither context nor params provide one
+  const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; 
+  const childId = contextChildId || paramChildId || fallbackChildId;
+  
+  console.log('=== EXERCISE PARAMETERS ===');
+  console.log('exerciseId:', exerciseId);
+  console.log('Context childId:', contextChildId);
+  console.log('Param childId:', paramChildId);
+  console.log('Using childId:', childId);
+  console.log('All search params:', useLocalSearchParams());
+  
   // App context would be used here for saving exercise completion if needed
   
   // State management
@@ -172,9 +182,32 @@ export const OrderedDragExercise = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
   const [sessionStartTime] = useState(Date.now());
+  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [questionAttempts, setQuestionAttempts] = useState(0);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   // Initialize and load exercise data
   useEffect(() => {
+    // Load saved progress if available
+    const loadSavedProgress = () => {
+      if (!childId || !exerciseId) return null;
+      
+      try {
+        const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+        const savedData = localStorage.getItem(storageKey);
+        
+        if (savedData) {
+          const progressData = JSON.parse(savedData);
+          console.log('Found saved progress:', progressData);
+          return progressData;
+        }
+      } catch (error) {
+        console.error('Error loading saved progress:', error);
+      }
+      
+      return null;
+    };
+
     const loadExerciseData = async () => {
       console.log('useEffect running - exerciseId:', exerciseId);
       console.log('useEffect running - childId:', childId);
@@ -189,6 +222,17 @@ export const OrderedDragExercise = () => {
         if (fetchedExercise) {
           console.log('Successfully loaded exercise data:', fetchedExercise);
           setExercise(fetchedExercise);
+          
+          // Check for saved progress and restore state
+          const savedProgress = loadSavedProgress();
+          if (savedProgress) {
+            setCurrentQuestion(savedProgress.currentQuestion || 0);
+            setScore(savedProgress.score || 0);
+            setRetryCount(savedProgress.retryCount || 0);
+            setQuestionStartTime(Date.now()); // Reset question timer
+            console.log('Progress restored from saved state');
+          }
+          
           setIsLoading(false);
           return;
         } else {
@@ -199,24 +243,96 @@ export const OrderedDragExercise = () => {
       // Use fallback data if API fetch failed
       console.log('Using fallback exercise data');
       setExercise(fallbackExercise);
+      
+      // Check for saved progress even with fallback data
+      const savedProgress = loadSavedProgress();
+      if (savedProgress) {
+        setCurrentQuestion(savedProgress.currentQuestion || 0);
+        setScore(savedProgress.score || 0);
+        setRetryCount(savedProgress.retryCount || 0);
+        setQuestionStartTime(Date.now());
+        console.log('Progress restored from saved state (fallback)');
+      }
+      
       setIsLoading(false);
     };
 
     loadExerciseData();
-  }, [childId, exerciseId]);
+  }, [childId, exerciseId]); // loadSavedProgress is called inside useEffect so no need to include it
 
   const currentQuestionData = exercise?.questions[currentQuestion];
 
+  // Submit question result to backend
+  const submitQuestionResult = async (questionId: string, correct: boolean, timeSpent: number, attempts: number) => {
+    console.log('=== SUBMIT QUESTION RESULT CALLED ===');
+    console.log('Parameters:', { questionId, correct, timeSpent, attempts });
+    console.log('childId:', childId);
+    
+    if (!childId || !questionId) {
+      console.log('Missing childId or questionId, returning early');
+      return;
+    }
+
+    try {
+      const url = `${API_URL}/result/${childId}/question/${questionId}/`;
+      console.log('Submitting question result to:', url);
+
+      const resultData = {
+        num_correct: correct ? 1 : 0,
+        num_incorrect: correct ? attempts - 1 : attempts,
+        time_spent: timeSpent
+      };
+
+      console.log('Submitting result data:', resultData);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(resultData),
+      });
+
+      console.log('Response received:', response);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        console.error('Failed to submit question result:', response.status, response.statusText);
+        
+        try {
+          const errorText = await response.text();
+          console.error('Error response body:', errorText);
+        } catch (bodyError) {
+          console.error('Could not read error response body:', bodyError);
+        }
+      } else {
+        console.log('Question result submitted successfully');
+      }
+    } catch (error) {
+      console.error('Error submitting question result:', error);
+    }
+  };
+
   const handleOptionSelect = (option: Option) => {
+    console.log('handleOptionSelect called with option:', option);
+    console.log('answered state:', answered);
+    
     if (answered) return;
 
     const newSelectedOptions = [...selectedOptions, option];
     setSelectedOptions(newSelectedOptions);
 
     // Check if we have selected all required options
-    const expectedLength = currentQuestionData?.correctSeq?.length || currentQuestionData?.options?.length || 0;
+    // For ordered drag exercises, we always use the number of options as the expected length
+    const expectedLength = currentQuestionData?.options?.length || 0;
+    
+    console.log('Expected length:', expectedLength);
+    console.log('New selected options length:', newSelectedOptions.length);
+    console.log('Should call checkAnswer?', newSelectedOptions.length === expectedLength);
     
     if (newSelectedOptions.length === expectedLength) {
+      console.log('About to call checkAnswer with:', newSelectedOptions);
       checkAnswer(newSelectedOptions);
     }
   };
@@ -228,14 +344,23 @@ export const OrderedDragExercise = () => {
     setSelectedOptions(newSelectedOptions);
   };
 
-  const checkAnswer = (userSelection: Option[]) => {
+  const checkAnswer = async (userSelection: Option[]) => {
+    console.log('checkAnswer called with userSelection:', userSelection);
     if (!currentQuestionData) return;
 
     setAnswered(true);
     
+    // Increment attempts for this question
+    const currentAttempts = questionAttempts + 1;
+    setQuestionAttempts(currentAttempts);
+    
     // Check if the order is correct
     const userSequence = userSelection.map(opt => opt.text);
-    const correctSequence = currentQuestionData.correctSeq || [];
+    
+    // For ordered drag exercises, always generate correct sequence from options' order property
+    const correctSequence = currentQuestionData.options
+      .sort((a, b) => a.order - b.order)
+      .map(opt => opt.text);
     
     const isCorrect = userSequence.length === correctSequence.length &&
       userSequence.every((text, index) => text === correctSequence[index]);
@@ -244,16 +369,39 @@ export const OrderedDragExercise = () => {
       setShowFeedback("correct");
       setScore(score + 1);
       
+      // Calculate time spent on this question
+      const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
+      
+      // Submit question result
+      const questionId = currentQuestionData.id.toString();
+      await submitQuestionResult(questionId, true, timeSpent, currentAttempts);
+      
       setTimeout(() => {
         nextQuestion();
       }, 2000);
     } else {
       setShowFeedback("incorrect");
       setRetryCount(retryCount + 1);
-      
-      setTimeout(() => {
-        resetCurrentQuestion();
-      }, 2000);
+
+      // Check if this was the final incorrect attempt (3 attempts total)
+      if (currentAttempts >= 3) {
+        // Calculate time spent on this question
+        const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
+
+        // Submit question result as incorrect after 3 failed attempts
+        const questionId = currentQuestionData.id.toString();
+        await submitQuestionResult(questionId, false, timeSpent, currentAttempts);
+        
+        setTimeout(() => {
+          // Move to next question after final incorrect attempt
+          nextQuestion();
+        }, 2000);
+      } else {
+        // Allow retry - reset current question for another attempt
+        setTimeout(() => {
+          resetCurrentQuestion();
+        }, 2000);
+      }
     }
   };
 
@@ -261,12 +409,16 @@ export const OrderedDragExercise = () => {
     setSelectedOptions([]);
     setShowFeedback(null);
     setAnswered(false);
+    // Don't reset question attempts or start time - keep them for the same question
   };
 
   const nextQuestion = () => {
     if (currentQuestion < (exercise?.questions.length || 0) - 1) {
       setCurrentQuestion(currentQuestion + 1);
       resetCurrentQuestion();
+      // Reset for new question
+      setQuestionAttempts(0);
+      setQuestionStartTime(Date.now());
     } else {
       completeExercise();
     }
@@ -291,11 +443,40 @@ export const OrderedDragExercise = () => {
     }
   };
 
+  // Save progress and exit
+  const saveProgressAndExit = async () => {
+    if (!childId || !exerciseId) {
+      router.back();
+      return;
+    }
+
+    try {
+      // Save current progress to localStorage or backend
+      const progressData = {
+        exerciseId,
+        childId,
+        currentQuestion,
+        score,
+        retryCount,
+        sessionStartTime,
+        timestamp: Date.now()
+      };
+
+      // Save to localStorage for now (could be enhanced to save to backend)
+      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+      localStorage.setItem(storageKey, JSON.stringify(progressData));
+      
+      console.log('Progress saved:', progressData);
+      
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    }
+    
+    router.back();
+  };
+
   const handleExit = () => {
-    router.push({
-      pathname: '/child-dashboard',
-      params: { completedTaskId: exerciseId }
-    });
+    setShowExitModal(true);
   };
 
   if (isLoading) {
@@ -346,6 +527,11 @@ export const OrderedDragExercise = () => {
   const availableOptions = currentQuestionData.options.filter(
     option => !selectedOptions.some(selected => selected.id === option.id)
   );
+
+  console.log('Available options:', availableOptions);
+  console.log('Selected options:', selectedOptions);
+  console.log('All options:', currentQuestionData.options);
+  console.log('About to render exercise with currentQuestionData:', currentQuestionData);
 
   return (
     <PaperProvider>
@@ -428,6 +614,32 @@ export const OrderedDragExercise = () => {
           <FeedbackIndicator 
             type={showFeedback} 
           />
+        )}
+
+        {/* Exit Modal */}
+        {showExitModal && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Exit Exercise?</Text>
+              <Text style={styles.modalText}>
+                Your progress will be saved and you can continue where you left off later.
+              </Text>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowExitModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={saveProgressAndExit}
+                >
+                  <Text style={styles.saveButtonText}>Save & Exit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
         )}
       </ScrollView>
     </PaperProvider>
@@ -619,6 +831,69 @@ const styles = StyleSheet.create({
   completeButtonText: {
     color: 'white',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 30,
+    margin: 20,
+    borderRadius: 15,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 15,
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 25,
+    lineHeight: 22,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  modalButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#95a5a6',
+  },
+  saveButton: {
+    backgroundColor: '#3498db',
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

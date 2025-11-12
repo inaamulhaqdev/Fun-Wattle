@@ -789,6 +789,7 @@ const ChildDashboard = () => {
       pathname: routePath as any,
       params: {
         exerciseId: task.exerciseId || task.id,
+        childId: childId,
         taskId: task.id,
         taskName: task.name,
         bodyType: mascotData.bodyType,
