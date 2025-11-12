@@ -125,14 +125,14 @@ export default function ParentDashboard() {
 
   // Subscribe to Supabase changes
   useEffect(() => {
-    const channel = supabase
+    const channelResults = supabase
       .channel('schema-db-changes')
       .on(
         'postgres_changes',
         {
           event: '*', // Listen to all events (insert, update, delete)
           schema: 'public',
-          table: 'Exercise_Result'
+          table: 'Assignment'
         },
         () => {
           // Refresh assignments when Exercise_Result table changes
@@ -143,7 +143,7 @@ export default function ParentDashboard() {
 
     // Cleanup subscription on unmount
     return () => {
-      channel.unsubscribe();
+      channelResults.unsubscribe();
     };
   }, [fetchAssignments]);
 

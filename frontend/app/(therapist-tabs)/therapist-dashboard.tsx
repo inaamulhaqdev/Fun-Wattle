@@ -125,7 +125,6 @@ export default function TherapistDashboard() {
     }
   }, [childId, userId]);
 
-  // Subscribe to Supabase Exercise_Result changes and refresh assignments
   useEffect(() => {
     const channel = supabase
       .channel('schema-db-changes')
@@ -134,7 +133,7 @@ export default function TherapistDashboard() {
         {
           event: '*',
           schema: 'public',
-          table: 'Exercise_Result'
+          table: 'Assignment'
         },
         () => {
           fetchAssignments();
