@@ -10,15 +10,14 @@ import LoginScreen from '../login';
 export default function LearningUnits() {
   const [data, setData] = useState<LearningUnit[]>([]);
   const { session, childId } = useApp();
-
-  if (!session?.access_token) {
-    Alert.alert('Error', 'You must be authorized to perform this action');
-    return <LoginScreen />;
-  }
-
   useFocusEffect(
     React.useCallback(() => {
       const fetchModules = async () => {
+        // Guard: don't attempt network requests when there's no authenticated session
+        if (!session?.access_token) {
+          return;
+        }
+
         try {
           const response = await fetch(`${API_URL}/content/learning_units/`, {
             method: 'GET',
@@ -51,8 +50,13 @@ export default function LearningUnits() {
       };
 
       fetchModules();
-    }, [childId])
+    }, [childId, session?.access_token])
   );
+
+  // If there's no active session, show the login screen (hooks above are still called unconditionally)
+  if (!session?.access_token) {
+    return <LoginScreen />;
+  }
 
   return <LearningLibrary data={data} />;
 }
