@@ -14,7 +14,7 @@ interface Option {
 }
 
 interface QuestionData {
-  id: number;
+  id: string;
   image?: string;
   question: string;
   options: Option[];
@@ -22,10 +22,11 @@ interface QuestionData {
 
 interface ApiQuestion {
   id: string;
-  exercise: string;
+  exercise?: string;
   order: number;
-  exercise_type: string;
-  question_data: string; // JSON string containing the question data
+  question_type: string; // Changed from exercise_type to question_type
+  question_data: any; // Can be string or object
+  created_at: string;
 }
 
 interface Exercise {
@@ -69,6 +70,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
 
     const questionsData = await response.json();
     console.log('Questions data received:', questionsData);
+    console.log('🚀 DEBUGGING: About to start transformation with updated code');
 
     if (!Array.isArray(questionsData) || questionsData.length === 0) {
       console.warn('No questions found for exercise:', exerciseId);
@@ -76,9 +78,12 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
     }
 
     // Transform API questions to our QuestionData format
+    console.log('🔧 Starting transformation of', questionsData.length, 'questions');
+    
     const transformedQuestions: QuestionData[] = questionsData
       .sort((a: ApiQuestion, b: ApiQuestion) => a.order - b.order) // Sort by order
       .map((apiQuestion: ApiQuestion, index: number) => {
+        console.log(`🔧 Processing question ${index + 1}:`, apiQuestion);
         try {
           // Handle both string and object cases for question_data
           let questionData;
@@ -87,21 +92,29 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
           } else {
             questionData = apiQuestion.question_data;
           }
-          console.log(`Question ${index + 1} data:`, questionData);
+          console.log(`✅ Question ${index + 1} parsed data:`, questionData);
+          console.log(`✅ Using API question ID: ${apiQuestion.id}`);
+          console.log(`API question ID: ${apiQuestion.id}`);
+          console.log(`Question data ID (if any): ${questionData.id}`);
 
-          return {
-            id: questionData.id,
+          const transformedQuestion = {
+            id: apiQuestion.id, // Use the actual API question ID
             image: questionData.image || undefined,
             question: questionData.question || 'Question not available',
             options: questionData.options || []
           };
+          
+          console.log(`✅ Transformed question ${index + 1}:`, transformedQuestion);
+          return transformedQuestion;
         } catch (parseError) {
-          console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
-          return {
-            id: parseInt(apiQuestion.id) || index + 1,
+          console.error('❌ Error parsing question_data for question:', apiQuestion.id, parseError);
+          const errorQuestion = {
+            id: apiQuestion.id, // Use the actual API question ID even in error case
             question: 'Error loading question',
             options: []
           };
+          console.log(`❌ Error question ${index + 1}:`, errorQuestion);
+          return errorQuestion;
         }
       });
 
@@ -126,7 +139,7 @@ const fallbackExercise: Exercise = {
   title: 'Ordered Drag Exercise',
   questions: [
     {
-      id: 1,
+      id: "fallback-question-1",
       image: "https://cvchwjconynpzhktnuxn.supabase.co/storage/v1/object/public/Images_Units/semantics-ex1-q4.png",
       question: "What is the woman doing?",
       options: [
@@ -156,7 +169,7 @@ const fallbackExercise: Exercise = {
 export const OrderedDragExercise = () => {
   const router = useRouter();
   const { exerciseId, childId: paramChildId } = useLocalSearchParams<{ exerciseId: string, childId: string}>();
-  const { childId: contextChildId } = useApp();
+  const { childId: contextChildId, session } = useApp();
   
   // Prioritize route parameter (from global childId), then context, then fallback
   const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; 
@@ -220,7 +233,8 @@ export const OrderedDragExercise = () => {
         const fetchedExercise = await fetchQuestionsByExerciseId(exerciseId);
 
         if (fetchedExercise) {
-          console.log('Successfully loaded exercise data:', fetchedExercise);
+          console.log('✅ Successfully loaded exercise data from API:', fetchedExercise);
+          console.log('✅ First question ID from API:', fetchedExercise.questions[0]?.id);
           setExercise(fetchedExercise);
           
           // Check for saved progress and restore state
@@ -241,7 +255,8 @@ export const OrderedDragExercise = () => {
       }
 
       // Use fallback data if API fetch failed
-      console.log('Using fallback exercise data');
+      console.log('⚠️ Using fallback exercise data');
+      console.log('⚠️ Fallback first question ID:', fallbackExercise.questions[0]?.id);
       setExercise(fallbackExercise);
       
       // Check for saved progress even with fallback data
@@ -278,8 +293,8 @@ export const OrderedDragExercise = () => {
       console.log('Submitting question result to:', url);
 
       const resultData = {
-        num_correct: correct ? 1 : 0,
         num_incorrect: correct ? attempts - 1 : attempts,
+        num_correct: correct ? 1 : 0,
         time_spent: timeSpent
       };
 
@@ -289,6 +304,7 @@ export const OrderedDragExercise = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify(resultData),
       });
@@ -373,7 +389,10 @@ export const OrderedDragExercise = () => {
       const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
       
       // Submit question result
-      const questionId = currentQuestionData.id.toString();
+      console.log('🔍 DEBUG: currentQuestionData:', currentQuestionData);
+      console.log('🔍 DEBUG: currentQuestionData.id:', currentQuestionData.id);
+      const questionId = currentQuestionData.id; // Already a string now
+      console.log('🔍 DEBUG: questionId being submitted:', questionId);
       await submitQuestionResult(questionId, true, timeSpent, currentAttempts);
       
       setTimeout(() => {
@@ -389,7 +408,10 @@ export const OrderedDragExercise = () => {
         const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
 
         // Submit question result as incorrect after 3 failed attempts
-        const questionId = currentQuestionData.id.toString();
+        console.log('🔍 DEBUG: currentQuestionData (incorrect):', currentQuestionData);
+        console.log('🔍 DEBUG: currentQuestionData.id (incorrect):', currentQuestionData.id);
+        const questionId = currentQuestionData.id; // Already a string now
+        console.log('🔍 DEBUG: questionId being submitted (incorrect):', questionId);
         await submitQuestionResult(questionId, false, timeSpent, currentAttempts);
         
         setTimeout(() => {
@@ -528,10 +550,12 @@ export const OrderedDragExercise = () => {
     option => !selectedOptions.some(selected => selected.id === option.id)
   );
 
+  console.log('🎯 RENDER DEBUG: Current question index:', currentQuestion);
+  console.log('🎯 RENDER DEBUG: Exercise:', exercise);  
+  console.log('🎯 RENDER DEBUG: currentQuestionData:', currentQuestionData);
+  console.log('🎯 RENDER DEBUG: currentQuestionData.id:', currentQuestionData?.id);
   console.log('Available options:', availableOptions);
   console.log('Selected options:', selectedOptions);
-  console.log('All options:', currentQuestionData.options);
-  console.log('About to render exercise with currentQuestionData:', currentQuestionData);
 
   return (
     <PaperProvider>
