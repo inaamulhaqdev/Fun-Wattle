@@ -98,8 +98,6 @@ export default function ParentDashboard() {
             assignedDate: formatDate(assignment.assigned_at),
           }));
 
-          console.log("Assigned units' details:", assignedUnitsDetails);
-
           const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
             assignedUnitsDetails.map(async (unit) => {
               const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, childId);
@@ -110,8 +108,6 @@ export default function ParentDashboard() {
               };
             })
           );
-
-          console.log("Assigned units with stats:", assignedUnitsWithStats);
 
           setData(assignedUnitsWithStats);
 
