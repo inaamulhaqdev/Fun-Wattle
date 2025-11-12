@@ -25,6 +25,8 @@ interface MascotData {
   accessoryId?: number;
 }
 
+const childId = 'some-child-id';
+
 // Default tasks (fallback if API fails)
 /* const defaultTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
@@ -422,18 +424,26 @@ const getMascotImages = (mascotData: MascotData) => {
   return { bodyImage, accessoryImage };
 };
 
+// Global childId variable - initialized with fallback, updated when component mounts
+let globalChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; // Fallback UUID for testing
+
+// Export function to get the current global childId
+export const getGlobalChildId = () => globalChildId;
+
 const ChildDashboard = () => {
   const { completedTaskId, bodyType, accessoryId } = useLocalSearchParams();
   const { childId: contextChildId } = useApp();
 
-  // Fallback childId for testing if context doesn't provide one (must be a valid UUID)
-  const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; // Valid UUID format for testing
-  const childId = contextChildId || fallbackChildId;
-
-  console.log('=== CHILDDASHBOARD COMPONENT LOADED ===');
-  console.log('Context childId:', contextChildId);
-  console.log('Fallback childId:', fallbackChildId);
-  console.log('Final childId being used:', childId);
+  // Update global childId with context value or keep fallback
+  const childId = contextChildId || globalChildId;
+  
+  // Update the global variable so other parts of the app can access it
+  React.useEffect(() => {
+    if (contextChildId) {
+      globalChildId = contextChildId;
+      console.log('Global childId updated to:', globalChildId);
+    }
+  }, [contextChildId]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
@@ -754,7 +764,7 @@ const ChildDashboard = () => {
 
 
 
-  const handleTaskPress = async (task: Task) => {
+  const handleTaskPress = async (task: Task, child_id: string) => {
     if (task.completed) return;
 
     console.log('=== TASK PRESSED ===');
@@ -784,17 +794,21 @@ const ChildDashboard = () => {
       }
     }
     console.log('Navigating to:', routePath);
+    console.log('Using global childId for navigation:', globalChildId);
+
+    const navigationParams = {
+      exerciseId: task.exerciseId || task.id,
+      childId: globalChildId, // Use global childId
+      taskId: task.id,
+      taskName: task.name,
+      bodyType: mascotData.bodyType,
+      accessoryId: mascotData.accessoryId?.toString() || ''
+    };
+        
     // Navigate to the exercise with exercise ID and mascot data
     router.push({
       pathname: routePath as any,
-      params: {
-        exerciseId: task.exerciseId || task.id,
-        childId: childId,
-        taskId: task.id,
-        taskName: task.name,
-        bodyType: mascotData.bodyType,
-        accessoryId: mascotData.accessoryId?.toString() || ''
-      }
+      params: navigationParams
     });
   };
 
@@ -957,7 +971,7 @@ const ChildDashboard = () => {
               {/* Task flower/circle */}
               <View style={styles.taskFlowerContainer}>
                 <TouchableOpacity
-                  onPress={() => handleTaskPress(task)}
+                  onPress={() => handleTaskPress(task, childId)}
                   disabled={task.completed || isAfterNextTask}
                 >
                   {task.completed ? (

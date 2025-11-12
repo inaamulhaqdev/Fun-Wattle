@@ -90,7 +90,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
           console.log(`Question ${index + 1} data:`, questionData);
 
           return {
-            id: index + 1,
+            id: questionData.id,
             image: questionData.image || undefined,
             question: questionData.question || 'Question not available',
             options: questionData.options || []
@@ -98,7 +98,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
         } catch (parseError) {
           console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
           return {
-            id: index + 1,
+            id: parseInt(apiQuestion.id) || index + 1,
             question: 'Error loading question',
             options: []
           };
@@ -155,12 +155,12 @@ const fallbackExercise: Exercise = {
 
 export const OrderedDragExercise = () => {
   const router = useRouter();
+  const { exerciseId, childId: paramChildId } = useLocalSearchParams<{ exerciseId: string, childId: string}>();
   const { childId: contextChildId } = useApp();
-  const { exerciseId, childId: paramChildId } = useLocalSearchParams<{ exerciseId: string, childId: string }>();
   
-  // Fallback childId for testing if neither context nor params provide one
+  // Prioritize route parameter (from global childId), then context, then fallback
   const fallbackChildId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; 
-  const childId = contextChildId || paramChildId || fallbackChildId;
+  const childId = paramChildId || contextChildId || fallbackChildId;
   
   console.log('=== EXERCISE PARAMETERS ===');
   console.log('exerciseId:', exerciseId);
