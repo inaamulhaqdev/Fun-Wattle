@@ -118,7 +118,7 @@ def results_for_question(request, child_id, question_id):
         try:
             num_incorrect = int(request.data.get('num_incorrect'))
             num_correct = int(request.data.get('num_correct'))
-            time_spent = float(request.data.get('time_spent'))
+            time_spent = int(request.data.get('time_spent'))
         except (TypeError, ValueError):
             return Response({'error': 'num_incorrect, num_correct, and time_spent are required and must be numbers'}, status=400)
 
