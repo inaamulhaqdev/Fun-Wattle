@@ -103,7 +103,26 @@ def assess_speech(request):
         best_answer = best.expected_answer_text
         is_correct = best_score >= 0.80
 
+        # RAG
+        # combined_input = f"Question: {question_text}\nChild's answer: {result.text}"
 
+        # combined_emb = emb_client.embeddings.create(
+        #    input=combined_input,
+        #    model="text-embedding-3-small"
+        # ).data[0].embedding
+
+        # combined_vector_literal = f"[{','.join(str(x) for x in combined_emb)}]"
+
+        # rag_sections = Document_Section.objects.annotate(
+        #     cosine=RawSQL("1 - (embedding <=> %s)", (combined_vector_literal,))
+        # ).order_by('-cosine')[:5]
+
+        # rag_contexts = [s.content for s in rag_sections]
+        # rag_context_combined = "\n\n".join(rag_contexts)
+        
+        # add --- RAG Context (Top 5 Document Sections) ---
+        # {rag_context_combined}
+        # to prompt
 
         # GPT Feedback
         gpt_client = AzureOpenAI(
@@ -114,7 +133,7 @@ def assess_speech(request):
 
         system_prompt = "You are an encouraging, friendly speech therapist helping children practice pronunciation. Ensure that you are providing constructive feedback on their pronunciation. Ensure you are following the professional and ethical speech pathologist guidelines when interacting with the child."
         user_prompt = f"""
-        Question asked: "{questionText}"
+        Question asked: "{question_text}"
         Child's speech: "{result.text}"
 
         Expected best match: "{best_answer}"
