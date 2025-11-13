@@ -27,6 +27,8 @@ class Profile(models.Model):
     pin_hash = models.CharField(max_length=256, blank=True, null=True)  # Null for children, Optional for Therapist, required for Parent (enforced in views)
     child_details = models.JSONField(null=True, blank=True)  # To store additional child-specific profile details
     created_at = models.DateTimeField(auto_now_add=True)
+    coins = models.IntegerField(default=0)
+    streak = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'Profile'
@@ -190,3 +192,32 @@ class Rag_Context(models.Model):
 
     def __str__(self):
         return f"source_name={self.source_name}, context_id={self.id}"
+
+class Mascot_Items(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    item_type = models.CharField(max_length=10, choices=( ('head', 'Head'), ('torso', 'Torso')))
+    icon_image = models.URLField()
+    mascot_image = models.JSONField()
+    price = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'Mascot_Item'
+
+    def __str__(self):
+        return f"item={self.id}, price={self.price}"
+    
+class Inventory(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='owner')
+    mascot_item = models.ForeignKey(Mascot_Items, on_delete=models.CASCADE, related_name='item')
+    equipped = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'Inventory'
+
+    def __str__(self):
+        return f"item={self.mascot_item}, owner={self.profile}"
+
+
+    
+
