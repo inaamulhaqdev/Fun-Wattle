@@ -513,7 +513,37 @@ export const OrderedDragExercise = () => {
   };
 
   const handleExit = () => {
+    console.log('Exit button pressed');
     setShowExitModal(true);
+  }
+
+  const handleComplete = async () => {
+    console.log('Complete button pressed');
+    
+    try {
+      const response = await fetch(`${API_URL}/result/${childId}/exercise/${exerciseId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to submit exercise results: ${response.status}`);
+      }
+      const result = await response.json();
+      console.log('Exercise submitted successfully:', result);
+
+      // Navigate back to dashboard after successful submission
+      router.push({
+        pathname: '/child-dashboard',
+        params: { completedTaskId: exerciseId }
+      });
+
+    } catch (error) {
+      console.error('Error submitting exercise:', error);
+    }
   };
 
   if (isLoading) {
@@ -552,7 +582,7 @@ export const OrderedDragExercise = () => {
             <Text style={styles.completionScore}>
               Score: {score} / {exercise.questions.length}
             </Text>
-            <TouchableOpacity style={styles.completeButton} onPress={handleExit}>
+            <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
               <Text style={styles.completeButtonText}>Continue</Text>
             </TouchableOpacity>
           </View>
