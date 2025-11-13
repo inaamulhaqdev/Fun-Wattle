@@ -1,18 +1,9 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TextInput,
-  FlatList,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Modal,
-} from 'react-native';
+import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Modal} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Chat() {
+  {/* TODO: replace hardcoded values with dynamic */}
   const [messages, setMessages] = useState([
     {
       id: '1',
@@ -51,14 +42,15 @@ export default function Chat() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header */}
+      {/* header - recipient's name */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
+           {/* TODO: replace hardcoded values with dynamic */}
           <Text style={styles.headerName}>Dr. Emily Carter</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Chat messages */}
+      {/* chat messages */}
       <FlatList
         data={messages}
         keyExtractor={(item) => item.id}
@@ -66,7 +58,7 @@ export default function Chat() {
           const previous = messages[index - 1];
           const showTime =
             !previous ||
-            Math.abs(item.timestamp.getTime() - previous.timestamp.getTime()) > 10 * 60 * 1000; // show if 5+ min gap
+            Math.abs(item.timestamp.getTime() - previous.timestamp.getTime()) > 10 * 60 * 1000; // show the time if 10+ min gap between messages 
 
           return (
             <View>
@@ -93,11 +85,11 @@ export default function Chat() {
         contentContainerStyle={styles.chatArea}
       />
 
-      {/* Input area */}
+      {/* sender message area */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Type your message..."
+          placeholder="Type a message..."
           value={input}
           onChangeText={setInput}
           multiline
@@ -107,7 +99,7 @@ export default function Chat() {
         </TouchableOpacity>
       </View>
 
-      {/* Modal */}
+      {/* recepient details pop-up modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -123,10 +115,9 @@ export default function Chat() {
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
 
+            {/* TODO: replace hardcoded values with dynamic */}
             <Text style={styles.modalTitle}>Dr. Emily Carter</Text>
-            <Text style={styles.modalSubtitle}>Clinical Psychologist</Text>
-            <Text style={styles.modalText}>Email: emily.carter@wellmind.com</Text>
-            <Text style={styles.modalText}>Experience: 8 years</Text>
+            <Text style={styles.modalText}>Email: elon.muck@funwattle.com</Text>
           </View>
         </View>
       </Modal>
@@ -135,8 +126,10 @@ export default function Chat() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff' 
+  },
   header: {
     paddingTop: 65,
     paddingBottom: 15,
@@ -145,8 +138,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
     borderBottomWidth: 1,
   },
-  headerName: { fontSize: 18, fontWeight: '600', color: '#333' },
-
+  headerName: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: 'white' 
+  },
   chatArea: { padding: 16 },
   timestamp: {
     alignSelf: 'center',
@@ -197,8 +193,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
-  sendText: { fontWeight: 'bold', color: 'white', fontSize: 15 },
-
+  sendText: { 
+    fontWeight: 'bold', 
+    color: 'white', 
+    fontSize: 15 
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -219,7 +218,15 @@ const styles = StyleSheet.create({
     right: 12,
     padding: 6,
   },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 10, marginBottom: 5 },
-  modalSubtitle: { fontSize: 16, color: '#666', marginBottom: 15 },
-  modalText: { fontSize: 15, marginBottom: 5, textAlign: 'center' },
+  modalTitle: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    marginTop: 10, 
+    marginBottom: 5 
+  },
+  modalText: 
+  { fontSize: 15, 
+    marginBottom: 5, 
+    textAlign: 'center' 
+  },
 });
