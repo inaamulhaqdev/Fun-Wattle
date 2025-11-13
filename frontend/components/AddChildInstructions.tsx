@@ -57,7 +57,7 @@ export default function AddChildInstructions() {
               key={option.id}
               label={option.label}
               value={option.label}
-              color="#FD902B"
+              color="#fd9029"
               position="leading"
               labelStyle={{ textAlign: 'left', paddingLeft: 10, fontSize: 15 }}
               mode="android"
@@ -70,7 +70,7 @@ export default function AddChildInstructions() {
           style={styles.nextButton}
           onPress={handleNext}
           contentStyle={{ paddingVertical: 8 }}
-          textColor="black"
+          textColor="white"
         >
           Next
         </Button>
@@ -106,6 +106,6 @@ const styles = StyleSheet.create({
   nextButton: {
     marginTop: 30,
     borderRadius: 8,
-    backgroundColor: "#FDD652",
+    backgroundColor: "#fd9029",
   },
 });

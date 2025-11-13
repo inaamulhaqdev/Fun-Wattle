@@ -152,6 +152,8 @@ export default function LearningLibrary({ data }: LibraryProps) {
       <FlatList
         data={filteredData}
         keyExtractor={item => item.id}
+        numColumns={2}
+        columnWrapperStyle={{ justifyContent: 'space-between'}}
         renderItem={({ item }) => {
         const imageUrl = item.image ? `${item.image}` : null;
 
@@ -210,8 +212,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   categoryButtonActive: {
-    backgroundColor: '#FF6B35',
-    borderColor: '#FF6B35',
+    backgroundColor: '#fd9029',
+    borderColor: '#fd9029',
   },
   categoryUnselected: {
     color: '#000',
@@ -224,6 +226,9 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     backgroundColor: 'white',
+    width: '48%',
+  // flex: 1,
+   // marginHorizontal: 4,
   },
   title: {
     fontSize: 25,

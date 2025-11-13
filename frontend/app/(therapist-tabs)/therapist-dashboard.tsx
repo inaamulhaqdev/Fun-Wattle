@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   header: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#fd9029',
     paddingHorizontal: 20,
     paddingVertical: 30,
     flexDirection: 'row',

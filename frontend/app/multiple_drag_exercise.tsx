@@ -371,7 +371,7 @@ export default function MultipleDragExercise() {
     } else {
       return {
         message: "Almost There!",
-        backgroundColor: '#2196F3', // Blue
+        backgroundColor: '#fd9029', // Blue
         showTryAgain: true
       };
     }

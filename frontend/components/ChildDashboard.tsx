@@ -1024,7 +1024,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#fd9029',
     paddingHorizontal: 20,
     paddingVertical: 15,
     paddingTop: 30,
@@ -1232,7 +1232,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FF6B35',
+    color: '#fd9029',
     marginBottom: 30,
     textAlign: 'center',
   },

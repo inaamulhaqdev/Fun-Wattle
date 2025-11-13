@@ -122,7 +122,7 @@ export default function DetailView({
       <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
       <Text variant="bodyMedium" style={styles.description}>{selectedItem.description}</Text>
 
-      <Text variant="titleMedium" style={styles.heading}>Activities</Text>
+      <Text variant="titleMedium" style={styles.heading}>Exercises</Text>
       <Divider style={styles.divider} />
 
       <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>

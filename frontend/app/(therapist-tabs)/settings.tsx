@@ -22,7 +22,7 @@ export default function Settings() {
         onPress={() => router.push('/account-selection')}
         style={styles.actionButton}
         contentStyle={{ paddingVertical: 8 }}
-        textColor="black"
+        textColor="white"
       >
         Change Profile
       </Button>

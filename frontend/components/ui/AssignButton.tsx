@@ -9,8 +9,8 @@ interface AssignButtonProps {
 const AssignButton = ({ onPress }: AssignButtonProps) => (
   <View style={styles.container}>
     <Button
-      textColor="black"
-      buttonColor="#FF6B35"
+      textColor="white"
+      buttonColor="#fd9029"
       mode="contained"
       onPress={onPress}
       contentStyle={{ paddingVertical: 10, paddingHorizontal: 20 }}

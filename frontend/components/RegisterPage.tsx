@@ -103,7 +103,7 @@ const RegisterPage = () => {
           >
             <ParentIcon
               size={40}
-              color={userType === 'parent' ? '#007bff' : '#000'}
+              color={userType === 'parent' ? '#fd9029' : '#000'}
             />
             <Text style={[
               styles.userTypeText,
@@ -122,7 +122,7 @@ const RegisterPage = () => {
           >
             <TherapistIcon
               size={40}
-              color={userType === 'therapist' ? '#007bff' : '#000'}
+              color={userType === 'therapist' ? '#fd9029' : '#000'}
             />
             <Text style={[
               styles.userTypeText,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   },
   userTypeButtonSelected: {
     backgroundColor: '#f0f0f0',
-    borderColor: '#007bff',
+    borderColor: '#fd9029',
   },
 
   userTypeText: {
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   userTypeTextSelected: {
-    color: '#007bff',
+    color: '#fd9029',
   },
   formSection: {
     flex: 1,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   signUpButtonActive: {
-    backgroundColor: '#007AFF', // Blue color when form is valid
+    backgroundColor: '#fd9029', // Blue color when form is valid
   },
   signUpButtonDisabled: {
     backgroundColor: '#eee',
