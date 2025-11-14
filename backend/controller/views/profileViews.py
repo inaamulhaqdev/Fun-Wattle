@@ -100,6 +100,16 @@ def shop(request):
 	shop = Mascot_Items.objects.all()
 	serializer = MascotItemsSerializer(shop, many=True)
 	return Response(serializer.data, status=200)
+	
+
+@api_view(['GET'])
+def get_item(request, item_id):
+	try:
+		item = Mascot_Items.objects.get(id=item_id)
+	except Mascot_Items.DoesNotExist:
+		return Response({'error': 'Mascot Item not found'}, status=404)
+	serializer = MascotItemsSerializer(item)
+	return Response(serializer.data, status=200)
 
 @api_view(['GET'])
 def get_inv(request, profile_id):
@@ -107,11 +117,12 @@ def get_inv(request, profile_id):
 		profile = Profile.objects.get(id=profile_id)
 	except Profile.DoesNotExist:
 		return Response({'error': 'Profile not found'}, status=404)
-	inv = Inventory.objects.get(
+	inv = Inventory.objects.filter(
 		profile = profile.id
-	)
-	serializer = InventorySerializer(inv, many=true)
-	return Response(serializer, status=200)
+	).select_related('mascot_item')
+	
+	serializer = InventorySerializer(inv, many=True)
+	return Response(serializer.data, status=200)
 
 @api_view(['POST'])
 def update_inv(request, profile_id, item_id):
@@ -127,7 +138,7 @@ def update_inv(request, profile_id, item_id):
 		mascot_item = item          
 	)
 	if prev_purchase:
-		return Resonse({'error':'Item has already been purchased'}, status=400)
+		return Response({'error':'Item has already been purchased'}, status=400)
 	if profile.coins < item.price:
 		return Response({'error': 'Item is too expensive'}, status=400)
 	inv_item = Inventory.objects.create(
@@ -141,12 +152,21 @@ def update_inv(request, profile_id, item_id):
 		return Response({'error':'Failed to purchase item'})
 	return Response({'message':'Success'}, status=200)
 		
-def equipped_items(profile_id, item):
-	 return Inventory.objects.filter(
-		profile = profile.id,
-		mascot_item = item,
-		equipped = True          
+def equipped_items(profile_id):
+	qs = Inventory.objects.filter(
+		profile=profile_id,
+		equipped=True,
 	)
+	inv_qs = qs.select_related('mascot_item')
+
+	result = {'head': None, 'torso': None}
+	for inv_item in inv_qs:
+		mi = inv_item.mascot_item
+		if not mi:
+			continue
+		key = mi.item_type
+		result[key] = {MascotItemsSerializer(mi).data}
+	return result
         
 @api_view(['GET', 'PUT'])
 def mascot(request, profile_id):
@@ -154,12 +174,13 @@ def mascot(request, profile_id):
 		profile = Profile.objects.get(id=profile_id)
 	except Profile.DoesNotExist:
 		return Response({'error': 'Profile not found'}, status=404)
-	eqipped_items = equipped_items(profile.id, item)
+	eqipped_items = equipped_items(profile.id)
 	if equipped_items.length > 2:
 		return Response({'error':'Cannot equip more than 2 items'}, status=400)	
 	if request.method == 'GET':
-		serializer = InventorySerializer(equipped_items, many=True)
-		return Response(serializer.data, staus=200)
+		items = equipped_items(profile.id)
+		return Response(items, status=200)
+		
 	elif request.method == 'PUT':
 		item_id = request.data.get('item')
 		try:
@@ -181,6 +202,6 @@ def mascot(request, profile_id):
 			inv_item_to_unequip.equipped = False
 			inv_item_to_unequip.save()
 		inv_item_to_equip.equipped = True
-		eqipped_items = equipped_items(profile.id, item)
-		serializer = InventorySerializer(equipped_items, many=True)
-		return Response(serializer.data, staus=200)
+		inv_item_to_equip.save()
+		items = equipped_items(profile.id)
+		return Response(items, staus=200)
