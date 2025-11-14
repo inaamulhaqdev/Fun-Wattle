@@ -49,26 +49,26 @@ export default function LearningLibrary({ data }: LibraryProps) {
   useFocusEffect(
     React.useCallback(() => {
       const fetchAssignments = async () => {
-      try {
-        const response = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`, { method: 'GET' });
-        if (!response.ok) throw new Error(`Failed to fetch assignments (${response.status})`);
+        try {
+          const response = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`, { method: 'GET' });
+          if (!response.ok) throw new Error(`Failed to fetch assignments (${response.status})`);
 
-        const assignments = await response.json();
+          const assignments = await response.json();
 
-        const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
+          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
 
-        const assignedIds = childAssignments.map((a: any) => a.learning_unit.id);
-        setAssignedUnitIds(new Set(assignedIds));
+          const assignedIds = childAssignments.map((a: any) => a.learning_unit.id);
+          setAssignedUnitIds(new Set(assignedIds));
 
-        const completedIds = childAssignments
-          .filter((a: any) => a.completed_at !== null)
-          .map((a: any) => a.learning_unit);
-        setCompletedUnitIds(new Set(completedIds));
-      } catch (err) {
-        console.error('Error fetching assignments:', err);
-        Alert.alert('Error', 'Failed to load assigned learning units.');
-      }
-    };
+          const completedIds = childAssignments
+            .filter((a: any) => a.completed_at !== null)
+            .map((a: any) => a.learning_unit);
+          setCompletedUnitIds(new Set(completedIds));
+        } catch (err) {
+          console.error('Error fetching assignments:', err);
+          Alert.alert('Error', 'Failed to load assigned learning units.');
+        }
+      };
       fetchAssignments();
     }, [childId, userId])
   );

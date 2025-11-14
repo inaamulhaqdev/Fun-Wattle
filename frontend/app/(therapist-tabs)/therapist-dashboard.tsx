@@ -79,14 +79,83 @@ export default function TherapistDashboard() {
   }, []);
 
   const userId = session.user.id
+  const fetchAssignments = React.useCallback(async () => {
+    try {
+      setLoading(true);
 
-  // Get assignments
+      const [unitsResp, assignmentsResp] = await Promise.all([
+        fetch(`${API_URL}/content/learning_units/`),
+        fetch(`${API_URL}/assignment/${userId}/assigned_by/`)
+      ]);
+
+      if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');
+
+      const allUnits = await unitsResp.json();
+      const assignments = await assignmentsResp.json();
+
+      const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
+
+      const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => {
+        const unit = allUnits.find((unit: any) => unit.id === assignment.learning_unit);
+        return {
+          assignmentId: assignment.id,
+          learningUnitId: assignment.learning_unit,
+          title: unit.title || '',
+          category: unit.category || '',
+          participationType: assignment.participation_type,
+          assignedDate: formatDate(assignment.assigned_at),
+        };
+      });
+
+      const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
+        assignedUnitsDetails.map(async (unit) => {
+          const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, childId);
+          return {
+            ...unit,
+            time: totalDuration,
+            status,
+          };
+        })
+      );
+
+      setData(assignedUnitsWithStats);
+
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to load learning units.');
+    } finally {
+      setLoadingAssignments(false);
+    }
+  }, [childId, userId]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'Assignment'
+        },
+        () => {
+          fetchAssignments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [fetchAssignments]);
+
+  // Get assignments on focus
   useFocusEffect(
     React.useCallback(() => {
       const fetchAssignments = async () => {
         try {
           const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
-          
+
           if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
 
           const assignments = await assignmentsResp.json();
@@ -124,7 +193,7 @@ export default function TherapistDashboard() {
       };
 
       fetchAssignments();
-    }, [childId, userId])
+    }, [fetchAssignments])
   );
 
   if (loading) {
@@ -181,7 +250,7 @@ export default function TherapistDashboard() {
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
             )}
           </View>
-          {childList.length > 0 && <Filters assignedUnits = { data } />}
+          {childList.length > 0 && <Filters assignedUnits={data} />}
         </View>
       </SafeAreaView>
     </PaperProvider>

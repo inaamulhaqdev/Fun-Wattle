@@ -262,8 +262,9 @@ const CompletedFlowerSVG = ({ size = 200, isNewlyCompleted = false }) => {
 
   React.useEffect(() => {
     if (isNewlyCompleted) {
-      // Start blooming animation from scale 0 to 1 with bounce effect
+      // Start blooming animation from scale 0 to 1 with bounce effect after delay
       Animated.sequence([
+        Animated.delay(1000), // Add delay before animation starts (800ms)
         Animated.timing(scaleAnim, {
           toValue: 1.2,
           duration: 200,
@@ -636,7 +637,7 @@ const ChildDashboard = () => {
           console.log('Clearing blooming state');
           setBloomingTaskId(null);
         }, 2000);
-      }, 5000);
+      },0);
 
       return () => clearTimeout(completionTimeout);
     }
