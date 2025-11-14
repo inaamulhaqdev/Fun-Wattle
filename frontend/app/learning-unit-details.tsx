@@ -14,8 +14,8 @@ interface Exercise {
   time_spent: number;
   completed: boolean;
   accuracy: number;
-  // num_correct: number;
-  // num_incorrect: number;
+  num_correct: number;
+  num_incorrect: number;
 }
 
 const calculateAccuracy = (exercises: Exercise[]) => {
@@ -50,7 +50,6 @@ export default function LearningUnitDetails() {
 
       setLoading(true);
       try {
-        // Fetch all exercises for this unit and their respective results
         const resp = await fetch(`${API_URL}/content/${id}/exercises/`);
         if (!resp.ok) throw new Error("Failed to fetch exercises");
 
@@ -67,15 +66,17 @@ export default function LearningUnitDetails() {
             const resJson = await resResp.json();
             if (Array.isArray(resJson) && resJson.length > 0) {
               const first = resJson[0];
+              console.log(first.num_correct)
+              console.log(first.num_incorrect)
               return {
                 time_spent: first.time_spent || 0,
                 completed: true,
                 accuracy: first.accuracy,
-                /* num_correct: first.num_correct,
-                num_incorrect: first.num_incorrect */
+                num_correct: first.num_correct,
+                num_incorrect: first.num_incorrect
               };
             }
-            return { time_spent: 0, completed: false, accuracy: 0 };
+            return { time_spent: 0, completed: false, accuracy: 0, num_correct: 0, num_incorrect: 0 };
           })
         );
 
@@ -105,13 +106,19 @@ export default function LearningUnitDetails() {
     fetchExercises();
   }, [id, childId]);
 
+  function formatTime(seconds: number) {
+    if (seconds === undefined) return "0";
+    if (seconds >= 60) return `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
+    return `${seconds} sec`;
+  }
+
   return (
     <PaperProvider theme={DefaultTheme}>
       <View style={styles.container}>
         <TouchableOpacity>
           <UnitCard
             title={`${title} \n ${category}`}
-            duration={`${totalDuration} mins`}
+            duration={formatTime(totalDuration)}
             progress={progress}
             accuracy={`${(unitAccuracy * 100).toFixed(0)}%`}
           />
@@ -132,8 +139,8 @@ export default function LearningUnitDetails() {
                 key={exercise.id}
                 title={exercise.title}
                 completed={exercise.completed ? "Completed" : "Not started"}
-                correct={0}
-                incorrect={0}
+                correct={exercise.num_correct}
+                incorrect={exercise.num_incorrect}
                 accuracy={exercise.accuracy != null ? `${(exercise.accuracy * 100).toFixed(0)}%` : ""}
               />
             ))}

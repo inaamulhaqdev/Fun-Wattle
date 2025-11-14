@@ -5,7 +5,6 @@ import { Text, ActivityIndicator } from "react-native-paper";
 type Stat = {
   label: string;
   value: number | string;
-  unit?: string;
 };
 
 type StatsGridProps = {
@@ -14,18 +13,35 @@ type StatsGridProps = {
 };
 
 export default function StatsGrid({ stats, loading }: StatsGridProps) {
+
+  const formatValue = (value: number) => {
+    if (value >= 60) {
+      const mins = Math.floor(value / 60);
+      const secs = value % 60;
+      return `${mins}:${secs.toString().padStart(2, "0")}`;
+    } else {
+      return `${value} secs`;
+    }
+  };
+
   return (
     <View style={styles.grid}>
-      {stats.map(({ label, value, unit }, index) => (
-        <View key={index} style={styles.gridItem}>
-          <Text style={styles.label}>{label}</Text>
-          {label === "Total Activities Done" && loading ? (
-            <ActivityIndicator size="small" color="orange" style={{ marginTop: 5 }} />
-          ) : (
-            <Text style={styles.stat}>{value}{unit ? ` ${unit}` : ""}</Text>
-          )}
-        </View>
-      ))}
+      {stats.map(({ label, value }, index) => {
+        let displayValue;
+
+        if (label === "Total Activities Done" && loading) {
+          displayValue = <ActivityIndicator size="small" color="orange" style={{ marginTop: 5 }} />;
+        } else if (typeof value === "number") {
+          displayValue = formatValue(value);
+        }
+
+        return (
+          <View key={index} style={styles.gridItem}>
+            <Text style={styles.label}>{label}</Text>
+            <Text style={styles.stat}>{displayValue}</Text>
+          </View>
+        );
+      })}
     </View>
   );
 }

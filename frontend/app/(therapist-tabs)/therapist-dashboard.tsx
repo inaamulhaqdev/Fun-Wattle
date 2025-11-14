@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Menu, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
-import Filters from "../../components/home_screen/Filters";
+import Filters from "../../components/home_screen/CategoryFilters";
 import { supabase } from '@/config/supabase';
 import { API_URL } from '@/config/api';
 import { Account } from '@/components/AccountSelectionPage';
