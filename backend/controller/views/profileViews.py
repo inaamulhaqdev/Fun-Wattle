@@ -73,22 +73,114 @@ def get_profile(request, profile_id):
     return Response(serializer.data, status=200)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
 def coins(request, profile_id):
-    if request.method == 'GET':
-        return Response({'Message': 'This get profile/id/coins route is unimplemented'}, status=501)
-    elif request.method == 'POST':
-        return Response({'Message': 'This post profile/id/coins route is unimplemented'}, status=501)
+    try:
+        profile = Profile.objects.get(id=profile_id)
+    except Profile.DoesNotExist:
+        return Response({'error': 'Profile not found'}, status=404)
+    return Response({
+          'coins':profile.coins
+	}, status=200)
 
 
 @api_view(['GET'])
 def get_streak(request, profile_id):
-    return Response({'Message': 'This profile/id/streak route is unimplemented'}, status=501)
+    try:
+        profile = Profile.objects.get(id=profile_id)
+    except Profile.DoesNotExist:
+        return Response({'error': 'Profile not found'}, status=404)
+    return Response({
+          'streak':profile.streak
+	}, status=200)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
+def shop(request):
+	shop = Mascot_Items.objects.all()
+	serializer = MascotItemsSerializer(shop, many=True)
+	return Response(serializer.data, status=200)
+
+@api_view(['GET'])
+def get_inv(request, profile_id):
+	try:
+		profile = Profile.objects.get(id=profile_id)
+	except Profile.DoesNotExist:
+		return Response({'error': 'Profile not found'}, status=404)
+	inv = Inventory.objects.get(
+		profile = profile.id
+	)
+	serializer = InventorySerializer(inv, many=true)
+	return Response(serializer, status=200)
+
+@api_view(['POST'])
+def update_inv(request, profile_id, item_id):
+	try:
+		profile = Profile.objects.get(id=profile_id)
+		item = Mascot_Items.objects.get(id=item_id)
+	except Profile.DoesNotExist:
+		return Response({'error': 'Profile not found'}, status=404)
+	except Mascot_Items.DoesNotExist:
+		return Response({'error': 'Mascot Item not found'}, status=404)
+	prev_purchase = Inventory.objects.get(
+		profile = profile.id,
+		mascot_item = item          
+	)
+	if prev_purchase:
+		return Resonse({'error':'Item has already been purchased'}, status=400)
+	if profile.coins < item.price:
+		return Response({'error': 'Item is too expensive'}, status=400)
+	inv_item = Inventory.objects.create(
+		profile=profile,
+		mascot_item=item,
+		equipped=False
+	)    
+	profile.coins = profile.coins - item.price
+	profile.save()
+	if not inv_item:	
+		return Response({'error':'Failed to purchase item'})
+	return Response({'message':'Success'}, status=200)
+		
+def equipped_items(profile_id, item):
+	 return Inventory.objects.filter(
+		profile = profile.id,
+		mascot_item = item,
+		equipped = True          
+	)
+        
+@api_view(['GET', 'PUT'])
 def mascot(request, profile_id):
-    if request.method == 'GET':
-        return Response({'Message': 'This get profile/id/mascot route is unimplemented'}, status=501)
-    elif request.method == 'POST':
-        return Response({'Message': 'This post profile/id/mascot route is unimplemented'}, status=501)
+	try:
+		profile = Profile.objects.get(id=profile_id)
+	except Profile.DoesNotExist:
+		return Response({'error': 'Profile not found'}, status=404)
+	eqipped_items = equipped_items(profile.id, item)
+	if equipped_items.length > 2:
+		return Response({'error':'Cannot equip more than 2 items'}, status=400)	
+	if request.method == 'GET':
+		serializer = InventorySerializer(equipped_items, many=True)
+		return Response(serializer.data, staus=200)
+	elif request.method == 'PUT':
+		item_id = request.data.get('item')
+		try:
+			item = Mascot_Items.objects.get(id=item_id)
+		except Mascot_Items.DoesNotExist:
+			return Response({'error': 'Mascot Item not found'}, status=404)
+		inv_item_to_equip = Inventory.objects.get(
+			profile = profile.id,
+			mascot_item = item          
+		)
+		if not inv_item_to_equip:
+			return Response({'error':'Item has not been purchased'}, status=400)
+		inv_item_to_unequip = Inventory.objects.get(
+			profile = profile.id,
+			equipped = True,
+			mascot_item__item_type = item.item_type,
+		)
+		if inv_item_to_unequip:
+			inv_item_to_unequip.equipped = False
+			inv_item_to_unequip.save()
+		inv_item_to_equip.equipped = True
+		eqipped_items = equipped_items(profile.id, item)
+		serializer = InventorySerializer(equipped_items, many=True)
+		return Response(serializer.data, staus=200)
