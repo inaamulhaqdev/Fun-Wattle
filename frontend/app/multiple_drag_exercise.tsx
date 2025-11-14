@@ -21,6 +21,7 @@ interface Question {
   question: string;
   correctAnswer: string;
   options: string[];
+  image?: string; // Optional image URL
 }
 
 interface ApiQuestion {
@@ -105,7 +106,8 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
             id: apiQuestion.id, // Use the API question ID (UUID)
             question: questionData.question || 'Question not available',
             correctAnswer: correctAnswer,
-            options: optionTexts
+            options: optionTexts,
+            image: questionData.image || undefined // Extract image URL if available
           };
         } catch (parseError) {
           console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
@@ -760,6 +762,13 @@ export default function MultipleDragExercise() {
       <View style={styles.questionContainer}>
         <Text style={styles.questionNumber}>Question {currentQuestion + 1}</Text>
         <Text style={styles.questionText}>{question.question}</Text>
+        {question.image && (
+          <Image
+            source={{ uri: question.image }}
+            style={styles.questionImage}
+            resizeMode="contain"
+          />
+        )}
       </View>
 
       {/* Drop Zone */}
@@ -1015,6 +1024,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
     lineHeight: 28,
+  },
+  questionImage: {
+    width: width * 0.8,
+    height: 200,
+    marginTop: 16,
+    marginBottom: 8,
+    alignSelf: 'center',
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
   },
   dropZone: {
     marginHorizontal: 20,
