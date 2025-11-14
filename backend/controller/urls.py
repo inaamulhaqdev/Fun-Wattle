@@ -18,6 +18,7 @@ urlpatterns = [
     path('profile/<str:profile_id>/coins/', coins, name='manage_coins'), # GET
     path('profile/<str:profile_id>/streak/', get_streak, name='get_streak'), # GET
     path('profile/shop/', shop, name='shop'), # GET
+    path('profile/shop/<str:item_id>/', get_item, name='get_item'), # GET
     path('profile/<str:profile_id>/inv', get_inv, name='get_inventory'), # GET
     path('profile/<str:profile_id>/inv/<str:item_id>/', update_inv, name='update_inventory'), # POST
     path('profile/<str:profile_id>/mascot/', mascot, name='manage_mascot'), # GET, PUT
