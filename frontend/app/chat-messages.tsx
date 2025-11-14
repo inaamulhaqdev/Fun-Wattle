@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Modal} from 'react-native';
+import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
-export default function Chat() {
+export default function ChatMessages() {
+  const router = useRouter();
   {/* TODO: replace hardcoded values with dynamic */}
   const [messages, setMessages] = useState([
     {
@@ -44,6 +46,12 @@ export default function Chat() {
     >
       {/* header - recipient's name */}
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.push('/(parent-tabs)/chat-rooms')}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
            {/* TODO: replace hardcoded values with dynamic */}
           <Text style={styles.headerName}>Dr. Emily Carter</Text>
@@ -58,7 +66,7 @@ export default function Chat() {
           const previous = messages[index - 1];
           const showTime =
             !previous ||
-            Math.abs(item.timestamp.getTime() - previous.timestamp.getTime()) > 10 * 60 * 1000; // show the time if 10+ min gap between messages 
+            Math.abs(item.timestamp.getTime() - previous.timestamp.getTime()) > 10 * 60 * 1000; // show the time if 10+ min gap between messages
 
           return (
             <View>
@@ -72,8 +80,8 @@ export default function Chat() {
                 ]}
               >
                 <Text style={[
-                  styles.messageText, 
-                  item.sender == 'me' && { color: 'white' }, 
+                  styles.messageText,
+                  item.sender == 'me' && { color: 'white' },
                 ]}
               >
                 {item.text}
@@ -126,9 +134,9 @@ export default function Chat() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff' 
+  container: {
+    flex: 1,
+    backgroundColor: '#fff'
   },
   header: {
     paddingTop: 65,
@@ -138,10 +146,17 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
     borderBottomWidth: 1,
   },
-  headerName: { 
-    fontSize: 18, 
-    fontWeight: '600', 
-    color: 'white' 
+  backButton: {
+    position: 'absolute',
+    left: 12,
+    bottom: 15,
+    zIndex: 10,
+    padding: 8,
+  },
+  headerName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'white'
   },
   chatArea: { padding: 16 },
   timestamp: {
@@ -193,10 +208,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
-  sendText: { 
-    fontWeight: 'bold', 
-    color: 'white', 
-    fontSize: 15 
+  sendText: {
+    fontWeight: 'bold',
+    color: 'white',
+    fontSize: 15
   },
   modalOverlay: {
     flex: 1,
@@ -218,15 +233,15 @@ const styles = StyleSheet.create({
     right: 12,
     padding: 6,
   },
-  modalTitle: { 
-    fontSize: 20, 
-    fontWeight: 'bold', 
-    marginTop: 10, 
-    marginBottom: 5 
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 10,
+    marginBottom: 5
   },
-  modalText: 
-  { fontSize: 15, 
-    marginBottom: 5, 
-    textAlign: 'center' 
+  modalText:
+  { fontSize: 15,
+    marginBottom: 5,
+    textAlign: 'center'
   },
 });

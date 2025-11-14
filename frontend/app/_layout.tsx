@@ -99,6 +99,7 @@ export default function RootLayout() {
               />
             )
             }} />
+          <Stack.Screen name="chat-messages" options={{ headerShown: false }} />
           <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="parent" options={{ headerShown: false }} />
         </Stack>

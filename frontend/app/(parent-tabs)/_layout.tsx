@@ -12,11 +12,10 @@ export default function ParentLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Commented out code = orange navbar instead of black or white
-        // tabBarStyle: { backgroundColor: '#fd9029' },
-        // tabBarActiveTintColor: '#ffffff',
-        // tabBarInactiveTintColor: 'rgba(255,255,255,0.7)',
+        // tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarStyle: { backgroundColor: '#fd9029' },
+        tabBarActiveTintColor: '#ffffff',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.7)',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarShowLabel: true,
@@ -36,12 +35,12 @@ export default function ParentLayout() {
         }}
       />
       <Tabs.Screen
-          name="chat"
+          name="chat-rooms"
           options={{
           title: 'Chat',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="bubble.left.and.bubble.right.fill" color={color} />,
-        }}
-      />
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="bubble.left.and.bubble.right.fill" color={color} />,
+          }}
+       />
        <Tabs.Screen
           name="reports"
           options={{
