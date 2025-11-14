@@ -17,7 +17,7 @@ import { API_URL } from '@/config/api';
 const { width, height } = Dimensions.get('window');
 
 interface Question {
-  id: number;
+  id: string; // Changed to string to match API UUID
   question: string;
   correctAnswer: string;
   options: string[];
@@ -44,7 +44,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
   console.log('API_URL:', API_URL);
 
   try {
-    const url = `${API_URL}/questions/${exerciseId}/`;
+    const url = `${API_URL}/content/${exerciseId}/questions/`;
     console.log('Fetching questions from URL:', url);
 
     const response = await fetch(url, {
@@ -102,7 +102,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
           console.log(`Question ${index + 1} correct answer:`, correctAnswer);
 
           return {
-            id: index + 1,
+            id: apiQuestion.id, // Use the API question ID (UUID)
             question: questionData.question || 'Question not available',
             correctAnswer: correctAnswer,
             options: optionTexts
@@ -110,7 +110,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
         } catch (parseError) {
           console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
           return {
-            id: index + 1,
+            id: `error-${index + 1}`,
             question: 'Error loading question',
             correctAnswer: 'Error',
             options: ['Error', 'Loading', 'Question']
@@ -132,6 +132,8 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
     return null;
   }
 };
+
+
 
 interface DraggableOptionProps {
   text: string;
@@ -318,6 +320,7 @@ export default function MultipleDragExercise() {
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
 
   const [sessionStartTime] = useState(Date.now());
+  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
 
   // Fallback exercise data
   const fallbackExercise: Exercise = useMemo(() => ({
@@ -325,19 +328,19 @@ export default function MultipleDragExercise() {
     title: "Opposite Words (Fallback)",
     questions: [
       {
-        id: 1,
+        id: "fallback-1",
         question: "What is the opposite of 'hot'?",
         correctAnswer: "cold",
         options: ["warm", "cold", "cool", "fire"]
       },
       {
-        id: 2,
+        id: "fallback-2",
         question: "What is the opposite of 'big'?",
         correctAnswer: "small",
         options: ["huge", "large", "small", "tiny"]
       },
       {
-        id: 3,
+        id: "fallback-3",
         question: "What is the opposite of 'happy'?",
         correctAnswer: "sad",
         options: ["sad", "young", "sweet", "bright"]
@@ -377,6 +380,63 @@ export default function MultipleDragExercise() {
     }
   };
 
+  // Submit individual question result to backend
+  const submitQuestionResult = async (questionId: string, correct: boolean, timeSpent: number, attempts: number) => {
+    console.log('=== SUBMIT QUESTION RESULT CALLED ===');
+    console.log('Parameters:', { questionId, correct, timeSpent, attempts });
+    console.log('childId:', childId);
+    
+    if (!childId || !questionId) {
+      console.log('Missing childId or questionId, returning early');
+      return;
+    }
+
+    try {
+      const url = `${API_URL}/result/${childId}/question/${questionId}/`;
+      console.log('Submitting question result to:', url);
+
+      const resultData = {
+        num_correct: correct ? 1 : 0,
+        num_incorrect: correct ? attempts - 1 : attempts,
+        time_spent: parseInt(timeSpent.toString())
+      };
+
+      console.log('Submitting result data:', resultData);
+
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+        console.log('🔍 Adding Authorization header');
+      } else {
+        console.log('⚠️ No access token found, sending without Authorization');
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(resultData),
+      });
+
+      console.log('Question result response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Question result submission failed:', response.status, errorText);
+        throw new Error(`Failed to submit question result: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Question result submitted successfully:', result);
+
+    } catch (error) {
+      console.error('Error submitting question result:', error);
+      // Don't throw here to prevent blocking exercise progression
+    }
+  };
+
   // Initialize session and handle cleanup
   useEffect(() => {
     const loadExerciseData = async () => {
@@ -409,7 +469,13 @@ export default function MultipleDragExercise() {
 
     loadExerciseData();
   }, [childId, exerciseId, fallbackExercise]);
-  const handleDrop = (isCorrect: boolean) => {
+
+  // Reset question timer when question changes
+  useEffect(() => {
+    setQuestionStartTime(Date.now());
+  }, [currentQuestion]);
+
+  const handleDrop = async (isCorrect: boolean) => {
     console.log('=== HANDLE DROP ===');
     console.log('isCorrect:', isCorrect);
     console.log('answered:', answered);
@@ -433,6 +499,16 @@ export default function MultipleDragExercise() {
     setAnswered(true);
 
     if (isCorrect) {
+      // Calculate time spent on this question and submit result for correct answer
+      const timeSpent = Math.round((Date.now() - questionStartTime) / 1000); // seconds
+      const currentAttempts = retryCount + 1;
+      
+      // Submit question result for correct answer
+      console.log('child id is:', childId);
+      if (childId) {
+        await submitQuestionResult(question.id, true, timeSpent, currentAttempts);
+      }
+
       setScore(score + 10);
       setShowCelebration(true);
 
@@ -445,11 +521,20 @@ export default function MultipleDragExercise() {
       // Check retry count for wrong answer
       if (retryCount < 2) {
         console.log(`Allowing retry - attempt ${retryCount + 1} of 3`);
-        // Show retry modal
+        // Show retry modal (don't submit result yet, allow retry)
         setShowRetryModal(true);
 
       } else {
         console.log('Max retries reached - showing correct answer');
+        
+        // Submit question result for final incorrect attempt
+        const timeSpent = Math.round((Date.now() - questionStartTime) / 1000); // seconds
+        const currentAttempts = retryCount + 1;
+        
+        if (childId) {
+          await submitQuestionResult(question.id, false, timeSpent, currentAttempts);
+        }
+        
         // Show correct answer modal after 2 failed attempts
         setShowCorrectAnswerModal(true);
 
@@ -463,6 +548,7 @@ export default function MultipleDragExercise() {
       setAnswered(false);
       setSelectedOption(null);
       setRetryCount(0); // Reset retry count for new question
+      setQuestionStartTime(Date.now()); // Reset question timer
 
     } else {
       completeActivity();
@@ -516,7 +602,7 @@ export default function MultipleDragExercise() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Backend error response:', errorText);
-        throw new Error(`Failed to submit exercise results: ${response.status} - ${errorText}`);
+        throw new Error(`Failed to submit exercise results: ${response.status} w- ${errorText}`);
       }
 
       const result = await response.json();
@@ -554,6 +640,7 @@ export default function MultipleDragExercise() {
     setSelectedOption(null);
     setRetryCount(retryCount + 1);
     setShowRetryModal(false);
+    // Don't reset question start time - keep timing from first attempt
   };
 
   const handleShowCorrectAnswer = () => {
