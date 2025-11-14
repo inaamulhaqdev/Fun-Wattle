@@ -413,7 +413,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [required, recommended]
+            enum: [total, required, recommended]
       responses:
         '200':
           description: Overall results data

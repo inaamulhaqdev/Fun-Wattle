@@ -34,7 +34,7 @@ urlpatterns = [
 
     # Child Results Routes
     path('result/<str:child_id>/all/', get_exercise_results, name='get_exercise_results'), # GET
-    path('result/<str:child_id>/learning_unit_overall/<str:participation_type>', results_for_learning_unit_overall, name='results_for_learning_unit_overall'), # GET
+    path('result/<str:child_id>/learning_unit_overall/<str:participation_type>/', results_for_learning_unit_overall, name='results_for_learning_unit_overall'), # GET
     path('result/<str:child_id>/exercise/<str:exercise_id>/', results_for_exercise, name='results_for_exercise'), # POST, GET
     path('result/<str:child_id>/question/<str:question_id>/', results_for_question, name='results_for_question'), # POST, GET
 
