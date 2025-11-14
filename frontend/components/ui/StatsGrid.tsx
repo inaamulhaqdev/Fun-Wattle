@@ -9,16 +9,15 @@ type Stat = {
 
 type StatsGridProps = {
   stats: Stat[];
-  loading?: boolean;
 };
 
-export default function StatsGrid({ stats, loading }: StatsGridProps) {
+export default function StatsGrid({ stats }: StatsGridProps) {
 
   const formatValue = (value: number) => {
     if (value >= 60) {
       const mins = Math.floor(value / 60);
       const secs = value % 60;
-      return `${mins}:${secs.toString().padStart(2, "0")}`;
+      return `${mins} min ${secs.toString().padStart(2, "0")} sec`;
     } else {
       return `${value} secs`;
     }
@@ -29,8 +28,8 @@ export default function StatsGrid({ stats, loading }: StatsGridProps) {
       {stats.map(({ label, value }, index) => {
         let displayValue;
 
-        if (label === "Total Activities Done" && loading) {
-          displayValue = <ActivityIndicator size="small" color="orange" style={{ marginTop: 5 }} />;
+        if (label === "Total Activities Done") {
+          displayValue = value;
         } else if (typeof value === "number") {
           displayValue = formatValue(value);
         }
