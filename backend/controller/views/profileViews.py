@@ -121,7 +121,7 @@ def get_inv(request, profile_id):
 		profile = profile.id
 	).select_related('mascot_item')
 	
-	serializer = InventorySerializer(inv, many=True)
+	serializer = MascotItemsSerializer(inv, many=True)
 	return Response(serializer.data, status=200)
 
 @api_view(['POST'])
@@ -192,7 +192,7 @@ def mascot(request, profile_id):
 			mascot_item = item          
 		)
 		if not inv_item_to_equip:
-			return Response({'error':'Item has not been purchased'}, status=400)
+			return Response({'error':'Item has not been purchased'}, status=401)
 		inv_item_to_unequip = Inventory.objects.get(
 			profile = profile.id,
 			equipped = True,
