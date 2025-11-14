@@ -441,6 +441,26 @@ export default function MultipleDragExercise() {
 
   // Initialize session and handle cleanup
   useEffect(() => {
+    // Load saved progress if available
+    const loadSavedProgress = () => {
+      if (!childId || !exerciseId) return null;
+      
+      try {
+        const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+        const savedData = localStorage.getItem(storageKey);
+        
+        if (savedData) {
+          const progressData = JSON.parse(savedData);
+          console.log('Found saved progress:', progressData);
+          return progressData;
+        }
+      } catch (error) {
+        console.error('Error loading saved progress:', error);
+      }
+      
+      return null;
+    };
+
     const loadExerciseData = async () => {
       console.log('useEffect running - exerciseId:', exerciseId);
       console.log('useEffect running - childId:', childId);
@@ -455,6 +475,17 @@ export default function MultipleDragExercise() {
         if (fetchedExercise) {
           console.log('Successfully loaded exercise data:', fetchedExercise);
           setExercise(fetchedExercise);
+          
+          // Check for saved progress and restore state
+          const savedProgress = loadSavedProgress();
+          if (savedProgress) {
+            setCurrentQuestion(savedProgress.currentQuestion || 0);
+            setScore(savedProgress.score || 0);
+            setRetryCount(savedProgress.retryCount || 0);
+            setQuestionStartTime(Date.now()); // Reset question timer
+            console.log('Progress restored from saved state');
+          }
+          
           setIsLoading(false);
           return;
         } else {
@@ -465,6 +496,16 @@ export default function MultipleDragExercise() {
       // Use fallback data if API fetch failed
       console.log('Using fallback exercise data');
       setExercise(fallbackExercise);
+      
+      // Check for saved progress even with fallback data
+      const savedProgress = loadSavedProgress();
+      if (savedProgress) {
+        setCurrentQuestion(savedProgress.currentQuestion || 0);
+        setScore(savedProgress.score || 0);
+        setRetryCount(savedProgress.retryCount || 0);
+        setQuestionStartTime(Date.now());
+        console.log('Progress restored from saved state (fallback)');
+      }
 
       setIsLoading(false);
     };
@@ -633,6 +674,15 @@ export default function MultipleDragExercise() {
   };
 
   const completeActivity = () => {
+    // Clear saved progress since exercise is completed
+    try {
+      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+      localStorage.removeItem(storageKey);
+      console.log('Progress cleared after exercise completion');
+    } catch (error) {
+      console.error('Error clearing saved progress:', error);
+    }
+    
     setShowCompletionScreen(true);
   };
 
@@ -668,10 +718,42 @@ export default function MultipleDragExercise() {
   const handleConfirmProgressExit = () => {
     console.log('Confirm progress exit pressed');
     setShowProgressExitModal(false);
+    
+    try {
+      // Save current progress to localStorage
+      const progressData = {
+        exerciseId,
+        childId,
+        currentQuestion,
+        score,
+        retryCount,
+        sessionStartTime,
+        timestamp: Date.now()
+      };
+
+      // Save to localStorage
+      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+      localStorage.setItem(storageKey, JSON.stringify(progressData));
+      
+      console.log('Progress saved:', progressData);
+      
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    }
+    
     router.back();
   };
 
   const handleTryAgainFromCompletion = () => {
+    // Clear saved progress since starting fresh
+    try {
+      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+      localStorage.removeItem(storageKey);
+      console.log('Progress cleared for fresh restart');
+    } catch (error) {
+      console.error('Error clearing saved progress:', error);
+    }
+    
     // Reset the entire exercise
     setCurrentQuestion(0);
     setScore(0);
@@ -811,7 +893,7 @@ export default function MultipleDragExercise() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Exit Exercise?</Text>
             <Text style={styles.modalText}>
-              Your progress will be lost if you exit now. Are you sure you want to leave?
+              Your progress will be saved and you can resume later. Are you sure you want to exit?
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalCancelButton} onPress={handleCancelProgressExit}>
