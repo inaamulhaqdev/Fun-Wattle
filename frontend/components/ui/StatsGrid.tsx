@@ -1,31 +1,59 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
+import React, { useRef, useEffect } from "react";
+import { View, StyleSheet, Animated} from "react-native";
+import { Text } from "react-native-paper";
 
 type Stat = {
   label: string;
   value: number | string;
-  unit?: string;
 };
 
 type StatsGridProps = {
   stats: Stat[];
-  loading?: boolean;
+  fetchingStats: boolean;
 };
 
-export default function StatsGrid({ stats, loading }: StatsGridProps) {
+export default function StatsGrid({ stats, fetchingStats }: StatsGridProps) {
+
+  const formatValue = (value: number) => {
+    if (value >= 60) {
+      const mins = Math.floor(value / 60);
+      const secs = value % 60;
+      return `${mins} min ${secs.toString().padStart(2, "0")} sec`;
+    } else {
+      return `${value} secs`;
+    }
+  };
+
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(opacity, {
+      toValue: fetchingStats ? 0.3 : 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [fetchingStats]);
+
   return (
     <View style={styles.grid}>
-      {stats.map(({ label, value, unit }, index) => (
-        <View key={index} style={styles.gridItem}>
-          <Text style={styles.label}>{label}</Text>
-          {label === "Total Activities Done" && loading ? (
-            <ActivityIndicator size="small" color="orange" style={{ marginTop: 5 }} />
-          ) : (
-            <Text style={styles.stat}>{value}{unit ? ` ${unit}` : ""}</Text>
-          )}
-        </View>
-      ))}
+      {stats.map(({ label, value }, index) => {
+        let displayValue;
+
+        if (label === "Total Activities Done") {
+          displayValue = value;
+        } else if (typeof value === "number") {
+          displayValue = formatValue(value);
+        }
+
+        return (
+          <View key={index} style={styles.gridItem}>
+            <Text style={styles.label}>{label}</Text>
+            <Animated.Text style={[styles.stat, { opacity }]}>
+              {displayValue}
+            </Animated.Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
