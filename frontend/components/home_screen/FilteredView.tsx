@@ -5,65 +5,30 @@ import TaskCard from "../ui/TaskCard";
 import StatsGrid from "../ui/StatsGrid";
 import { router } from "expo-router";
 import { AssignedLearningUnit } from "@/types/learningUnitTypes";
-import { API_URL } from '@/config/api';
-import { useApp } from "@/context/AppContext";
 
 interface FilterViewProps {
   units: AssignedLearningUnit[];
   category: string;
+  statistics: {
+    total_exercises: number;
+    completed_exercises: number;
+    total_time_spent: number;
+  };
+  fetchingStats: boolean;
 }
 
-interface LUStatistics {
-  total_exercises: number;
-  completed_exercises: number;
-  total_time_spent: number;
-}
-
-export default function FilteredView({ units, category }: FilterViewProps) {
-  const { session, childId } = useApp();
-  const [statistics, setStats] = useState<LUStatistics>({
-    total_exercises: 0,
-    completed_exercises: 0,
-    total_time_spent: 0
-  });
-  const [loading, setLoading] = useState(true);
-
-  /* useEffect(() => {
-    const fetchTotals = async () => {
-      if (!childId) return;
-
-      setLoading(true);
-
-      try {
-        const response = await fetch(`${API_URL}/result/${childId}/learning_unit_overall/${category}`, {
-          method: 'GET',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
-          },
-        });
-
-        if (!response.ok) throw new Error(`Failed to fetch exercises (${response.status})`);
-
-        const data = await response.json();
-        setStats(data);
-      } catch (err) {
-        console.error("Failed to fetch unit stats:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTotals();
-  });
-
+export default function FilteredView({ units, category, statistics, fetchingStats }: FilterViewProps) {
   const stats = [
     { label: "Total Activities Done", value: `${statistics.completed_exercises} / ${statistics.total_exercises}` },
     { label: "Total Practice Time", value: statistics.total_time_spent },
-  ]; */
+  ];
 
-  const filteredUnits = category === "total"
-  ? units
-  : units.filter((u) => u.participationType === category);
+  let filteredUnits: AssignedLearningUnit[] = [];
+  if (category === "total") {
+    filteredUnits = units;
+  } else {
+    filteredUnits = units.filter((u) => u.participationType === category);
+  }
 
   function formatTime(seconds: number) {
     if (seconds === undefined) return "0";
@@ -83,7 +48,7 @@ export default function FilteredView({ units, category }: FilterViewProps) {
 
   return (
     <View style={styles.container}>
-      {/* <StatsGrid stats={stats} loading={loading} /> */}
+      <StatsGrid stats={stats} fetchingStats={fetchingStats} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {tasks.length === 0 ? (

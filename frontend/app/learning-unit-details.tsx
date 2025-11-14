@@ -66,8 +66,6 @@ export default function LearningUnitDetails() {
             const resJson = await resResp.json();
             if (Array.isArray(resJson) && resJson.length > 0) {
               const first = resJson[0];
-              console.log(first.num_correct)
-              console.log(first.num_incorrect)
               return {
                 time_spent: first.time_spent || 0,
                 completed: true,
@@ -110,6 +108,16 @@ export default function LearningUnitDetails() {
     if (seconds === undefined) return "0";
     if (seconds >= 60) return `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
     return `${seconds} sec`;
+  }
+
+  if (loading) {
+    return (
+      <PaperProvider theme={DefaultTheme}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FD902B" />
+        </View>
+      </PaperProvider>
+    );
   }
 
   return (
@@ -163,8 +171,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
+    backgroundColor: "#fff7de",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 150
   },
 });

@@ -1,6 +1,6 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
+import React, { useRef, useEffect } from "react";
+import { View, StyleSheet, Animated} from "react-native";
+import { Text } from "react-native-paper";
 
 type Stat = {
   label: string;
@@ -9,9 +9,10 @@ type Stat = {
 
 type StatsGridProps = {
   stats: Stat[];
+  fetchingStats: boolean;
 };
 
-export default function StatsGrid({ stats }: StatsGridProps) {
+export default function StatsGrid({ stats, fetchingStats }: StatsGridProps) {
 
   const formatValue = (value: number) => {
     if (value >= 60) {
@@ -22,6 +23,16 @@ export default function StatsGrid({ stats }: StatsGridProps) {
       return `${value} secs`;
     }
   };
+
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(opacity, {
+      toValue: fetchingStats ? 0.3 : 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [fetchingStats]);
 
   return (
     <View style={styles.grid}>
@@ -37,7 +48,9 @@ export default function StatsGrid({ stats }: StatsGridProps) {
         return (
           <View key={index} style={styles.gridItem}>
             <Text style={styles.label}>{label}</Text>
-            <Text style={styles.stat}>{displayValue}</Text>
+            <Animated.Text style={[styles.stat, { opacity }]}>
+              {displayValue}
+            </Animated.Text>
           </View>
         );
       })}
