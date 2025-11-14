@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,16 +12,16 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const { width, height } = Dimensions.get('window');
 
 interface Question {
-  id: string; // Changed to string to match API UUID
+  id: string;
   question: string;
   correctAnswer: string;
   options: string[];
-  image?: string; // Optional image URL
 }
 
 interface ApiQuestion {
@@ -103,16 +103,15 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
           console.log(`Question ${index + 1} correct answer:`, correctAnswer);
 
           return {
-            id: apiQuestion.id, // Use the API question ID (UUID)
+            id: apiQuestion.id,
             question: questionData.question || 'Question not available',
             correctAnswer: correctAnswer,
-            options: optionTexts,
-            image: questionData.image || undefined // Extract image URL if available
+            options: optionTexts
           };
         } catch (parseError) {
           console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
           return {
-            id: `error-${index + 1}`,
+            id: apiQuestion.id || `error_${index + 1}`,
             question: 'Error loading question',
             correctAnswer: 'Error',
             options: ['Error', 'Loading', 'Question']
@@ -134,8 +133,6 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
     return null;
   }
 };
-
-
 
 interface DraggableOptionProps {
   text: string;
@@ -323,6 +320,7 @@ export default function MultipleDragExercise() {
 
   const [sessionStartTime] = useState(Date.now());
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [progressRestored, setProgressRestored] = useState(false);
 
   // Fallback exercise data
   const fallbackExercise: Exercise = useMemo(() => ({
@@ -330,19 +328,19 @@ export default function MultipleDragExercise() {
     title: "Opposite Words (Fallback)",
     questions: [
       {
-        id: "fallback-1",
+        id: "fallback_1",
         question: "What is the opposite of 'hot'?",
         correctAnswer: "cold",
         options: ["warm", "cold", "cool", "fire"]
       },
       {
-        id: "fallback-2",
+        id: "fallback_2",
         question: "What is the opposite of 'big'?",
         correctAnswer: "small",
         options: ["huge", "large", "small", "tiny"]
       },
       {
-        id: "fallback-3",
+        id: "fallback_3",
         question: "What is the opposite of 'happy'?",
         correctAnswer: "sad",
         options: ["sad", "young", "sweet", "bright"]
@@ -382,85 +380,67 @@ export default function MultipleDragExercise() {
     }
   };
 
-  // Submit individual question result to backend
-  const submitQuestionResult = async (questionId: string, correct: boolean, timeSpent: number, attempts: number) => {
-    console.log('=== SUBMIT QUESTION RESULT CALLED ===');
-    console.log('Parameters:', { questionId, correct, timeSpent, attempts });
-    console.log('childId:', childId);
-    
-    if (!childId || !questionId) {
-      console.log('Missing childId or questionId, returning early');
+  // Load saved progress from AsyncStorage
+  const loadSavedProgress = useCallback(async () => {
+    if (!childId || !exerciseId) {
+      console.log('Missing childId or exerciseId, cannot load progress');
       return;
     }
 
     try {
-      const url = `${API_URL}/result/${childId}/question/${questionId}/`;
-      console.log('Submitting question result to:', url);
-
-      const resultData = {
-        num_correct: correct ? 1 : 0,
-        num_incorrect: correct ? attempts - 1 : attempts,
-        time_spent: parseInt(timeSpent.toString())
-      };
-
-      console.log('Submitting result data:', resultData);
-
-      const headers: any = {
-        'Content-Type': 'application/json',
-      };
-
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-        console.log('🔍 Adding Authorization header');
-      } else {
-        console.log('⚠️ No access token found, sending without Authorization');
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(resultData),
-      });
-
-      console.log('Question result response status:', response.status);
+      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+      const savedProgressString = await AsyncStorage.getItem(storageKey);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Question result submission failed:', response.status, errorText);
-        throw new Error(`Failed to submit question result: ${response.status} - ${errorText}`);
+      if (savedProgressString) {
+        const savedProgress = JSON.parse(savedProgressString);
+        console.log('Found saved progress:', savedProgress);
+
+        // Validate that the saved progress is for the same exercise
+        if (savedProgress.exerciseId === exerciseId && savedProgress.childId === childId) {
+          console.log('Restoring progress...');
+          
+          // Restore the saved state
+          setCurrentQuestion(savedProgress.currentQuestion || 0);
+          setScore(savedProgress.score || 0);
+          setRetryCount(savedProgress.retryCount || 0);
+          
+          // Reset answer state for the current question
+          setAnswered(false);
+          setSelectedOption(null);
+          setQuestionStartTime(Date.now()); // Reset question timer
+          
+          // Mark that progress was restored
+          setProgressRestored(true);
+          
+          console.log(`Progress restored: Question ${savedProgress.currentQuestion + 1}, Score ${savedProgress.score}`);
+        } else {
+          console.log('Saved progress is for different exercise/child, ignoring');
+        }
+      } else {
+        console.log('No saved progress found');
       }
-
-      const result = await response.json();
-      console.log('Question result submitted successfully:', result);
-
     } catch (error) {
-      console.error('Error submitting question result:', error);
-      // Don't throw here to prevent blocking exercise progression
+      console.error('Error loading saved progress:', error);
+    }
+  }, [childId, exerciseId]);
+
+  // Clear saved progress from AsyncStorage
+  const clearSavedProgress = async () => {
+    if (!childId || !exerciseId) {
+      return;
+    }
+
+    try {
+      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+      await AsyncStorage.removeItem(storageKey);
+      console.log('Saved progress cleared');
+    } catch (error) {
+      console.error('Error clearing saved progress:', error);
     }
   };
 
   // Initialize session and handle cleanup
   useEffect(() => {
-    // Load saved progress if available
-    const loadSavedProgress = () => {
-      if (!childId || !exerciseId) return null;
-      
-      try {
-        const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-        const savedData = localStorage.getItem(storageKey);
-        
-        if (savedData) {
-          const progressData = JSON.parse(savedData);
-          console.log('Found saved progress:', progressData);
-          return progressData;
-        }
-      } catch (error) {
-        console.error('Error loading saved progress:', error);
-      }
-      
-      return null;
-    };
-
     const loadExerciseData = async () => {
       console.log('useEffect running - exerciseId:', exerciseId);
       console.log('useEffect running - childId:', childId);
@@ -475,17 +455,6 @@ export default function MultipleDragExercise() {
         if (fetchedExercise) {
           console.log('Successfully loaded exercise data:', fetchedExercise);
           setExercise(fetchedExercise);
-          
-          // Check for saved progress and restore state
-          const savedProgress = loadSavedProgress();
-          if (savedProgress) {
-            setCurrentQuestion(savedProgress.currentQuestion || 0);
-            setScore(savedProgress.score || 0);
-            setRetryCount(savedProgress.retryCount || 0);
-            setQuestionStartTime(Date.now()); // Reset question timer
-            console.log('Progress restored from saved state');
-          }
-          
           setIsLoading(false);
           return;
         } else {
@@ -496,29 +465,101 @@ export default function MultipleDragExercise() {
       // Use fallback data if API fetch failed
       console.log('Using fallback exercise data');
       setExercise(fallbackExercise);
-      
-      // Check for saved progress even with fallback data
-      const savedProgress = loadSavedProgress();
-      if (savedProgress) {
-        setCurrentQuestion(savedProgress.currentQuestion || 0);
-        setScore(savedProgress.score || 0);
-        setRetryCount(savedProgress.retryCount || 0);
-        setQuestionStartTime(Date.now());
-        console.log('Progress restored from saved state (fallback)');
-      }
 
       setIsLoading(false);
+      
+      // Load saved progress after exercise data is loaded
+      await loadSavedProgress();
     };
 
     loadExerciseData();
-  }, [childId, exerciseId, fallbackExercise]);
+  }, [childId, exerciseId, fallbackExercise, loadSavedProgress]);
 
-  // Reset question timer when question changes
+  // Reset question start time when question changes
   useEffect(() => {
     setQuestionStartTime(Date.now());
   }, [currentQuestion]);
 
-  const handleDrop = async (isCorrect: boolean) => {
+  // Hide progress restored notification after 3 seconds
+  useEffect(() => {
+    if (progressRestored) {
+      const timer = setTimeout(() => {
+        setProgressRestored(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [progressRestored]);
+
+  // Submit question result to backend
+  const submitQuestionResult = async (questionId: string, correct: boolean, timeSpent: number, attempts: number) => {
+    console.log('=== SUBMIT QUESTION RESULT CALLED ===');
+    console.log('Parameters:', { questionId, correct, timeSpent, attempts });
+    console.log('childId:', childId);
+    
+    if (!childId || !questionId) {
+      console.log('Missing childId or questionId, returning early');
+      return;
+    }
+
+    try {
+      const url = `${API_URL}/result/${childId}/question/${questionId}/`;
+      console.log('Submitting question result to:', url);
+
+      // Try different field order and ensure proper types
+      const resultData = {
+        num_correct: correct ? 1 : 0,
+        num_incorrect: correct ? attempts - 1 : attempts,
+        time_spent: parseInt(timeSpent.toString()) // Ensure it's an integer
+      };
+
+      console.log('Submitting result data:', resultData);
+      console.log('XXXXX SESSION DEBUG XXXXX:', session);
+      console.log('XXXXX ACCESS TOKEN XXXXX:', session?.access_token);
+      console.log('XXXXX STRINGIFIED DATA XXXXX:', JSON.stringify(resultData));
+
+      // Prepare headers - only add Authorization if we have a valid token
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+
+      // Temporarily disable Authorization to test if that's the issue
+      // if (session?.access_token) {
+      //   headers['Authorization'] = `Bearer ${session.access_token}`;
+      //   console.log('🔍 Adding Authorization header');
+      // } else {
+      //   console.log('⚠️ No access token found, sending without Authorization');
+      // }
+      console.log('🧪 TESTING: Sending without Authorization header to debug');
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(resultData),
+      });
+
+      console.log('Response received:', response);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        console.error('Failed to submit question result:', response.status, response.statusText);
+        
+        try {
+          const errorText = await response.text();
+          console.error('Error response body:', errorText);
+        } catch (bodyError) {
+          console.error('Could not read error response body:', bodyError);
+        }
+      } else {
+        console.log('Question result submitted successfully');
+      }
+    } catch (error) {
+      console.error('Error submitting question result:', error);
+    }
+  };
+
+  const handleDrop = (isCorrect: boolean) => {
     console.log('=== HANDLE DROP ===');
     console.log('isCorrect:', isCorrect);
     console.log('answered:', answered);
@@ -541,17 +582,15 @@ export default function MultipleDragExercise() {
     setSelectedOption(droppedOption || null);
     setAnswered(true);
 
-    if (isCorrect) {
-      // Calculate time spent on this question and submit result for correct answer
-      const timeSpent = Math.round((Date.now() - questionStartTime) / 1000); // seconds
-      const currentAttempts = retryCount + 1;
-      
-      // Submit question result for correct answer
-      console.log('child id is:', childId);
-      if (childId) {
-        await submitQuestionResult(question.id, true, timeSpent, currentAttempts);
-      }
+    // Submit question result to backend
+    const currentTime = Date.now();
+    const timeSpent = Math.round((currentTime - questionStartTime) / 1000); // Convert to seconds
+    const attempts = retryCount + 1; // Current attempt (retryCount starts at 0)
+    
+    // Submit the result for this attempt
+    submitQuestionResult(question.id, isCorrect, timeSpent, attempts);
 
+    if (isCorrect) {
       setScore(score + 10);
       setShowCelebration(true);
 
@@ -564,20 +603,11 @@ export default function MultipleDragExercise() {
       // Check retry count for wrong answer
       if (retryCount < 2) {
         console.log(`Allowing retry - attempt ${retryCount + 1} of 3`);
-        // Show retry modal (don't submit result yet, allow retry)
+        // Show retry modal
         setShowRetryModal(true);
 
       } else {
         console.log('Max retries reached - showing correct answer');
-        
-        // Submit question result for final incorrect attempt
-        const timeSpent = Math.round((Date.now() - questionStartTime) / 1000); // seconds
-        const currentAttempts = retryCount + 1;
-        
-        if (childId) {
-          await submitQuestionResult(question.id, false, timeSpent, currentAttempts);
-        }
-        
         // Show correct answer modal after 2 failed attempts
         setShowCorrectAnswerModal(true);
 
@@ -591,47 +621,51 @@ export default function MultipleDragExercise() {
       setAnswered(false);
       setSelectedOption(null);
       setRetryCount(0); // Reset retry count for new question
-      setQuestionStartTime(Date.now()); // Reset question timer
+      setQuestionStartTime(Date.now()); // Reset question start time for new question
 
     } else {
       completeActivity();
     }
   };
 
-  // Submit all exercise data to backend
-  const submitExerciseResults = async () => {
-    const sessionEndTime = Date.now();
-    const totalSessionTime = sessionEndTime - sessionStartTime;
-
-    // Calculate correct answers from score (score is 10 points per correct answer)
-    const correctAnswers = score / 10;
-    const totalQuestions = currentExercise.questions.length;
-
-    const accuracy = Math.max(0, Math.min(1, correctAnswers / totalQuestions));
-    const timeSpent = Math.max(0, Math.round(totalSessionTime / 60000));
-
-    const exerciseSubmission = {
-      accuracy: accuracy,
-      time_spent: timeSpent,
-    };
-
-    console.log('Submitting exercise results:', exerciseSubmission);
-    console.log('Child ID:', childId);
-    console.log('Exercise ID:', exerciseId);
-    console.log('API URL:', `${API_URL}/results/${childId}/exercise/${exerciseId}/`);
-
-    // Validate IDs are not null/undefined
+  // Save progress and exit
+  const saveProgressAndExit = async () => {
     if (!childId || !exerciseId) {
-      console.error('Missing required IDs:', { childId, exerciseId });
-      throw new Error('Child ID and Exercise ID are required');
-    }
-
-    if (!session?.access_token) {
-      console.error('Error', 'You must be authorized to perform this action');
+      router.back();
       return;
     }
 
-    // Submit to backend
+    try {
+      // Save current progress to AsyncStorage
+      const progressData = {
+        exerciseId,
+        childId,
+        currentQuestion,
+        score,
+        retryCount,
+        sessionStartTime,
+        timestamp: Date.now()
+      };
+
+      // Save to AsyncStorage for React Native
+      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+      await AsyncStorage.setItem(storageKey, JSON.stringify(progressData));
+      
+      console.log('Progress saved:', progressData);
+      
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    }
+    
+    router.back();
+  };
+
+
+
+  // Submit exercise completion to backend (no body, just POST request)
+  const submitExerciseResults = async () => {
+    console.log('Complete button pressed');
+    
     try {
       const response = await fetch(`${API_URL}/result/${childId}/exercise/${exerciseId}/`, {
         method: 'POST',
@@ -639,17 +673,16 @@ export default function MultipleDragExercise() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify(exerciseSubmission)
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Backend error response:', errorText);
-        throw new Error(`Failed to submit exercise results: ${response.status} w- ${errorText}`);
+        throw new Error(`Failed to submit exercise results: ${response.status}`);
       }
-
       const result = await response.json();
       console.log('Exercise submitted successfully:', result);
+
+      // Clear saved progress since exercise is completed
+      await clearSavedProgress();
 
       // Navigate back to dashboard after successful submission
       router.push({
@@ -660,29 +693,9 @@ export default function MultipleDragExercise() {
     } catch (error) {
       console.error('Error submitting exercise:', error);
     }
-
-
-
-    // Navigate back to dashboard after submission (regardless of API success for now)
-    /*
-    router.push({
-      pathname: '/child-dashboard',
-      params: { completedTaskId: exerciseId }
-    });
-    */
-
   };
 
   const completeActivity = () => {
-    // Clear saved progress since exercise is completed
-    try {
-      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-      localStorage.removeItem(storageKey);
-      console.log('Progress cleared after exercise completion');
-    } catch (error) {
-      console.error('Error clearing saved progress:', error);
-    }
-    
     setShowCompletionScreen(true);
   };
 
@@ -692,7 +705,7 @@ export default function MultipleDragExercise() {
     setSelectedOption(null);
     setRetryCount(retryCount + 1);
     setShowRetryModal(false);
-    // Don't reset question start time - keep timing from first attempt
+    setQuestionStartTime(Date.now()); // Reset question start time for retry
   };
 
   const handleShowCorrectAnswer = () => {
@@ -715,45 +728,13 @@ export default function MultipleDragExercise() {
     setShowProgressExitModal(false);
   };
 
-  const handleConfirmProgressExit = () => {
+  const handleConfirmProgressExit = async () => {
     console.log('Confirm progress exit pressed');
     setShowProgressExitModal(false);
-    
-    try {
-      // Save current progress to localStorage
-      const progressData = {
-        exerciseId,
-        childId,
-        currentQuestion,
-        score,
-        retryCount,
-        sessionStartTime,
-        timestamp: Date.now()
-      };
-
-      // Save to localStorage
-      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-      localStorage.setItem(storageKey, JSON.stringify(progressData));
-      
-      console.log('Progress saved:', progressData);
-      
-    } catch (error) {
-      console.error('Error saving progress:', error);
-    }
-    
-    router.back();
+    await saveProgressAndExit();
   };
 
   const handleTryAgainFromCompletion = () => {
-    // Clear saved progress since starting fresh
-    try {
-      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-      localStorage.removeItem(storageKey);
-      console.log('Progress cleared for fresh restart');
-    } catch (error) {
-      console.error('Error clearing saved progress:', error);
-    }
-    
     // Reset the entire exercise
     setCurrentQuestion(0);
     setScore(0);
@@ -840,17 +821,19 @@ export default function MultipleDragExercise() {
         </View>
       </View>
 
+      {/* Progress Restored Notification */}
+      {progressRestored && (
+        <View style={styles.progressRestoredBanner}>
+          <Text style={styles.progressRestoredText}>
+            ✓ Returning to Question {currentQuestion + 1}
+          </Text>
+        </View>
+      )}
+
       {/* Question */}
       <View style={styles.questionContainer}>
         <Text style={styles.questionNumber}>Question {currentQuestion + 1}</Text>
         <Text style={styles.questionText}>{question.question}</Text>
-        {question.image && (
-          <Image
-            source={{ uri: question.image }}
-            style={styles.questionImage}
-            resizeMode="contain"
-          />
-        )}
       </View>
 
       {/* Drop Zone */}
@@ -893,7 +876,7 @@ export default function MultipleDragExercise() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Exit Exercise?</Text>
             <Text style={styles.modalText}>
-              Your progress will be saved and you can resume later. Are you sure you want to exit?
+              Your progress will be lost if you exit now. Are you sure you want to leave?
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalCancelButton} onPress={handleCancelProgressExit}>
@@ -1082,6 +1065,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  progressRestoredBanner: {
+    backgroundColor: 'rgba(76, 175, 80, 0.9)', // Green background
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  progressRestoredText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   questionContainer: {
     padding: 24,
     margin: 20,
@@ -1106,15 +1103,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
     lineHeight: 28,
-  },
-  questionImage: {
-    width: width * 0.8,
-    height: 200,
-    marginTop: 16,
-    marginBottom: 8,
-    alignSelf: 'center',
-    borderRadius: 12,
-    backgroundColor: '#f0f0f0',
   },
   dropZone: {
     marginHorizontal: 20,
