@@ -16,7 +16,7 @@ export const ActivityCards: React.FC<ActivityCardsProps> = ({ title, completed, 
         <Card style={styles.activityCard} mode='elevated'>
             <Card.Content>
               <View style={styles.titleRow}>
-                <Text variant="titleMedium" style={styles.completed}>
+                <Text variant="titleMedium" style={styles.title}>
                   {title}
                 </Text>
 
@@ -75,6 +75,7 @@ const styles = StyleSheet.create({
   }, 
   title: {
     fontWeight: "600",
+    flexShrink: 1
   },
   completed: {
     fontWeight: "600",

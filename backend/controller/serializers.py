@@ -57,3 +57,13 @@ class QuestionResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question_Result
         fields = '__all__'
+
+class MascotItemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Mascot_Items
+        fields = '__all__'
+
+class Inventory(serializers.ModelSerializer):
+    class Meta:
+        model = Inventory
+        fields = '__all__'

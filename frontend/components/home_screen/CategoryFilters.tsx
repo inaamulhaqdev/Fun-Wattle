@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
-import { Button } from "react-native-paper";
-import TotalView from "./Total_View";
-import RequiredView from "./Required_View";
-import RecommendedView from "./Recommended_View";
+import { Button, ActivityIndicator } from "react-native-paper";
+import FilteredView from "./FilteredView";
+import { API_URL } from '@/config/api';
+import { useApp } from "@/context/AppContext";
 
 export const segments = [
   { value: "total", label: "Total" },
@@ -17,7 +17,7 @@ export type AssignedLearningUnit = {
   title: string;
   category: string;
   participationType: "required" | "recommended";
-  time?: number;
+  time: number;
   status?: string;
 };
 
@@ -25,23 +25,53 @@ interface FiltersProps {
   assignedUnits: AssignedLearningUnit[];
 }
 
+interface LUStatistics {
+  total_exercises: number;
+  completed_exercises: number;
+  total_time_spent: number;
+}
+
 const Filters = ({ assignedUnits }: FiltersProps) => {
   const [selected, setSelected] = useState("total");
+  const [statistics, setStats] = useState<LUStatistics>({
+    total_exercises: 0,
+    completed_exercises: 0,
+    total_time_spent: 0,
+  });
+  const [fetchingStats, setFetchingStats] = useState(false);
+
+  const { session, childId } = useApp();
+
+  useEffect(() => {
+    const fetchTotals = async () => {
+      if (!childId) return;
+
+      setFetchingStats(true);
+
+      try {
+        const response = await fetch(`${API_URL}/result/${childId}/learning_unit_overall/${selected}`, {
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+        });
+
+        if (!response.ok) throw new Error(`Failed to fetch exercises (${response.status})`);
+
+        const data = await response.json();
+        setStats(data);
+      } catch (err) {
+        console.error("Failed to fetch unit stats:", err);
+      } finally {
+        setFetchingStats(false);
+      }
+    };
+    fetchTotals();
+  }, [childId, selected]);
 
   const renderContent = () => {
-    const required = assignedUnits.filter((u) => u.participationType === "required");
-    const recommended = assignedUnits.filter((u) => u.participationType === "recommended");
-
-    switch (selected) {
-      case "total":
-        return <TotalView units={assignedUnits} />;
-      case "required":
-        return <RequiredView units={required} />;
-      case "recommended":
-        return <RecommendedView units={recommended} />;
-      default:
-        return null;
-    }
+    return <FilteredView units={assignedUnits} category={selected} statistics={statistics} fetchingStats={fetchingStats}/>;
   };
 
   return (

@@ -413,7 +413,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [required, recommended]
+            enum: [total, required, recommended]
       responses:
         '200':
           description: Overall results data
@@ -613,6 +613,247 @@ paths:
                 format: binary
         '400':
           description: Invalid input data
+  /profile/{profile_id}/coins/:
+    get:
+      summary: Add coins to a profile
+      description: Add the coin total for a profile ID
+      tags:
+        - Profiles
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Coins returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  coins:
+                    type: integer
+        '404':
+          description: Profile not found
+    put:
+      summary: Get coins for a profile
+      description: Retrieve the coin total for a profile ID
+      tags:
+        - Profiles
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                coins:
+                  type: integer
+              required:
+                - item_id
+      responses:
+        '200':
+          description: Coins returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  coins:
+                    type: integer
+        '400':
+          description: Invalid coin amount, or non existent coins
+        '401':
+          description: Coins added must be positive 
+        '404':
+          description: Profile not found
+  /profile/{profile_id}/streak/:
+    get:
+      summary: Get the streak for a profile
+      description:  Retrieve the coin total for a profile ID
+      tags:
+        - Profiles
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Streak returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  streak:
+                    type: integer
+        '404':
+          description: Profile not found
+  /profile/shop/:
+    get:
+      summary: Get everything from the shop
+      description:  Retrieve all purchasable items
+      tags:
+        - Profiles
+      responses:
+        '200':
+          description: Shop returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Shop_Item'
+  /profile/shop/{item_id}:
+    get:
+      summary: Get an item from the shop
+      description:  Retrieve a purchasable items
+      tags:
+        - Profiles
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/Shop_Item'
+  /profile/{profile_id}/inv/:
+    get:
+      summary: Get the inventory for the profile
+      description:  Retrieve all the items that a user has purchased
+      tags:
+        - Profiles
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: inventory returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Shop_Item'
+        '404':
+          description: Profile not found
+  /profile/{profile_id}/inv/{item_id}/:
+    post:
+      summary: Add an item to a players inventory
+      description: Purchase an item for a profile
+      tags:
+        - Profiles
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Profile not found    
+  /profile/{profile_id}/mascot/:
+    get:
+      summary: Get the equipped mascot items for a profile
+      description:  Retrieve the currently equipped mascot items
+      tags:
+        - Profiles
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Equipped items returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  head:
+                    $ref: '#/components/schemas/Shop_Item'
+                    nullable: true
+                  toros:
+                    $ref: '#/components/schemas/Shop_Item'
+                    nullable: true
+        '400':
+          description: More then 2 items are equipped (DB error)
+        '404':
+          description: Profile not found
+    put:
+      summary: Equipped mascot items for a profile
+      description:  Equip a new item, then return the newly equipped items.
+      tags:
+        - Profiles
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                item_id:
+                  type: string
+                  format: uuid
+              required:
+                - item_id
+      responses:
+        '200':
+          description: Item Equipped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  head:
+                    $ref: '#/components/schemas/Shop_Item'
+                    nullable: true
+                  toros:
+                    $ref: '#/components/schemas/Shop_Item'
+                    nullable: true
+        '400':
+          description: More then 2 items are equipped (DB error)
+        '401':
+          description: Item has not been purchased 
+        '404':
+          description: Profile not found
 
 components:
   schemas:
@@ -863,3 +1104,20 @@ components:
         created_at:
           type: string
           format: date-time
+    Shop_Item:
+      type: object
+      properties:
+        id: 
+          type: string
+          format: uuid
+        item_type:
+          type: string
+          enum: [head, torso]
+        icon_image:
+          type: string
+          format: url
+        mascot_image:
+          type: string
+          format: json
+        price: 
+          type: integer
