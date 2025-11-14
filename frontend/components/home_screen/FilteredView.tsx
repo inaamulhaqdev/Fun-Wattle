@@ -5,74 +5,85 @@ import TaskCard from "../ui/TaskCard";
 import StatsGrid from "../ui/StatsGrid";
 import { router } from "expo-router";
 import { AssignedLearningUnit } from "@/types/learningUnitTypes";
-import { fetchUnitStats } from "@/components/util/fetchUnitStats";
+import { API_URL } from '@/config/api';
 import { useApp } from "@/context/AppContext";
 
-interface TotalViewProps {
+interface FilterViewProps {
   units: AssignedLearningUnit[];
+  category: string;
 }
 
-export default function TotalView({ units }: TotalViewProps) {
-  const { childId } = useApp();
-  const [totalActivitiesDone, setTotalActivitiesDone] = useState<number | null>(null);
+interface LUStatistics {
+  total_exercises: number;
+  completed_exercises: number;
+  total_time_spent: number;
+}
+
+export default function FilteredView({ units, category }: FilterViewProps) {
+  const { session, childId } = useApp();
+  const [statistics, setStats] = useState<LUStatistics>({
+    total_exercises: 0,
+    completed_exercises: 0,
+    total_time_spent: 0
+  });
   const [loading, setLoading] = useState(true);
 
-  // Calculate total number of completed (assigned) exercises
-  useEffect(() => {
+  /* useEffect(() => {
     const fetchTotals = async () => {
       if (!childId) return;
 
       setLoading(true);
 
       try {
-        if (units.length === 0) {
-          setTotalActivitiesDone(0);
-          return;
-        }
+        const response = await fetch(`${API_URL}/result/${childId}/learning_unit_overall/${category}`, {
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+        });
 
-        const unitsStats = await Promise.all(
-          units.map((unit) => fetchUnitStats(unit.learningUnitId, childId))
-        );
+        if (!response.ok) throw new Error(`Failed to fetch exercises (${response.status})`);
 
-        const totalDone = unitsStats.reduce(
-          (sum, stats) => sum + stats.completedCount,
-          0
-        );
-
-        setTotalActivitiesDone(totalDone);
+        const data = await response.json();
+        setStats(data);
       } catch (err) {
         console.error("Failed to fetch unit stats:", err);
-        setTotalActivitiesDone(0);
       } finally {
         setLoading(false);
       }
     };
-
     fetchTotals();
-  }, [units, childId]);
-
-  const overallTime = units.reduce((sum, unit) => sum + (unit.time || 0), 0);
+  });
 
   const stats = [
-    { label: "Total Activities Done", value: totalActivitiesDone ?? "-", unit: "" },
-    { label: "Total Practice Time", value: overallTime, unit: "mins" },
-  ];
+    { label: "Total Activities Done", value: `${statistics.completed_exercises} / ${statistics.total_exercises}` },
+    { label: "Total Practice Time", value: statistics.total_time_spent },
+  ]; */
+
+  const filteredUnits = category === "total"
+  ? units
+  : units.filter((u) => u.participationType === category);
+
+  function formatTime(seconds: number) {
+    if (seconds === undefined) return "0";
+    if (seconds >= 60) return `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
+    return `${seconds} sec`;
+  }
 
   // Map unit to TaskCard
-  const tasks = units.map((unit) => ({
+  const tasks = filteredUnits.map((unit) => ({
     key: unit.learningUnitId,
     title: unit.title,
     category: unit.category,
     status: unit.status || "Not started",
-    time: unit.time !== undefined ? `${unit.time} minutes` : "0 minutes",
+    time: formatTime(unit.time),
     assigned_date: unit.assignedDate || ""
   }));       
 
-  console.log("Tasks for filter view (total):", tasks);
-
   return (
     <View style={styles.container}>
-      <StatsGrid stats={stats} loading={loading} />
+      {/* <StatsGrid stats={stats} loading={loading} /> */}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {tasks.length === 0 ? (
