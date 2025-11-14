@@ -615,8 +615,8 @@ paths:
           description: Invalid input data
   /profile/{profile_id}/coins/:
     get:
-      summary: Get coins for a profile
-      description: Retrieve the coin total for a profile ID
+      summary: Add coins to a profile
+      description: Add the coin total for a profile ID
       tags:
         - Profiles
       parameters:
@@ -635,6 +635,44 @@ paths:
                 properties:
                   coins:
                     type: integer
+        '404':
+          description: Profile not found
+    put:
+      summary: Get coins for a profile
+      description: Retrieve the coin total for a profile ID
+      tags:
+        - Profiles
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                coins:
+                  type: integer
+              required:
+                - item_id
+      responses:
+        '200':
+          description: Coins returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  coins:
+                    type: integer
+        '400':
+          description: Invalid coin amount, or non existent coins
+        '401':
+          description: Coins added must be positive 
         '404':
           description: Profile not found
   /profile/{profile_id}/streak/:
