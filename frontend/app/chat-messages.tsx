@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
+import { supabase } from '@/config/supabase';
 
 interface Message {
   id: string;
-  sender: string;
+  sender_id: string;
   message_content: string;
   timestamp: string;
 }
@@ -33,6 +34,37 @@ export default function ChatMessages() {
     fetchMessages();
   }, [chat_room_id, token]);
 
+  // Subscribe to realtime message updates from Chat_Message table in Supabase
+  useEffect(() => {
+    if (!chat_room_id) {
+      Alert.alert('Error', 'Missing chat room ID');
+      return;
+    }
+
+    const channel = supabase
+      .channel('chat-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'Chat_Message',
+          filter: `chat_room_id=eq.${chat_room_id}`
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          setMessages((prevMessages) => {
+            return [...prevMessages, newMessage];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [chat_room_id]);
+
   const fetchMessages = async () => {
     try {
       const response = await fetch(`${API_URL}/chat/${chat_room_id}/messages/`, {
@@ -50,7 +82,6 @@ export default function ChatMessages() {
       const data = await response.json();
       setMessages(data);
     } catch (error) {
-      console.error('Error fetching messages:', error);
       Alert.alert('Error', 'Failed to load messages');
     } finally {
       setLoading(false);
@@ -58,7 +89,10 @@ export default function ChatMessages() {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || !profileId || !token) return;
+    if (!input.trim() || !profileId || !token) {
+      Alert.alert('Error', 'Missing input, profile ID, or token');
+      return;
+    }
 
     try {
       const response = await fetch(`${API_URL}/chat/${chat_room_id}/messages/`, {
@@ -77,11 +111,8 @@ export default function ChatMessages() {
         throw new Error(`Failed to send message (${response.status})`);
       }
 
-      const newMessage = await response.json();
-      setMessages([...messages, newMessage]);
       setInput('');
     } catch (error) {
-      console.error('Error sending message:', error);
       Alert.alert('Error', 'Failed to send message');
     }
   };
@@ -123,11 +154,9 @@ export default function ChatMessages() {
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => {
           const previous = messages[index - 1];
-          const showTime =
-            !previous ||
-            Math.abs(new Date(item.timestamp).getTime() - new Date(previous.timestamp).getTime()) > 10 * 60 * 1000; // show the time if 10+ min gap between messages
+          const showTime = !previous || Math.abs(new Date(item.timestamp).getTime() - new Date(previous.timestamp).getTime()) > 10 * 60 * 1000; // show the time if 10+ min gap between messages
 
-          const isMyMessage = item.sender === profileId;
+          const isMyMessage = item.sender_id === profileId;
 
           return (
             <View>

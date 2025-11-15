@@ -69,6 +69,10 @@ class Inventory(serializers.ModelSerializer):
         fields = '__all__'
 
 class ChatMessageSerializer(serializers.ModelSerializer):
+    # Im doing this since supabase realtime subscriptions give actual fields (exact field names)
+    # Django normally gives ForeignKey objects, but we need the ID directly for consistency in the frontend
+    sender_id = serializers.UUIDField(source='sender.id', read_only=True)
+
     class Meta:
         model = Chat_Message
-        fields = '__all__'
+        fields = ['id', 'chat_room_id', 'sender_id', 'message_content', 'timestamp']
