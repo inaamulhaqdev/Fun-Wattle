@@ -2,14 +2,32 @@ import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { API_URL } from '@/config/api';
+import { useApp } from '@/context/AppContext';
 
 export default function ChatRooms() {
   const router = useRouter();
+  const [rooms, setRooms] = React.useState<Array<{ id: string; name: string; profile_picture: string; last_message: string; }>>([]);
 
-  const rooms = [
-    { id: '1', name: 'Dr. Emily Carter', previousMessage: "Are you available for a call to discuss Jasmine's progress?" },
-    { id: '2', name: "Dr. James Brown", previousMessage: "Are you available for a call to discuss Jasmine's progress?" },
-  ];
+  // const rooms = [
+  //   { id: '1', name: 'Dr. Emily Carter', previousMessage: "Are you available for a call to discuss Jasmine's progress?" },
+  //   { id: '2', name: "Dr. James Brown", previousMessage: "Are you available for a call to discuss Jasmine's progress?" },
+  // ];
+
+  React.useEffect(() => {
+    // Fetch chat rooms
+    const { profile_id } = useApp();
+    fetch(`${API_URL}/chat/${profile_id}/rooms/`)
+      .then(response => response.json())
+      .then(data => {
+        // Update the rooms state with the fetched data
+        setRooms(data);
+        console.log(data);
+      })
+      .catch(error => {
+        console.error('Error fetching chat rooms:', error);
+      });
+  }, []);
 
   const openRoom = () => {
     router.push('/chat-messages');
@@ -29,7 +47,7 @@ export default function ChatRooms() {
             <View style={styles.roomText}>
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
-                {item.previousMessage}
+                {item.last_message}
               </Text>
             </View>
           </TouchableOpacity>
