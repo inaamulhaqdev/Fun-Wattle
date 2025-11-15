@@ -1,0 +1,52 @@
+[
+    {
+        "question_id": "495a57c5-d924-44da-a0ac-c01bdf8b0e8d", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["a lion zebra and giraffe"]
+    }, 
+    {
+        "question_id": "22ad38cb-14f6-4f49-9b67-2ed5b2508042", 
+        "question_text": "Which animal doesn`t have legs?", 
+        "expected_answers": ["snake"]
+    }, 
+    {
+        "question_id": "1736f943-c898-48d5-a4ee-89cb66fb38e0", 
+        "question_text": "Which animals are brown?", 
+        "expected_answers": ["lion","giraffe", "duck", "ducklings", "monkeys"]
+    }, 
+    {
+        "question_id": "2982ef7e-80e0-4c03-bead-f206c765261c", 
+        "question_text": "What might happen next? ", 
+        "expected_answers": ["zookeeper gives ducks food and they eat it", "ducks eat the food"]
+    },
+    {
+        "question_id": "9cae5360-67f8-47d0-b9ab-dea458e350fe", 
+        "question_text": "There are three monkeys in the cage. What is the colour of the monkey that is climbing?", 
+        "expected_answers": ["brown"]
+    }, 
+    {
+        "question_id": "89117c4b-7410-443a-a674-6063ec71c9ae", 
+        "question_text": "What would happen if the lion`s gate was left open?", 
+        "expected_answers": ["lion would escape", "lion would escape and eat the other animals", "lion would escape and attack the other animals"]
+    },
+    {
+        "question_id": "7873e82e-b2ef-45c5-93a3-a407d21e2505", 
+        "question_text": "What does the word “zookeeper” mean?", 
+        "expected_answers": ["person who takes care of the zoo", "person who works at a zoo and takes care of the animals"]
+    },
+    {
+        "question_id": "d5ccd799-800a-4951-bb1b-ac461872a41d", 
+        "question_text": "What does the word “wild” mean?", 
+        "expected_answers": ["untamed, not domesticated"]
+    },
+    {
+        "question_id": "158ea547-09ac-403d-b795-a8858854c7d7", 
+        "question_text": " Which item in the picture is not an animal.", 
+        "expected_answers": ["the zoo sign", "the fences", "the cage", "the zookeeper, the zookeeper`s clothes"]
+    },
+    {
+        "question_id": "cfa7bfc3-9b26-4750-841e-5632128275d1", 
+        "question_text": "If animals could talk, what might an elephant say?", 
+        "expected_answers": ["time to eat", "wow look at my trunk", "where are my babies", "i am so happy i am not in a fenced area", "my trunk feels heavy"]
+    }
+]
