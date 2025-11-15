@@ -62,7 +62,7 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
           const completedIds = childAssignments
             .filter((a: any) => a.completed_at !== null)
-            .map((a: any) => a.learning_unit);
+            .map((a: any) => a.learning_unit.id);
           setCompletedUnitIds(new Set(completedIds));
         } catch (err) {
           console.error('Error fetching assignments:', err);

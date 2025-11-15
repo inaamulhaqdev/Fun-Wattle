@@ -1,5 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { KeyboardAvoidingView, Keyboard, Platform, TouchableWithoutFeedback, ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { 
+  KeyboardAvoidingView, 
+  Keyboard, 
+  Platform, 
+  ScrollView, 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert,
+  Pressable
+} from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../config/supabase';
 import { API_URL } from '../config/api';
@@ -59,7 +71,7 @@ const ProfileCreationPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorisation': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
           user_id: user.id,
@@ -159,10 +171,13 @@ const ProfileCreationPage = () => {
   
   if (Platform.OS !== 'web') {
     return (
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
           {content}
-        </TouchableWithoutFeedback>
+        </Pressable>
       </KeyboardAvoidingView>
     );
   }

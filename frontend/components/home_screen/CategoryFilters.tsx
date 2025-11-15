@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
-import { Button, ActivityIndicator } from "react-native-paper";
+import { Button } from "react-native-paper";
 import FilteredView from "./FilteredView";
 import { API_URL } from '@/config/api';
 import { useApp } from "@/context/AppContext";
+import { useFocusEffect } from '@react-navigation/native';
 
 export const segments = [
   { value: "total", label: "Total" },
@@ -42,33 +43,35 @@ const Filters = ({ assignedUnits }: FiltersProps) => {
 
   const { session, childId } = useApp();
 
-  useEffect(() => {
-    const fetchTotals = async () => {
+  useFocusEffect(
+    useCallback(() => {
       if (!childId) return;
 
-      setFetchingStats(true);
+      const fetchTotals = async () => {
+        setFetchingStats(true);
+        try {
+          const response = await fetch(`${API_URL}/result/${childId}/learning_unit_overall/${selected}`, {
+            method: 'GET',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token}`,
+            },
+          });
 
-      try {
-        const response = await fetch(`${API_URL}/result/${childId}/learning_unit_overall/${selected}`, {
-          method: 'GET',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
-          },
-        });
+          if (!response.ok) throw new Error(`Failed to fetch exercises (${response.status})`);
 
-        if (!response.ok) throw new Error(`Failed to fetch exercises (${response.status})`);
+          const data = await response.json();
+          setStats(data);
+        } catch (err) {
+          console.error("Failed to fetch unit stats:", err);
+        } finally {
+          setFetchingStats(false);
+        }
+      };
 
-        const data = await response.json();
-        setStats(data);
-      } catch (err) {
-        console.error("Failed to fetch unit stats:", err);
-      } finally {
-        setFetchingStats(false);
-      }
-    };
-    fetchTotals();
-  }, [childId, selected]);
+      fetchTotals();
+    }, [childId, selected])
+  );
 
   const renderContent = () => {
     return <FilteredView units={assignedUnits} category={selected} statistics={statistics} fetchingStats={fetchingStats}/>;
