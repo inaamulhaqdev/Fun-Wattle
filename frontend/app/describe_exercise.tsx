@@ -11,7 +11,7 @@ import { Buffer } from 'buffer';
 
 // Question data interfaces
 interface Question {
-  id: number;
+  id: string;
   question: string;
   image: string;
   show_pointer: boolean;
@@ -28,9 +28,11 @@ interface DescribeExercise {
 }
 
 interface ApiQuestion {
-  id: number;
-  question_data: string | object;
+  id: string;
+  question_type: string;
   order: number;
+  question_data: string | object;
+  created_at: string;
 }
 
 // Fetch questions for a specific exercise by ID
@@ -75,30 +77,52 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeE
     }
 
     // Transform API questions to our Question format
+    console.log('BEFORE TRANSFORMATION - Raw questionsData:', questionsData);
+    
     const transformedQuestions: Question[] = questionsData
       .sort((a: ApiQuestion, b: ApiQuestion) => a.order - b.order) // Sort by order
       .map((apiQuestion: ApiQuestion, index: number) => {
         try {
+          console.warn('ALERT: PROCESSING QUESTION INDEX', index + 1);
+          console.warn('ALERT: RAW ID:', apiQuestion.id, 'TYPE:', typeof apiQuestion.id);
+          console.error('ERROR-LEVEL LOG - Question Data:', apiQuestion.question_data);
+          console.info('INFO: Question Order:', apiQuestion.order);
+          
           // Handle both string and object cases for question_data
           let questionData;
           if (typeof apiQuestion.question_data === 'string') {
+            console.log('🔄 Parsing question_data as JSON string');
             questionData = JSON.parse(apiQuestion.question_data);
           } else {
+            console.log('✅ Using question_data as object directly');
             questionData = apiQuestion.question_data;
           }
-          console.log(`Question ${index + 1} data:`, questionData);
+          console.log(`📋 Question ${index + 1} parsed data:`, questionData);
 
-          return {
-            id: index + 1,
+          // DEBUG: Check if apiQuestion.id is actually present
+          console.error('🚨 CRITICAL DEBUG - apiQuestion object:', apiQuestion);
+          console.error('🚨 CRITICAL DEBUG - apiQuestion.id value:', apiQuestion.id);
+          console.error('🚨 CRITICAL DEBUG - typeof apiQuestion.id:', typeof apiQuestion.id);
+          console.error('🚨 CRITICAL DEBUG - apiQuestion.id === undefined?', apiQuestion.id === undefined);
+          
+          const finalId = apiQuestion.id || `fallback_${index + 1}`;
+          console.error('🚨 CRITICAL DEBUG - Final ID being used:', finalId);
+          
+          const transformedQuestion = {
+            id: finalId, // Use finalId to debug what's actually being assigned
             question: questionData.question || 'Question not available',
             image: questionData.image || '',
             show_pointer: questionData.show_pointer || false,
             pointerPosition: questionData.pointerPosition || undefined
           };
+          
+          console.warn(`ALERT: FINAL TRANSFORMED Question ${index + 1}:`, transformedQuestion);
+          console.error(`ERROR-LEVEL: ID IS ALREADY STRING ${apiQuestion.id} (${typeof apiQuestion.id}) → "${transformedQuestion.id}" (${typeof transformedQuestion.id})`);
+          return transformedQuestion;
         } catch (parseError) {
           console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
           return {
-            id: index + 1,
+            id: apiQuestion.id, // Already a string UUID
             question: 'Error loading question',
             image: '',
             show_pointer: false,
@@ -127,29 +151,8 @@ const fallbackExercise: DescribeExercise = {
   title: 'Describe Exercise',
   questions: [
     {
-      id: 1,
+      id: '1',
       question: "Where are we?",
-      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
-      show_pointer: false,
-      pointerPosition: undefined
-    },
-    {
-      id: 2,
-      question: "What colour is the water?",
-      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
-      show_pointer: true,
-      pointerPosition: { top: "250", left: "100" }
-    },
-    {
-      id: 3,
-      question: "What is the weather like?",
-      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
-      show_pointer: true,
-      pointerPosition: { top: "100", left: "100" }
-    },
-    {
-      id: 4,
-      question: "What else can you see?",
       image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
       show_pointer: false,
       pointerPosition: undefined
@@ -239,7 +242,7 @@ const DescribeExerciseComponent = () => {
   const [sessionStartTime] = useState(Date.now()); // Used in commented backend submission
   const { session } = useApp();
   const [exerciseResponses, setExerciseResponses] = useState<{ // Used in commented backend submission
-    questionId: number;
+    questionId: string; // Now string UUID instead of number
     question: string;
     response: string; // In real app, this would be transcribed audio
     timeSpent: number;
@@ -536,7 +539,7 @@ const DescribeExerciseComponent = () => {
         setExerciseResponses(prev => [
           ...prev,
           {
-            questionId: currentQData.id,
+            questionId: currentQData.id, // Use string UUID directly
             question: currentQData.question,
             response: uri,
             timeSpent,
@@ -720,7 +723,7 @@ const DescribeExerciseComponent = () => {
         <Image
           source={currentQ.image ? { uri: currentQ.image } : require('@/assets/images/beach.jpg')}
           style={styles.beachImage}
-          resizeMode="cover"
+          resizeMode="contain"
         />
 
         {/* Pointer for ocean question */}
