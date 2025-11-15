@@ -48,4 +48,5 @@ urlpatterns = [
 
     # Chat Routes
     path('chat/<str:profile_id>/rooms/', get_chat_rooms, name='get_chat_rooms'), # GET
+    path('chat/<str:chat_room_id>/messages/', chat_messages, name='chat_messages'), # GET, POST
 ]

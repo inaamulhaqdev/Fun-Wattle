@@ -67,3 +67,8 @@ class Inventory(serializers.ModelSerializer):
     class Meta:
         model = Inventory
         fields = '__all__'
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chat_Message
+        fields = '__all__'

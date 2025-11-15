@@ -4,20 +4,28 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
+import { Alert } from 'react-native';
 
 export default function ChatRooms() {
   const router = useRouter();
   const [rooms, setRooms] = React.useState<Array<{ id: string; name: string; profile_picture: string; last_message: string; }>>([]);
-
-  // const rooms = [
-  //   { id: '1', name: 'Dr. Emily Carter', previousMessage: "Are you available for a call to discuss Jasmine's progress?" },
-  //   { id: '2', name: "Dr. James Brown", previousMessage: "Are you available for a call to discuss Jasmine's progress?" },
-  // ];
+  const { profileId, session } = useApp();
+  const token = session?.access_token;
 
   React.useEffect(() => {
     // Fetch chat rooms
-    const { profile_id } = useApp();
-    fetch(`${API_URL}/chat/${profile_id}/rooms/`)
+    if (!profileId || !token) {
+      Alert.alert('Error', 'Missing profile ID or token');
+      return;
+    }
+
+    fetch(`${API_URL}/chat/${profileId}/rooms/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    })
       .then(response => response.json())
       .then(data => {
         // Update the rooms state with the fetched data
@@ -29,8 +37,11 @@ export default function ChatRooms() {
       });
   }, []);
 
-  const openRoom = () => {
-    router.push('/chat-messages');
+  const openRoom = (roomId: string, roomName: string) => {
+    router.push({
+      pathname: '/chat-messages',
+      params: { chat_room_id: roomId, recipient_name: roomName }
+    });
   };
 
   return (
@@ -40,7 +51,7 @@ export default function ChatRooms() {
         data={rooms}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.room} onPress={openRoom}>
+          <TouchableOpacity style={styles.room} onPress={() => openRoom(item.id, item.name)}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
             </View>

@@ -44,13 +44,36 @@ def get_chat_rooms(request, profile_id):
 
     return Response(data, status=200)
 
-# This needs more work to determine who the recipient is based on the profile type
-# @api_view(['GET'])
-# def get_chat_messages(request, chat_room_id):
-#     chat_room = Chat_Room.objects.filter(id=chat_room_id).first()
-#     if not chat_room:
-#         return Response({'error': 'Chat room not found'}, status=404)
 
-#     messages = Chat_Message.objects.filter(chat_room=chat_room).order_by('timestamp')
-#     serializer = ChatMessageSerializer(messages, many=True)
-#     return Response(serializer.data, status=200)
+@api_view(['GET', 'POST'])
+def chat_messages(request, chat_room_id):
+    chat_room = Chat_Room.objects.filter(id=chat_room_id).first()
+    if not chat_room:
+        return Response({'error': 'Chat room not found'}, status=404)
+
+    # Get all messages for a chat room
+    if request.method == 'GET':
+        messages = Chat_Message.objects.filter(chat_room=chat_room).order_by('timestamp')
+        serializer = ChatMessageSerializer(messages, many=True)
+        return Response(serializer.data, status=200)
+
+    # Post a new message to a chat room
+    elif request.method == 'POST':
+        sender_profile_id = request.data.get('sender_profile_id')
+        message_content = request.data.get('message_content')
+
+        if not sender_profile_id or not message_content:
+            return Response({'error': 'Missing required fields: sender_profile_id, message_content'}, status=400)
+
+        sender_profile = Profile.objects.filter(id=sender_profile_id).first()
+        if not sender_profile:
+            return Response({'error': 'Sender profile not found'}, status=404)
+
+        chat_message = Chat_Message.objects.create(
+            chat_room=chat_room,
+            sender=sender_profile,
+            message_content=message_content
+        )
+
+        serializer = ChatMessageSerializer(chat_message)
+        return Response(serializer.data, status=201)

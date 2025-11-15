@@ -1,43 +1,103 @@
-import React, { useState } from 'react';
-import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useApp } from '@/context/AppContext';
+import { API_URL } from '@/config/api';
+
+interface Message {
+  id: string;
+  sender: string;
+  message_content: string;
+  timestamp: string;
+}
 
 export default function ChatMessages() {
   const router = useRouter();
-  {/* TODO: replace hardcoded values with dynamic */}
-  const [messages, setMessages] = useState([
-    {
-      id: '1',
-      sender: 'them',
-      text: 'Let me know if I can provide you with anymore information.',
-      timestamp: new Date('2025-11-13T10:30:00'),
-    },
-    {
-      id: '2',
-      sender: 'me',
-      text: 'Are you available for a call to discuss Jasmine\'s progress?',
-      timestamp: new Date('2025-11-13T10:32:00'),
-    },
-  ]);
+  const { chat_room_id, recipient_name } = useLocalSearchParams<{ chat_room_id: string; recipient_name: string }>();
+  const { profileId, session } = useApp();
+  const token = session?.access_token;
+
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    const newMessage = {
-      id: Date.now().toString(),
-      sender: 'me',
-      text: input,
-      timestamp: new Date(),
-    };
-    setMessages([...messages, newMessage]);
-    setInput('');
+  // Fetch messages from the database
+  useEffect(() => {
+    if (!chat_room_id || !token) {
+      Alert.alert('Error', 'Missing chat room ID or token');
+      return;
+    }
+
+    fetchMessages();
+  }, [chat_room_id, token]);
+
+  const fetchMessages = async () => {
+    try {
+      const response = await fetch(`${API_URL}/chat/${chat_room_id}/messages/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch messages (${response.status})`);
+      }
+
+      const data = await response.json();
+      setMessages(data);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      Alert.alert('Error', 'Failed to load messages');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatTime = (date: Date) => {
+  const sendMessage = async () => {
+    if (!input.trim() || !profileId || !token) return;
+
+    try {
+      const response = await fetch(`${API_URL}/chat/${chat_room_id}/messages/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          sender_profile_id: profileId,
+          message_content: input.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send message (${response.status})`);
+      }
+
+      const newMessage = await response.json();
+      setMessages([...messages, newMessage]);
+      setInput('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      Alert.alert('Error', 'Failed to send message');
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading messages...</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -53,8 +113,7 @@ export default function ChatMessages() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
-           {/* TODO: replace hardcoded values with dynamic */}
-          <Text style={styles.headerName}>Dr. Emily Carter</Text>
+          <Text style={styles.headerName}>{recipient_name || 'Chat'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -66,7 +125,9 @@ export default function ChatMessages() {
           const previous = messages[index - 1];
           const showTime =
             !previous ||
-            Math.abs(item.timestamp.getTime() - previous.timestamp.getTime()) > 10 * 60 * 1000; // show the time if 10+ min gap between messages
+            Math.abs(new Date(item.timestamp).getTime() - new Date(previous.timestamp).getTime()) > 10 * 60 * 1000; // show the time if 10+ min gap between messages
+
+          const isMyMessage = item.sender === profileId;
 
           return (
             <View>
@@ -76,15 +137,15 @@ export default function ChatMessages() {
               <View
                 style={[
                   styles.messageBubble,
-                  item.sender === 'me' ? styles.myMessage : styles.theirMessage,
+                  isMyMessage ? styles.myMessage : styles.theirMessage,
                 ]}
               >
                 <Text style={[
                   styles.messageText,
-                  item.sender == 'me' && { color: 'white' },
+                  isMyMessage && { color: 'white' },
                 ]}
               >
-                {item.text}
+                {item.message_content}
               </Text>
               </View>
             </View>
@@ -123,9 +184,8 @@ export default function ChatMessages() {
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
 
-            {/* TODO: replace hardcoded values with dynamic */}
-            <Text style={styles.modalTitle}>Dr. Emily Carter</Text>
-            <Text style={styles.modalText}>Email: elon.muck@funwattle.com</Text>
+            <Text style={styles.modalTitle}>{recipient_name || 'Chat'}</Text>
+            <Text style={styles.modalText}>Email: Contact details coming soon</Text>
           </View>
         </View>
       </Modal>
