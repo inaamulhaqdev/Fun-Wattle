@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, ActivityIndicator } from "react-native-paper";
-import Filters from "@/components/home_screen/Filters";
+import Filters from "@/components/home_screen/CategoryFilters";
 import AddChild from '@/components/AddChildCard';
 import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
@@ -145,46 +145,6 @@ export default function ParentDashboard() {
   // Get assignments on focus
   useFocusEffect(
     React.useCallback(() => {
-      const fetchAssignments = async () => {
-        try {
-          const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
-
-          if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
-
-          const assignments = await assignmentsResp.json();
-
-          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
-
-          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
-            assignmentId: assignment.id,
-            learningUnitId: assignment.learning_unit.id,
-            title: assignment.learning_unit.title || '',
-            category: assignment.learning_unit.category || '',
-            participationType: assignment.participation_type,
-            assignedDate: formatDate(assignment.assigned_at),
-          }));
-
-          const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
-            assignedUnitsDetails.map(async (unit) => {
-              const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, childId);
-              return {
-                ...unit,
-                time: totalDuration,
-                status,
-              };
-            })
-          );
-
-          setData(assignedUnitsWithStats);
-
-        } catch (err) {
-          console.error(err);
-          Alert.alert('Error', 'Failed to load learning units.');
-        } finally {
-          setLoadingAssignments(false);
-        }
-      };
-
       fetchAssignments();
     }, [fetchAssignments])
   );
