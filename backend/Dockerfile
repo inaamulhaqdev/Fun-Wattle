@@ -23,4 +23,4 @@ COPY . .
 # Expose Django's port
 EXPOSE 7000
 
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:${PORT}"]
+CMD gunicorn backend.wsgi:application --bind 0.0.0.0:${PORT}
