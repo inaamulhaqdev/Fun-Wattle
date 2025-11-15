@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const { width, height } = Dimensions.get('window');
@@ -304,12 +303,12 @@ export default function MultipleDragExercise() {
   const params = useLocalSearchParams();
   const exerciseId = params.exerciseId as string;
 
+  const [exercise, setExercise] = useState<Exercise | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [exercise, setExercise] = useState<Exercise | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const [showRetryModal, setShowRetryModal] = useState(false);
@@ -320,7 +319,6 @@ export default function MultipleDragExercise() {
 
   const [sessionStartTime] = useState(Date.now());
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  const [progressRestored, setProgressRestored] = useState(false);
 
   // Fallback exercise data
   const fallbackExercise: Exercise = useMemo(() => ({
@@ -380,67 +378,28 @@ export default function MultipleDragExercise() {
     }
   };
 
-  // Load saved progress from AsyncStorage
-  const loadSavedProgress = useCallback(async () => {
-    if (!childId || !exerciseId) {
-      console.log('Missing childId or exerciseId, cannot load progress');
-      return;
-    }
-
-    try {
-      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-      const savedProgressString = await AsyncStorage.getItem(storageKey);
-      
-      if (savedProgressString) {
-        const savedProgress = JSON.parse(savedProgressString);
-        console.log('Found saved progress:', savedProgress);
-
-        // Validate that the saved progress is for the same exercise
-        if (savedProgress.exerciseId === exerciseId && savedProgress.childId === childId) {
-          console.log('Restoring progress...');
-          
-          // Restore the saved state
-          setCurrentQuestion(savedProgress.currentQuestion || 0);
-          setScore(savedProgress.score || 0);
-          setRetryCount(savedProgress.retryCount || 0);
-          
-          // Reset answer state for the current question
-          setAnswered(false);
-          setSelectedOption(null);
-          setQuestionStartTime(Date.now()); // Reset question timer
-          
-          // Mark that progress was restored
-          setProgressRestored(true);
-          
-          console.log(`Progress restored: Question ${savedProgress.currentQuestion + 1}, Score ${savedProgress.score}`);
-        } else {
-          console.log('Saved progress is for different exercise/child, ignoring');
-        }
-      } else {
-        console.log('No saved progress found');
-      }
-    } catch (error) {
-      console.error('Error loading saved progress:', error);
-    }
-  }, [childId, exerciseId]);
-
-  // Clear saved progress from AsyncStorage
-  const clearSavedProgress = async () => {
-    if (!childId || !exerciseId) {
-      return;
-    }
-
-    try {
-      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-      await AsyncStorage.removeItem(storageKey);
-      console.log('Saved progress cleared');
-    } catch (error) {
-      console.error('Error clearing saved progress:', error);
-    }
-  };
-
-  // Initialize session and handle cleanup
+  // Initialize and load exercise data
   useEffect(() => {
+    // Load saved progress if available
+    const loadSavedProgress = () => {
+      if (!childId || !exerciseId) return null;
+      
+      try {
+        const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+        const savedData = localStorage.getItem(storageKey);
+        
+        if (savedData) {
+          const progressData = JSON.parse(savedData);
+          console.log('Found saved progress:', progressData);
+          return progressData;
+        }
+      } catch (error) {
+        console.error('Error loading saved progress:', error);
+      }
+      
+      return null;
+    };
+
     const loadExerciseData = async () => {
       console.log('useEffect running - exerciseId:', exerciseId);
       console.log('useEffect running - childId:', childId);
@@ -455,6 +414,17 @@ export default function MultipleDragExercise() {
         if (fetchedExercise) {
           console.log('Successfully loaded exercise data:', fetchedExercise);
           setExercise(fetchedExercise);
+          
+          // Check for saved progress and restore state
+          const savedProgress = loadSavedProgress();
+          if (savedProgress) {
+            setCurrentQuestion(savedProgress.currentQuestion || 0);
+            setScore(savedProgress.score || 0);
+            setRetryCount(savedProgress.retryCount || 0);
+            setQuestionStartTime(Date.now()); // Reset question timer
+            console.log('Progress restored from saved state');
+          }
+          
           setIsLoading(false);
           return;
         } else {
@@ -465,31 +435,22 @@ export default function MultipleDragExercise() {
       // Use fallback data if API fetch failed
       console.log('Using fallback exercise data');
       setExercise(fallbackExercise);
-
-      setIsLoading(false);
       
-      // Load saved progress after exercise data is loaded
-      await loadSavedProgress();
+      // Check for saved progress even with fallback data
+      const savedProgress = loadSavedProgress();
+      if (savedProgress) {
+        setCurrentQuestion(savedProgress.currentQuestion || 0);
+        setScore(savedProgress.score || 0);
+        setRetryCount(savedProgress.retryCount || 0);
+        setQuestionStartTime(Date.now());
+        console.log('Progress restored from saved state (fallback)');
+      }
+      
+      setIsLoading(false); 
     };
 
     loadExerciseData();
-  }, [childId, exerciseId, fallbackExercise, loadSavedProgress]);
-
-  // Reset question start time when question changes
-  useEffect(() => {
-    setQuestionStartTime(Date.now());
-  }, [currentQuestion]);
-
-  // Hide progress restored notification after 3 seconds
-  useEffect(() => {
-    if (progressRestored) {
-      const timer = setTimeout(() => {
-        setProgressRestored(false);
-      }, 3000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [progressRestored]);
+  }, [childId, exerciseId, fallbackExercise]); // loadSavedProgress is called inside useEffect so no need to include it
 
   // Submit question result to backend
   const submitQuestionResult = async (questionId: string, correct: boolean, timeSpent: number, attempts: number) => {
@@ -636,7 +597,7 @@ export default function MultipleDragExercise() {
     }
 
     try {
-      // Save current progress to AsyncStorage
+      // Save current progress to localStorage or backend
       const progressData = {
         exerciseId,
         childId,
@@ -647,9 +608,9 @@ export default function MultipleDragExercise() {
         timestamp: Date.now()
       };
 
-      // Save to AsyncStorage for React Native
+      // Save to localStorage for now (could be enhanced to save to backend)
       const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-      await AsyncStorage.setItem(storageKey, JSON.stringify(progressData));
+      localStorage.setItem(storageKey, JSON.stringify(progressData));
       
       console.log('Progress saved:', progressData);
       
@@ -660,7 +621,20 @@ export default function MultipleDragExercise() {
     router.back();
   };
 
+  // Clear saved progress from localStorage
+  const clearSavedProgress = () => {
+    if (!childId || !exerciseId) {
+      return;
+    }
 
+    try {
+      const storageKey = `exercise_progress_${exerciseId}_${childId}`;
+      localStorage.removeItem(storageKey);
+      console.log('Saved progress cleared');
+    } catch (error) {
+      console.error('Error clearing saved progress:', error);
+    }
+  };
 
   // Submit exercise completion to backend (no body, just POST request)
   const submitExerciseResults = async () => {
@@ -821,15 +795,6 @@ export default function MultipleDragExercise() {
         </View>
       </View>
 
-      {/* Progress Restored Notification */}
-      {progressRestored && (
-        <View style={styles.progressRestoredBanner}>
-          <Text style={styles.progressRestoredText}>
-            ✓ Returning to Question {currentQuestion + 1}
-          </Text>
-        </View>
-      )}
-
       {/* Question */}
       <View style={styles.questionContainer}>
         <Text style={styles.questionNumber}>Question {currentQuestion + 1}</Text>
@@ -875,9 +840,7 @@ export default function MultipleDragExercise() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Exit Exercise?</Text>
-            <Text style={styles.modalText}>
-              Your progress will be lost if you exit now. Are you sure you want to leave?
-            </Text>
+            {/*<Text style={styles.modalText}>Are you sure you want to leave?</Text>*/}
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalCancelButton} onPress={handleCancelProgressExit}>
                 <Text style={styles.modalCancelButtonText}>Cancel</Text>
@@ -1064,20 +1027,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  progressRestoredBanner: {
-    backgroundColor: 'rgba(76, 175, 80, 0.9)', // Green background
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    marginHorizontal: 20,
-    marginBottom: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  progressRestoredText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
   },
   questionContainer: {
     padding: 24,
