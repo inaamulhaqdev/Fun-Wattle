@@ -92,6 +92,17 @@ def results_for_exercise(request, child_id, exercise_id):
             }
         )
 
+        # If all exercises for the learning unit are completed, mark assignment as completed
+        total_exercises = Exercise.objects.filter(learning_unit=exercise.learning_unit).count()
+        completed_exercises = Exercise_Result.objects.filter(
+            assignment=assignment,
+            completed_at__isnull=False
+        ).count()
+
+        if completed_exercises == total_exercises:
+            assignment.completed_at = timezone.now()
+            assignment.save()
+
         return Response({'message': 'Exercise marked as completed'}, status=200)
 
 
