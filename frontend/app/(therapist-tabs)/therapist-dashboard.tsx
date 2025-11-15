@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Menu, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
 import Filters from "../../components/home_screen/Filters";
@@ -21,17 +21,51 @@ const formatDate = (isoString: string): string => {
   });
 };
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning"; 
+  if (hour < 18) return "Good afternoon"; 
+  return "Good evening"; 
+}
+
 export default function TherapistDashboard() {
   const { childId, session } = useApp();
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [therapistName, setTherapistName] = useState('');
-  const [childList, setChildList] = useState<string[]>([]);
+  const [childList, setChildList] = useState<Account[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
+  const [selectedChildId, setSelectedChildId] = useState<string>(childList[0]?.id || '');
+
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
 
   const loading = loadingProfiles || loadingAssignments;
+
+  const [greeting, setGreeting] = useState(getGreeting());
+
+  // every 60 seconds, checks if the greeting should be changed according to time (eg. app left open, time switches from morning to midday; greeting changes to 'Good afternoon' without reload)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGreeting(getGreeting());
+    }, 60 * 1000); 
+
+    return () => clearInterval(interval); 
+  }, []);
+
+  // therapist greeting fade in animation
+  const fadeAnimation = React.useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (therapistName) {
+        Animated.timing(fadeAnimation, {
+        toValue: 1,
+        duration: 800, // fade-in duration in ms
+        useNativeDriver: true,
+    }).start();
+  }
+}, [therapistName]);
+
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -63,10 +97,10 @@ export default function TherapistDashboard() {
         const therapistProfile = transformedData.find(profile => profile.type === 'therapist');
         if (therapistProfile) setTherapistName(therapistProfile.name);
 
-        const children = transformedData.filter(p => p.type === 'child').map(p => p.name);
-        setChildList(children);
+        const childrenFull = transformedData.filter(p => p.type === 'child');
+        setChildList(childrenFull);
+        if (childrenFull.length > 0) setSelectedChild(childrenFull[0].name);
 
-        if (children.length > 0) setSelectedChild(children[0]);
       } catch (error) {
         console.error('Error fetching profiles:', error);
         Alert.alert('Error', 'Failed to load profiles. Please try again.');
@@ -91,7 +125,7 @@ export default function TherapistDashboard() {
 
           const assignments = await assignmentsResp.json();
 
-          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
+          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === selectedChildId);
 
           const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
             assignmentId: assignment.id,
@@ -104,7 +138,7 @@ export default function TherapistDashboard() {
 
           const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
             assignedUnitsDetails.map(async (unit) => {
-              const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, childId);
+              const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, selectedChildId);
               return {
                 ...unit,
                 time: totalDuration,
@@ -123,8 +157,8 @@ export default function TherapistDashboard() {
         }
       };
 
-      fetchAssignments();
-    }, [childId, userId])
+      if (selectedChildId) fetchAssignments();
+    }, [selectedChildId, userId])
   );
 
   if (loading) {
@@ -141,38 +175,50 @@ export default function TherapistDashboard() {
     <PaperProvider theme={DefaultTheme}>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-            <Text style={styles.headerTitle}>Good evening, {therapistName}!</Text>
+            <Animated.Text style={[styles.headerTitle, { opacity: fadeAnimation }]}>
+              {getGreeting()}, {therapistName}!
+              </Animated.Text>
         </View>
 
         <View style={styles.body}>
           <View style={styles.subtitleRow}>
             {childList.length > 0 ? (
               <>
-                <Menu
-                  visible={menuVisible}
-                  onDismiss={() => setMenuVisible(false)}
-                  anchor={
-                    <TouchableOpacity style={styles.childButton} onPress={() => setMenuVisible(true)}>
-                      <Text style={styles.childText}>{selectedChild}</Text>
-                    </TouchableOpacity>
-                  }
-                  style={styles.menuContainer}
-                >
-                  {childList.map((child) => (
-                    <Menu.Item
-                      key={child}
-                      onPress={() => {
-                        setSelectedChild(child);
-                        setMenuVisible(false);
-                      }}
-                      title={child}
-                      titleStyle={{ color: "#000000ff", fontWeight: "500" }}
-                      style={{ backgroundColor: "#f7f7f7", borderRadius: 10 }}
-                    />
-                  ))}
-                </Menu>
+              {childList.length > 1 ? (
+              <View>
+              <Menu
+                visible={menuVisible}
+                onDismiss={() => setMenuVisible(false)}
+                anchor={
+                  <TouchableOpacity style={styles.childButton} onPress={() => setMenuVisible(true)}>
+                    <Text style={styles.childText}>{selectedChild}</Text>
+                  </TouchableOpacity>
+                }
+                style={styles.menuContainer}
+              >
+                {childList.map((childObj) => (
+                  <Menu.Item
+                    key={childObj.id}
+                    onPress={() => {
+                      setSelectedChild(childObj.name);
+                      setSelectedChildId(childObj.id);
+                      setMenuVisible(false);
+                    }}
+                    title={childObj.name}
+                    titleStyle={{ color: "#000", fontWeight: "500" }}
+                    style={styles.menuItem}
+                  />
+                ))}
+              </Menu>
+              </View>
+            ) : (
+              <View style={styles.childButton}>
+                <Text style={styles.childText}>{selectedChild}</Text>
+              </View>
+            )}
 
-                <Text variant="bodyMedium" style={styles.subtitle}>&apos;s progress this week.</Text>
+
+                <Text variant="bodyMedium" style={styles.subtitle}>\u2019s progress this week.</Text>
               </>
             ) : (
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
@@ -188,7 +234,7 @@ export default function TherapistDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffff",
+    backgroundColor: "#fd9029",
   },
   loading: {
     flex: 1,
@@ -220,11 +266,21 @@ const styles = StyleSheet.create({
   menuContainer: {
     backgroundColor: "#fff",
     borderRadius: 12,
+    elevation: 4, 
+    paddingVertical: 4,
+  },
+  menuItem: {
+    backgroundColor: "#ffffff", 
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    paddingVertical: 6,
+    borderRadius: 0,
   },
   header: {
     backgroundColor: '#fd9029',
-    paddingTop: 65,
-    paddingBottom: 15,
+    paddingTop: 30,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
@@ -241,5 +297,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 20,
   }
 });
