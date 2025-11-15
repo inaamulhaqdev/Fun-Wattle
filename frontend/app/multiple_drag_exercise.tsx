@@ -484,15 +484,6 @@ export default function MultipleDragExercise() {
         'Content-Type': 'application/json',
       };
 
-      // Temporarily disable Authorization to test if that's the issue
-      // if (session?.access_token) {
-      //   headers['Authorization'] = `Bearer ${session.access_token}`;
-      //   console.log('🔍 Adding Authorization header');
-      // } else {
-      //   console.log('⚠️ No access token found, sending without Authorization');
-      // }
-      console.log('🧪 TESTING: Sending without Authorization header to debug');
-
       const response = await fetch(url, {
         method: 'POST',
         headers: headers,
