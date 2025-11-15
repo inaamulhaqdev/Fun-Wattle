@@ -3,14 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 interface CounterProps {
   value: number;
-  type: string;
   onChange: (newValue: number) => void;
 }
 
-export default function Counter({ value, onChange, type }: CounterProps) {
+export default function Counter({ value, onChange }: CounterProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Number of {type}</Text>
+      <Text style={styles.label}>Number of question retries</Text>
       <View style={styles.counter}>
 
         {/* Decrement */}

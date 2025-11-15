@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { Button, IconButton, Divider } from 'react-native-paper';
 import Counter from './AssignmentPillButton';
@@ -22,6 +22,15 @@ export default function AssignmentStatus({
 }: AssignmentStatusProps) {
   const [selected, setSelected] = useState(status || "");
   const [retries, setRetries] = useState(initialRetries);
+
+  useEffect(() => {
+    if (visible) {
+      setSelected(status || '');
+      setRetries(initialRetries);
+    }
+  }, [visible, status, initialRetries]);
+
+  const isAssigned = selected !== 'Unassigned';
 
   return (
     <Modal transparent visible={visible} animationType="fade">
@@ -51,20 +60,23 @@ export default function AssignmentStatus({
             </View>
           ))}
 
-          <View style={{ marginTop: 5 }}>
-            <Counter value={retries} onChange={setRetries} type="question retries"/>
-            <Button
-              mode="contained"
-              onPress={() => {
-                onSelect(selected, retries);
-              }}
-              style={styles.confirmButton}
-              contentStyle={{ paddingVertical: 8 }}
-              textColor="black"
-            >
-              Continue
-            </Button>
-          </View>  
+          {isAssigned && (
+            <View style={{ marginTop: 5 }}>
+              <Counter value={retries} onChange={setRetries}/>
+            </View>
+          )};
+          
+          <Button
+            mode="contained"
+            onPress={() => {
+              onSelect(selected, retries);
+            }}
+            style={styles.confirmButton}
+            contentStyle={{ paddingVertical: 8 }}
+            textColor="black"
+          >
+            Continue
+          </Button>        
         </View>
       </View>
     </Modal>
