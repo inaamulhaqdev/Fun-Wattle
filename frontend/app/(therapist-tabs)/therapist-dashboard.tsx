@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View, Animated } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, Menu, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { Text, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { Dropdown } from "react-native-element-dropdown";
 import Filters from "../../components/home_screen/CategoryFilters";
 import { supabase } from '@/config/supabase';
 import { API_URL } from '@/config/api';
@@ -35,11 +36,9 @@ export default function TherapistDashboard() {
   const [therapistName, setTherapistName] = useState('');
   const [childList, setChildList] = useState<Account[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
-  const [selectedChildId, setSelectedChildId] = useState<string>(childList[0]?.id || '');
-
-  const [menuVisible, setMenuVisible] = React.useState(false);
+  const [selectedChildId, setSelectedChildId] = useState<string>('');
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
-
+  const [childLoading, setChildLoading] = useState(false);
   const loading = loadingProfiles || loadingAssignments;
 
   const [greeting, setGreeting] = useState(getGreeting());
@@ -52,20 +51,6 @@ export default function TherapistDashboard() {
 
     return () => clearInterval(interval); 
   }, []);
-
-  // therapist greeting fade in animation
-  const fadeAnimation = React.useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (therapistName) {
-        Animated.timing(fadeAnimation, {
-        toValue: 1,
-        duration: 800, // fade-in duration in ms
-        useNativeDriver: true,
-    }).start();
-  }
-}, [therapistName]);
-
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -99,7 +84,10 @@ export default function TherapistDashboard() {
 
         const childrenFull = transformedData.filter(p => p.type === 'child');
         setChildList(childrenFull);
-        if (childrenFull.length > 0) setSelectedChild(childrenFull[0].name);
+        if (childrenFull.length > 0) {
+          setSelectedChild(childrenFull[0].name);
+          setSelectedChildId(childrenFull[0].id);
+        }
 
       } catch (error) {
         console.error('Error fetching profiles:', error);
@@ -115,7 +103,7 @@ export default function TherapistDashboard() {
   const userId = session.user.id
   const fetchAssignments = React.useCallback(async () => {
     try {
-      setLoading(true);
+      setLoadingAssignments(true);
 
       const [unitsResp, assignmentsResp] = await Promise.all([
         fetch(`${API_URL}/content/learning_units/`),
@@ -127,7 +115,7 @@ export default function TherapistDashboard() {
       const allUnits = await unitsResp.json();
       const assignments = await assignmentsResp.json();
 
-      const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
+      const childAssignments = assignments.filter((a: any) => a.assigned_to === selectedChildId);
 
       const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => {
         const unit = allUnits.find((unit: any) => unit.id === assignment.learning_unit);
@@ -234,7 +222,7 @@ export default function TherapistDashboard() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#FD902B" />
+          <ActivityIndicator size="large" color="#fd9029" />
         </View>
       </SafeAreaView>
     );
@@ -244,9 +232,9 @@ export default function TherapistDashboard() {
     <PaperProvider theme={DefaultTheme}>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-            <Animated.Text style={[styles.headerTitle, { opacity: fadeAnimation }]}>
+            <Text style={styles.headerTitle}>
               {getGreeting()}, {therapistName}!
-              </Animated.Text>
+              </Text>
         </View>
 
         <View style={styles.body}>
@@ -254,31 +242,28 @@ export default function TherapistDashboard() {
             {childList.length > 0 ? (
               <>
               {childList.length > 1 ? (
-              <View>
-              <Menu
-                visible={menuVisible}
-                onDismiss={() => setMenuVisible(false)}
-                anchor={
-                  <TouchableOpacity style={styles.childButton} onPress={() => setMenuVisible(true)}>
-                    <Text style={styles.childText}>{selectedChild}</Text>
-                  </TouchableOpacity>
-                }
-                style={styles.menuContainer}
-              >
-                {childList.map((childObj) => (
-                  <Menu.Item
-                    key={childObj.id}
-                    onPress={() => {
-                      setSelectedChild(childObj.name);
-                      setSelectedChildId(childObj.id);
-                      setMenuVisible(false);
-                    }}
-                    title={childObj.name}
-                    titleStyle={{ color: "#000", fontWeight: "500" }}
-                    style={styles.menuItem}
-                  />
-                ))}
-              </Menu>
+              <View style={{ width: 160 }}>
+                <Dropdown
+                  style={{
+                    height: 40,
+                    borderColor: "#ccc",
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                  }}
+                  placeholder="Select child"
+                  value={selectedChildId}
+                  data={childList.map((child) => ({
+                    label: child.name,
+                    value: child.id,
+                  }))}
+                  labelField="label"
+                  valueField="value"
+                  onChange={(item) => {
+                    setSelectedChildId(item.value);
+                    setSelectedChild(item.label);
+                  }}
+                />
               </View>
             ) : (
               <View style={styles.childButton}>
@@ -287,13 +272,22 @@ export default function TherapistDashboard() {
             )}
 
 
-                <Text variant="bodyMedium" style={styles.subtitle}>\u2019s progress this week.</Text>
+                <Text variant="bodyMedium" style={styles.subtitle}>'s progress this week.</Text>
               </>
             ) : (
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
             )}
           </View>
-          {childList.length > 0 && <Filters assignedUnits={data} />}
+          {childList.length > 0 && (
+            loadingAssignments ? (
+              <View style={{ marginTop: 40, alignItems: "center" }}>
+                <ActivityIndicator size="large" color="#fd9029"/>
+                <Text style={{ marginTop: 10, color: "#555" }}>Loading learning units...</Text>
+              </View>
+            ) : (
+              <Filters assignedUnits={data} selectedChildId={selectedChildId}/>
+            )
+          )}
         </View>
       </SafeAreaView>
     </PaperProvider>
@@ -367,5 +361,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
+    marginBottom: -34,
   }
 });
