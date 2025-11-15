@@ -1,0 +1,42 @@
+[
+    {
+        "question_id": "15f80cf4-0540-4c90-b087-24f4021c4738", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["shell", "white shell", "white seashell", "seashell", "curvy shell", "curvy seashell", "starfish", "orange starfish", "island", "sand", "clouds", "white clouds", "white", "fluffy clouds", "fluffy clouds", "palm trees", "palm tree", "green trees", "trees", "green palm trees", "fauna", "bushes", "green bushes", "coconuts", "shandcastle", "rocks", "buckets", "crab", "umbrella", "brown poles"]
+    }, 
+    {
+        "question_id": "b25b3624-155e-4192-932e-5faab83c0fb4", 
+        "question_text": "What is the color of the water? ", 
+        "expected_answers": ["blue", "dark blue", "light blue", "cerulean", "sky blue", "columbia blue", "cobalt", "cobalt blue"]
+    }, 
+    {
+        "question_id": "a62c0ccb-6c04-4af3-a5a4-7ac11c58d7fe", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["sun is shining", "the sun"]
+    }, 
+    {
+        "question_id": "345cc696-c962-4ea3-b5e5-dfad39c02ea1", 
+        "question_text": "Is the umbrella small or big?", 
+        "expected_answers": ["big", "medium"]
+    },
+    {
+        "question_id": "ec117b7a-7fe0-4da9-8c74-e4533f683433", 
+        "question_text": "What can you see on the sand?", 
+        "expected_answers": ["shells", "seashells", "lots of shells"]
+    }, 
+    {
+        "question_id": "565e33d8-ea33-4393-8263-f8bc9b01a39b", 
+        "question_text": "What is moving so fast?", 
+        "expected_answers": ["the waves"]
+    },
+    {
+        "question_id": "de23e53b-efca-4e0f-811f-75aa0c796617", 
+        "question_text": "What are the children using to play?", 
+        "expected_answers": ["using a bucket", "using a shovel", "using the sand"]
+    },
+    {
+        "question_id": "fb8b0ef4-39a1-4173-b124-db26ef4d04cf", 
+        "question_text": "What are the people doing?", 
+        "expected_answers": ["swimming in the water", "swimming in the ocean"]
+    }
+]
