@@ -54,11 +54,14 @@ export default function DetailView({
       }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Failed to assign learning unit (${response.status})`);
+      Alert.alert('Error', data.error || 'Failed to assign learning unit');
+      return null;
     }
 
-    return await response.json();
+    return data;
   };
 
   const unassignLearningUnit = async (
@@ -159,20 +162,24 @@ export default function DetailView({
                 return;
               }
 
+              let result;
+
               if (newStatus === 'Unassigned') {
                 await unassignLearningUnit(selectedItem.id, childId);
                 setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
               } else if (newStatus === 'Assigned as Required') {
-                await assignLearningUnit(selectedItem.id, childId, userId, retries, 'required');
+                result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'required');
                 setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
               } else if (newStatus === 'Assigned as Recommended') {
-                await assignLearningUnit(selectedItem.id, childId, userId, retries, 'recommended');
+                result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'recommended');
                 setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
               }
 
+              if (!result) return;
+
               selectedItem.status = newStatus;
 
-              Alert.alert('Success', `Learning unit ${newStatus.toLowerCase()} successfully!`);
+              Alert.alert('Success', `Learning unit successfully ${newStatus.toLowerCase()}!`);
             } catch (error) {
               console.error('Error updating assignment:', error);
               Alert.alert('Error', 'Failed to update assignment. Please try again.');

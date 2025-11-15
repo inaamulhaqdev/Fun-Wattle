@@ -109,7 +109,6 @@ export default function ParentDashboard() {
 
       setData(assignedUnitsWithStats);
 
-
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Failed to load learning units.');

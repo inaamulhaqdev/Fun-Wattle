@@ -64,7 +64,7 @@ export default function AssignmentStatus({
             <View style={{ marginTop: 5 }}>
               <Counter value={retries} onChange={setRetries}/>
             </View>
-          )};
+          )}
           
           <Button
             mode="contained"
@@ -75,7 +75,7 @@ export default function AssignmentStatus({
             contentStyle={{ paddingVertical: 8 }}
             textColor="black"
           >
-            Continue
+            Confirm
           </Button>        
         </View>
       </View>
@@ -159,6 +159,6 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     backgroundColor: "#FDD652",
-    paddingTop: 30,
+    marginTop: 30,
   },
 });
