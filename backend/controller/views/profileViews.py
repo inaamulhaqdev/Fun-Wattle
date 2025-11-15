@@ -39,8 +39,27 @@ def create_profile(request):
 		streak=0
 	)
 
+	if not profile:
+		return Response({'error':'Failed to create profile'}, status=500)
+
 	# Link profile to user
 	user_profile = User_Profile.objects.create(user=user, profile=profile)
+
+	if not user_profile:
+		return Response({'error':'Failed to link profile to user'}, status=500)
+
+	# If we are creating a child profile, check if another user is connected to that child
+ 	# If so, create a chat room between them
+	if creating_child_profile:
+		existing_user_profiles = User_Profile.objects.filter(profile__child_details=child_details).exclude(user=user)
+		for existing_user_profile in existing_user_profiles:
+			new_room = Chat_Room.objects.create(
+				messenger_1=profile,
+				messenger_2=existing_user_profile.profile,
+			)
+
+			if not new_room:
+				return Response({'error':'Failed to create chat room for linked profiles'}, status=500)
 
 	profile_serializer = ProfileSerializer(profile)
 	user_profile_serializer = User_ProfileSerializer(user_profile)

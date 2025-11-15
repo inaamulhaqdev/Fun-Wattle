@@ -223,8 +223,8 @@ class Inventory(models.Model):
 
 class Chat_Room(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    parent = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='parent_chat_rooms')
-    therapist = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='therapist_chat_rooms')
+    messenger_1 = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='messenger_1_chat_rooms')
+    messenger_2 = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='messenger_2_chat_rooms')
     child = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='child_chat_rooms')
     room_name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -233,7 +233,7 @@ class Chat_Room(models.Model):
         db_table = 'Chat_Room'
 
     def __str__(self):
-        return f"room_name={self.room_name}, parent={self.parent.name}, therapist={self.therapist.name}, child={self.child.name}"
+        return f"room_name={self.room_name}, messenger_1={self.messenger_1.name}, messenger_2={self.messenger_2.name}, child={self.child.name}"
 
 
 class Chat_Message(models.Model):

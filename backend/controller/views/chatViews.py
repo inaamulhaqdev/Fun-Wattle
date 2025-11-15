@@ -12,19 +12,16 @@ def get_chat_rooms(request, profile_id):
     if profile.profile_type not in ['parent', 'therapist']:
         return Response({'error': 'Profile must be of type parent or therapist'}, status=400)
 
-    # Get chat room data based on perspective of parent or therapist
-    if profile.profile_type == 'parent':
-        chat_rooms = Chat_Room.objects.filter(parent=profile)
-    else:
-        chat_rooms = Chat_Room.objects.filter(therapist=profile)
+    # Get chat room data for the profile whether they are messenger_1 or messenger_2
+    chat_rooms = Chat_Room.objects.filter(messenger_1=profile) | Chat_Room.objects.filter(messenger_2=profile)
 
     data = []
     for chat_room in chat_rooms:
         # Get profile name and profile picture for the recipient of each chat room
-        if profile.profile_type == 'parent':
-            recipient_profile = chat_room.therapist
+        if chat_room.messenger_1 == profile:
+            recipient_profile = chat_room.messenger_2
         else:
-            recipient_profile = chat_room.parent
+            recipient_profile = chat_room.messenger_1
         name = recipient_profile.name
         profile_picture = recipient_profile.profile_picture
 
