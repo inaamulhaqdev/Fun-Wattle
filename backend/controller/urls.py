@@ -5,7 +5,6 @@ from .views.contentViews import *
 from .views.assignmentViews import *
 from .views.resultViews import *
 from .views.azureAIViews import *
-from .views.dashboardViews import *
 
 urlpatterns = [
     # User Routes
@@ -16,9 +15,13 @@ urlpatterns = [
     path('profile/create/', create_profile, name='create_profile'), # POST
     path('profile/<str:user_id>/list/', get_user_profiles, name='get_user_profiles'), # GET
     path('profile/<str:profile_id>/data/', get_profile, name='get_profile'), # GET
-    path('profile/<str:profile_id>/coins/', coins, name='manage_coins'), # TODO
-    path('profile/<str:profile_id>/streak/', get_streak, name='get_streak'), # TODO
-    path('profile/<str:profile_id>/mascot/', mascot, name='manage_mascot'), # TODO
+    path('profile/<str:profile_id>/coins/', coins, name='manage_coins'), # GET, PUT
+    path('profile/<str:profile_id>/streak/', get_streak, name='get_streak'), # GET
+    path('profile/shop/', shop, name='shop'), # GET
+    path('profile/shop/<str:item_id>/', get_item, name='get_item'), # GET
+    path('profile/<str:profile_id>/inv', get_inv, name='get_inventory'), # GET
+    path('profile/<str:profile_id>/inv/<str:item_id>/', update_inv, name='update_inventory'), # POST
+    path('profile/<str:profile_id>/mascot/', mascot, name='manage_mascot'), # GET, PUT
 
     # Content Library Routes
     path('content/learning_units/', get_all_learning_units, name='get_all_learning_units'), # GET
@@ -34,7 +37,7 @@ urlpatterns = [
 
     # Child Results Routes
     path('result/<str:child_id>/all/', get_exercise_results, name='get_exercise_results'), # GET
-    path('result/<str:child_id>/learning_unit_overall/<str:participation_type>', results_for_learning_unit_overall, name='results_for_learning_unit_overall'), # GET
+    path('result/<str:child_id>/learning_unit_overall/<str:participation_type>/', results_for_learning_unit_overall, name='results_for_learning_unit_overall'), # GET
     path('result/<str:child_id>/exercise/<str:exercise_id>/', results_for_exercise, name='results_for_exercise'), # POST, GET
     path('result/<str:child_id>/question/<str:question_id>/', results_for_question, name='results_for_question'), # POST, GET
 

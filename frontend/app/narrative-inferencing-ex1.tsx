@@ -57,7 +57,7 @@ export const NarrativeInferencingEx1 = () => {
       // finish exercise if on last question
       Alert.alert("Great job!", "You have finished all the questions!");
       // navigate to exercise 2
-      router.push('/narrative-inferencing-ex2');
+      router.push('/ordered_drag_exercise');
     }
   }
 

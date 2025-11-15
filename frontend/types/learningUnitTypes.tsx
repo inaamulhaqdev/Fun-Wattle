@@ -9,7 +9,7 @@ export type AssignedLearningUnit = {
   title: string;
   category: string;
   participationType: "required" | "recommended";
-  time?: number;
+  time: number;
   progress?: number;
   status?: string;
   assignedDate?: string;
