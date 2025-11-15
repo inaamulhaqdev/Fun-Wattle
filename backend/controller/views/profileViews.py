@@ -66,7 +66,8 @@ def get_user_profiles(request, user_id):
 
 def calc_streak(profile):
 	completed_units = Exercise_Result.objects.filter(
-		child_profile=profile
+		assignment__assigned_to=profile,
+		completed_at__isnull=False
 	).order_by('-completed_at')
 	if not completed_units.exists():
 		profile.streak = 0
@@ -141,7 +142,7 @@ def shop(request):
 	shop = Mascot_Items.objects.all()
 	serializer = MascotItemsSerializer(shop, many=True)
 	return Response(serializer.data, status=200)
-	
+
 
 @api_view(['GET'])
 def get_item(request, item_id):
@@ -161,7 +162,7 @@ def get_inv(request, profile_id):
 	inv = Inventory.objects.filter(
 		profile = profile.id
 	).select_related('mascot_item')
-	
+
 	serializer = MascotItemsSerializer(inv, many=True)
 	return Response(serializer.data, status=200)
 
@@ -176,7 +177,7 @@ def update_inv(request, profile_id, item_id):
 		return Response({'error': 'Mascot Item not found'}, status=404)
 	prev_purchase = Inventory.objects.get(
 		profile = profile.id,
-		mascot_item = item          
+		mascot_item = item
 	)
 	if prev_purchase:
 		return Response({'error':'Item has already been purchased'}, status=400)
@@ -186,13 +187,13 @@ def update_inv(request, profile_id, item_id):
 		profile=profile,
 		mascot_item=item,
 		equipped=False
-	)    
+	)
 	profile.coins = profile.coins - item.price
 	profile.save()
-	if not inv_item:	
+	if not inv_item:
 		return Response({'error':'Failed to purchase item'})
 	return Response({'message':'Success'}, status=200)
-		
+
 def equipped_items(profile_id):
 	qs = Inventory.objects.filter(
 		profile=profile_id,
@@ -208,7 +209,7 @@ def equipped_items(profile_id):
 		key = mi.item_type
 		result[key] = {MascotItemsSerializer(mi).data}
 	return result
-        
+
 @api_view(['GET', 'PUT'])
 def mascot(request, profile_id):
 	try:
@@ -217,11 +218,11 @@ def mascot(request, profile_id):
 		return Response({'error': 'Profile not found'}, status=404)
 	eqipped_items = equipped_items(profile.id)
 	if equipped_items.length > 2:
-		return Response({'error':'Cannot equip more than 2 items'}, status=400)	
+		return Response({'error':'Cannot equip more than 2 items'}, status=400)
 	if request.method == 'GET':
 		items = equipped_items(profile.id)
 		return Response(items, status=200)
-		
+
 	elif request.method == 'PUT':
 		item_id = request.data.get('item')
 		try:
@@ -230,7 +231,7 @@ def mascot(request, profile_id):
 			return Response({'error': 'Mascot Item not found'}, status=404)
 		inv_item_to_equip = Inventory.objects.get(
 			profile = profile.id,
-			mascot_item = item          
+			mascot_item = item
 		)
 		if not inv_item_to_equip:
 			return Response({'error':'Item has not been purchased'}, status=401)
