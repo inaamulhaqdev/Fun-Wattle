@@ -1,0 +1,42 @@
+[
+    {
+        "question_id": "f981ae15-c1d2-448a-be8f-ae13d87c69b6", 
+        "question_text": "Describe the cake", 
+        "expected_answers": ["cake is big and colourful", "cake has candles"]
+    }, 
+    {
+        "question_id": "4eb14148-bebe-457c-a400-6a743c240003", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["there are many balloons", "children dancing", "rug", "gifts"]
+    }, 
+    {
+        "question_id": "38993a10-36af-4d8b-b926-00252cf6d2ae", 
+        "question_text": "What are the friends doing?", 
+        "expected_answers": ["friends are smiling, celebrating"]
+    }, 
+    {
+        "question_id": "5e9ec60c-7f63-4695-89a1-7ba8847d99b1", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["many gifts on the table, children dancing, cake, baloons"]
+    },
+    {
+        "question_id": "c41c3533-9bf6-4e85-9526-30b3198c7715", 
+        "question_text": "What are the children wearing?", 
+        "expected_answers": ["children are wearing party hats"]
+    }, 
+    {
+        "question_id": "8b8d8c53-143f-4932-9608-0b48caeb163d", 
+        "question_text": "What is happening?", 
+        "expected_answers": ["music is playing loudly"]
+    },
+    {
+        "question_id": "67315dac-13c4-4e5c-aa66-89fad794587a", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["some children are dancing"]
+    },
+    {
+        "question_id": "ff75caf7-823e-4c71-9dad-7a5f50c34d63", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["candles are burning on the cake"]
+    }
+]
