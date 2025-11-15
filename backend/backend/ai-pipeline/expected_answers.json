@@ -19,4 +19,4 @@
         "question_text": "What else can you see?", 
         "expected_answers": ["ball", "beach ball", "stripy ball", "stripy beach ball", "shell", "white shell", "white seashell", "seashell", "curvy shell", "curvy seashell", "white conch shell", "conch shell", "white conch seashell", "conch seashell", "starfish", "three starfish", "orange starfish", "white starfish", "one orange starfish and two white starfish", "island", "two islands", "sand", "clouds", "white clouds", "white", "fluffy clouds", "fluffy clouds", "sunlight", "palm trees", "palm tree", "green trees", "trees", "green palm trees", "fauna", "bushes", "green bushes"]
     }
-]
+] 

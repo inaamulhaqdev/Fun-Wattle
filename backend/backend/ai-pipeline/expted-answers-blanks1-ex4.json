@@ -1,0 +1,47 @@
+[
+    {
+        "question_id": "495a57c5-d924-44da-a0ac-c01bdf8b0e8d", 
+        "question_text": "What is the zookeeper doing", 
+        "expected_answers": ["feeding the animal", "feeding the deer", "feeding the deer a water bottle"]
+    }, 
+    {
+        "question_id": "22ad38cb-14f6-4f49-9b67-2ed5b2508042", 
+        "question_text": " What is different about the elephant and giraffe?", 
+        "expected_answers": ["they are different sizes", "the giraffe is taller", "elephant has a trunk", "the giraffe has a long neck", "the giraffe has brown spots", "the elephant is grey"]
+    }, 
+    {
+        "question_id": "1736f943-c898-48d5-a4ee-89cb66fb38e0", 
+        "question_text": " What is sitting on the branch?", 
+        "expected_answers": ["a bird", "a brown bird", "a small bird"]
+    }, 
+    {
+        "question_id": "2982ef7e-80e0-4c03-bead-f206c765261c", 
+        "question_text": " What do you use to feed animals with?", 
+        "expected_answers": ["bottle", "feeder", "hands"]
+    },
+    {
+        "question_id": "9cae5360-67f8-47d0-b9ab-dea458e350fe", 
+        "question_text": "The zebra is eating grass. Can you find another animal eating grass?", 
+        "expected_answers": ["the deer", "a deer is also eating grass"]
+    }, 
+    {
+        "question_id": "89117c4b-7410-443a-a674-6063ec71c9ae", 
+        "question_text": "Can you find the tall animal?", 
+        "expected_answers": ["the tall animal is the giraffe"]
+    },
+    {
+        "question_id": "7873e82e-b2ef-45c5-93a3-a407d21e2505", 
+        "question_text": "Can you find the animal with stripes?", 
+        "expected_answers": ["the zebra"]
+    },
+    {
+        "question_id": "d5ccd799-800a-4951-bb1b-ac461872a41d", 
+        "question_text": "Where are all the animals?", 
+        "expected_answers": ["the zoo"]
+    },
+    {
+        "question_id": "cfa7bfc3-9b26-4750-841e-5632128275d1", 
+        "question_text": "What is happening in this picture?", 
+        "expected_answers": ["it is a picture of the zoo where many animals are eating or resting", "zookeeper is feeding the deer and the other animals are resting or eating in the zoo", "animals in a zoo with the zookeeper feeding water to the deer"]
+    }
+]

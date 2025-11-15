@@ -1,0 +1,32 @@
+[
+    {
+        "question_id": "d7da689f-df84-47c3-9e58-85424d2919e9", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["zebra"]
+    }, 
+    {
+        "question_id": "9b26a82d-839f-406b-91ca-864aa89a076c", 
+        "question_text": "What is this?", 
+        "expected_answers": ["elephant"]
+    }, 
+    {
+        "question_id": "4a5e0c70-3fc2-4ed8-a95f-943f99d36d26", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["monkey"]
+    }, 
+    {
+        "question_id": "8fb3ced8-e065-4cc4-87d8-0f006dade28d", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["snake", "python"]
+    },
+    {
+        "question_id": "1e93d1b0-d33b-4525-b57f-351509ca8873", 
+        "question_text": "What are those?", 
+        "expected_answers": ["bananas"]
+    },
+    {
+        "question_id": "07faa170-ec1f-4251-af64-4ec1cfe57f9e", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["turtle"]
+    }
+]
