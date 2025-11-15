@@ -40,7 +40,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeE
   console.log('API_URL:', API_URL);
 
   try {
-    const url = `${API_URL}/questions/${exerciseId}/`;
+    const url = `${API_URL}/content/${exerciseId}/questions/`;
     console.log('Fetching questions from URL:', url);
 
     const response = await fetch(url, {
@@ -643,7 +643,7 @@ const DescribeExerciseComponent = () => {
 */
 
   // Handle next question
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     if (currentQuestion < exercise.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setQuestionStartTime(Date.now()); // Reset timer for next question
@@ -652,20 +652,30 @@ const DescribeExerciseComponent = () => {
       // Exercise completed
       setIsCompleted(true);
 
-      // Submit exercise results to backend (commented out)
-      // submitExerciseResults();
-
-      // Temporary navigation (remove when backend is ready)
-      setTimeout(() => {
-        router.push({
-          pathname: '/child-dashboard' as any,
-          params: {
-            completedTaskId: taskId,
-            bodyType: mascotData.bodyType,
-            accessoryId: mascotData.accessoryId?.toString() || ''
-          }
+      try {
+        const response = await fetch(`${API_URL}/result/${childId}/exercise/${exerciseId}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
         });
-      }, 2000);
+  
+        if (!response.ok) {
+          throw new Error(`Failed to submit exercise results: ${response.status}`);
+        }
+        const result = await response.json();
+        console.log('Exercise submitted successfully:', result);
+  
+        // Navigate back to dashboard after successful submission
+        router.push({
+          pathname: '/child-dashboard',
+          params: { completedTaskId: exerciseId }
+        });
+  
+      } catch (error) {
+        console.error('Error submitting exercise:', error);
+      }
     }
   };
 
