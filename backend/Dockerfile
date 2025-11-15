@@ -23,5 +23,4 @@ COPY . .
 # Expose Django's port
 EXPOSE 7000
 
-# Development mode (this with volume mapping gives us live-reload with `docker-compose up`, so we don't need to rebuild image on code changes!!)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:7000"]
+CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:${PORT}"]
