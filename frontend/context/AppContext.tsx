@@ -5,6 +5,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
+import { Exercise } from '../types/learningUnitTypes';
 
 interface AppContextType {
   session: any | null;
@@ -15,6 +16,8 @@ interface AppContextType {
   selectChild: (child: any) => Promise<void>;
   setProfile: (profileId: string, childId?: string) => Promise<void>;
   logout: () => Promise<void>;
+  exercisesCache: Record<string, Exercise[]>;
+  setExercisesForUnit: (unitId: string, exercises: Exercise[]) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -25,6 +28,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [profileId, setProfileId] = useState<string | null>(null);
   const [childId, setChildId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [exercisesCache, setExercisesCache] = useState<Record<string, Exercise[]>>({});
 
   useEffect(() => {
     (async () => {
@@ -87,6 +92,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Load cached exercises on startup
+  useEffect(() => {
+    (async () => {
+      try {
+        const storedExercises = await AsyncStorage.getItem('exercisesCache');
+        if (storedExercises) {
+          setExercisesCache(JSON.parse(storedExercises));
+        }
+      } catch (error) {
+        console.error('Error loading exercises from storage:', error);
+      }
+    })();
+  }, []);
+
+  // Function to cache exercises
+  const setExercisesForUnit = async (unitId: string, exercises: Exercise[]) => {
+    setExercisesCache(prev => {
+      const newCache = { ...prev, [unitId]: exercises };
+      AsyncStorage.setItem('exercisesCache', JSON.stringify(newCache))
+        .catch(err => console.error('Error saving exercises to storage:', err));
+      return newCache;
+    });
+  };
+
   // Function to log out, clear session and stored data
   const logout = async () => {
     await supabase.auth.signOut();
@@ -107,7 +136,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loading,
         selectChild,
         setProfile,
-        logout
+        logout,
+        exercisesCache,
+        setExercisesForUnit,
       }}
     >
       {children}

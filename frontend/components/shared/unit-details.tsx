@@ -24,7 +24,7 @@ export default function DetailView({
   const [showOverlay, setShowOverlay] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
 
-  const { childId, session } = useApp();
+  const { childId, session, exercisesCache, setExercisesForUnit } = useApp();
   const userId = session.user.id;
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -99,6 +99,11 @@ export default function DetailView({
 
   useEffect(() => {
     const fetchExercises = async () => {
+      if (exercisesCache[selectedItem.id]) {
+        setExercises(exercisesCache[selectedItem.id]);
+        return;
+      }
+      
       if (!session?.access_token) {
         Alert.alert('Error', 'You must be authorized to perform this action');
         return;
@@ -117,6 +122,8 @@ export default function DetailView({
 
         const data = await response.json();
         setExercises(data);
+
+        await setExercisesForUnit(selectedItem.id, data);
       } catch (err) {
         console.error('Error fetching exercises:', err);
         Alert.alert('Error', 'Failed to load exercises.');
@@ -124,7 +131,7 @@ export default function DetailView({
     };
 
     fetchExercises();
-  }, [selectedItem.id]);
+  }, [selectedItem.id, session]);
 
   return (
     <View style={{ flex: 1 }}>
