@@ -12,7 +12,10 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor:"#fd9029",
+        // tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarStyle: { backgroundColor: '#fd9029' },
+        tabBarActiveTintColor: '#ffffff',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.7)',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarShowLabel: true,
@@ -32,12 +35,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-          name="chat"
-          options={{
-          title: 'Chat',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="bubble.left.and.bubble.right.fill" color={color} />,
-          }}
-       />
+        name="chat-rooms"
+        options={{
+        title: 'Chat',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="bubble.left.and.bubble.right.fill" color={color} />,
+        }}
+      />
        <Tabs.Screen
           name="reports"
           options={{
