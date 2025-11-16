@@ -64,18 +64,22 @@ export default function DetailView({
         child_id: childId,
         user_id: userId,
         participation_type: participationType,
-        num_attempts: retries
+        num_question_attempts: retries
       }),
     });
 
-    const data = await response.json();
+    const res = await response.json();
 
     if (!response.ok) {
-      Alert.alert('Error', data.error || 'Failed to assign learning unit');
+      if (res.error) {
+        showMessage(res.error, 'error');
+      } else {
+        showMessage('Failed to assign learning unit', 'error');
+      }
       return null;
     }
 
-    return data;
+    return res;
   };
 
   const unassignLearningUnit = async (
@@ -96,7 +100,7 @@ export default function DetailView({
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to unassign learning unit (${response.status})`);
+      showMessage(`Failed to unassign learning unit (${response.status})`, 'error');
     }
 
     return await response.json();
@@ -127,7 +131,7 @@ export default function DetailView({
 
         const data = await response.json();
         setExercises(data);
-
+        
         await setExercisesForUnit(selectedItem.id, data);
       } catch (err) {
         console.error('Error fetching exercises:', err);
@@ -156,12 +160,6 @@ export default function DetailView({
           {exercises.map((exercise, index) => (
             <Card
               key={index}
-              onPress={() =>
-                router.push({
-                  pathname: '/exercise-screen',
-                  params: { title: exercise.title, component: exercise.title?.replace(" ", "") },
-                })
-              }
             >
               <Card.Title title={exercise.title} />
               <Card.Content>
@@ -184,24 +182,24 @@ export default function DetailView({
                   return;
                 }
 
-              let result;
+                let result;
 
-              if (newStatus === 'Unassigned') {
-                await unassignLearningUnit(selectedItem.id, childId);
-                setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
-              } else if (newStatus === 'Assigned as Required') {
-                result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'required');
-                setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
-              } else if (newStatus === 'Assigned as Recommended') {
-                result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'recommended');
-                setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
-              }
+                if (newStatus === 'Unassigned') {
+                  result = await unassignLearningUnit(selectedItem.id, childId);
+                  setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
+                } else if (newStatus === 'Assigned as Required') {
+                  result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'required');
+                  setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
+                } else if (newStatus === 'Assigned as Recommended') {
+                  result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'recommended');
+                  setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
+                }
 
-              if (!result) return;
+                if (!result) return;
 
                 selectedItem.status = newStatus;
 
-                showMessage(`Learning unit ${newStatus.toLowerCase()} successfully!`, 'success');
+                showMessage(`Learning unit successfully ${newStatus.toLowerCase()}!`, 'success');
               } catch (error) {
                 console.error('Error updating assignment:', error);
                 showMessage('Failed to update assignment. Please try again.', 'error');
