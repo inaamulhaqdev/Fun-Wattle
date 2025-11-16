@@ -15,6 +15,7 @@ export default function ChatRooms() {
   const { profileId, session, chatRooms, setChatRooms, updateRoomLastMessage } = useApp();
   const token = session?.access_token;
   const isFetching = React.useRef(false);
+  const hasFetched = React.useRef(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(false);
 
   const fetch_rooms_data = React.useCallback(async () => {
@@ -34,8 +35,10 @@ export default function ChatRooms() {
       });
       const data = await response.json();
       setChatRooms(data);
+      hasFetched.current = true;
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch chat rooms');
+      hasFetched.current = true;
     } finally {
       isFetching.current = false;
       setIsInitialLoading(false);
@@ -89,9 +92,9 @@ export default function ChatRooms() {
     };
   }, [profileId, updateRoomLastMessage]);
 
-  // Fetch rooms on mount only if cache is empty (typically first load)
+  // Fetch rooms on mount only if cache is empty and we haven't fetched yet
   React.useEffect(() => {
-    if (chatRooms.length === 0) {
+    if (chatRooms.length === 0 && !hasFetched.current) {
       fetch_rooms_data();
     }
   }, [fetch_rooms_data, chatRooms.length]);
@@ -112,7 +115,7 @@ export default function ChatRooms() {
         </View>
       ) : chatRooms.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No messages yet</Text>
+          <Text style={styles.emptyText}>You have no messages yet.</Text>
         </View>
       ) : (
         <FlatList
