@@ -1,0 +1,42 @@
+[
+    {
+        "question_id": "44a9a4be-af63-41e9-965c-663e1b11da3c", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["lots of food on the table, kitchen, dining table"]
+    }, 
+    {
+        "question_id": "02c4c6fd-0991-4f21-b098-68f9ac698620", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["there are plates on the table"]
+    }, 
+    {
+        "question_id": "33f86a05-4c6c-4d4d-9615-b43f039197cb", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["fresh fruits in the bowl", "fruit bowl"]
+    }, 
+    {
+        "question_id": "4e91afc2-0b68-44d5-b366-d09335090f41", 
+        "question_text": "What is next to the plate?", 
+        "expected_answers": ["there is a spoon next to the plate"]
+    },
+    {
+        "question_id": "9cd78ce6-d99b-4e98-b67d-84b2da388237", 
+        "question_text": "What is in the glass?", 
+        "expected_answers": ["the milk is in the glass"]
+    }, 
+    {
+        "question_id": "6df07310-41db-4cec-be46-af83cd2b9eec", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["i can see someone cooking in the kitchen"]
+    },
+    {
+        "question_id": "95901ae9-6438-47d8-95a6-c0dc0885082b", 
+        "question_text": "Where are the chairs?", 
+        "expected_answers": ["the chairs are around the table"]
+    },
+    {
+        "question_id": "b670ef75-1fa0-4552-993b-17ed90e6ae37", 
+        "question_text": "What is the girl doing?", 
+        "expected_answers": ["the girl is ready to eat her food", "girl is eating her food"]
+    }
+]

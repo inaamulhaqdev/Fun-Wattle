@@ -1,0 +1,52 @@
+[
+    {
+        "question_id": "ab813a5d-db6c-478f-a9ae-032be4adb817", 
+        "question_text": "What would you do if you saw a lion nearby?", 
+        "expected_answers": ["run away"]
+    }, 
+    {
+        "question_id": "f3d08cfd-2848-402f-9af9-8805b2135727", 
+        "question_text": "When the zookeeper gives food to the giraffe, what might the giraffe think?", 
+        "expected_answers": ["yum food","yess food i am so hungry", "thank you zookeeper", "i do not want to eat this food yuck"]
+    }, 
+    {
+        "question_id": "6ddaede8-1b65-4969-b5d1-1215b0a4e70c", 
+        "question_text": "Why does the giraffe have a long neck?", 
+        "expected_answers": ["to look past the trees", "to protect itself from predators", "to eat the leaves on tall trees"]
+    }, 
+    {
+        "question_id": "b385f140-eab7-4ff3-af7b-76cc82788850", 
+        "question_text": "Why do elephants have big ears?", 
+        "expected_answers": ["to flap away flies", "to hear better", "to protect against the sun"]
+    },
+    {
+        "question_id": "c55136e1-467a-4fa4-9c4e-f9461c553139", 
+        "question_text": "Why are the monkeys up in the tree?", 
+        "expected_answers": ["to get bananas", "to swing", "that is where they live"]
+    }, 
+    {
+        "question_id": "ce121e08-a4fa-4e03-bf7a-3164dda48029", 
+        "question_text": "What would the zookeeper do if an animal escaped?", 
+        "expected_answers": ["chase them", "call the authorities and search for it", "dispatch a search party"]
+    },
+    {
+        "question_id": "f0349f64-39a2-464b-8730-541b8aa4595a", 
+        "question_text": "How did all the animals come to live in the zoo?", 
+        "expected_answers": ["they were captured and put these by the zookeeper"]
+    },
+    {
+        "question_id": "f62ae1f4-0d41-451f-ae91-c8d4a00874e0", 
+        "question_text": "Why does a turtle have a shell?", 
+        "expected_answers": ["it is their home", "to protect against predators"]
+    },
+    {
+        "question_id": "4cf02e89-8163-4347-9bba-ef0ffac81a02", 
+        "question_text": "The lion has sharp teeth. Why does the lion need sharp teeth?", 
+        "expected_answers": ["lions eat prey so their teeth need to be sharp to kill prey", "to kill prey and eat it"]
+    },
+    {
+        "question_id": "5ca9150f-9440-4964-9a20-c73f65c5d639", 
+        "question_text": "Think of a reason why we should not tease animals at the zoo.", 
+        "expected_answers": ["so we do not agitate them, they could get angry and try to attack you, it is cruel"]
+    }
+]
