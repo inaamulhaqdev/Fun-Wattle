@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     left: 12,
-    bottom: 15,
+    bottom: 13,
     zIndex: 10,
     padding: 8,
   },
@@ -292,8 +292,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: 10,
+    paddingBottom: 20,
     borderTopColor: '#ddd',
     borderTopWidth: 1,
+    backgroundColor: '#fff',
   },
   input: {
     flex: 1,

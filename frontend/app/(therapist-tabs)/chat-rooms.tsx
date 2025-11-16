@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -7,6 +7,8 @@ import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
 import { Alert } from 'react-native';
 import { supabase } from '@/config/supabase';
+
+const genericProfilePic = require('@/assets/images/default-profile-pic.jpeg');
 
 export default function ChatRooms() {
   const router = useRouter();
@@ -108,37 +110,34 @@ export default function ChatRooms() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FD902B" />
         </View>
+      ) : chatRooms.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No messages yet</Text>
+        </View>
       ) : (
         <FlatList
           data={chatRooms}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-          <TouchableOpacity style={styles.room} onPress={() => openRoom(item.id, item.name)}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
-            </View>
-            <View style={styles.roomText}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
-                {item.last_message}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+            <TouchableOpacity style={styles.roomWrapper} onPress={() => openRoom(item.id, item.name)}>
+              <View style={styles.room}>
+                <Image
+                  source={item.profile_picture ? { uri: item.profile_picture } : genericProfilePic}
+                  style={styles.avatar}
+                />
+                <View style={styles.roomText}>
+                  <Text style={styles.name}>{item.name}</Text>
+                  <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+                    {item.last_message}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
       />
       )}
     </SafeAreaView>
   );
-}
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 }
 
 const styles = StyleSheet.create({
@@ -147,32 +146,35 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff'
     },
     title: {
-        fontSize: 20,
+        fontSize: 28,
         fontWeight: '600',
-        margin: 16,
-        marginTop: 8,
+        marginLeft: 24,
+        marginTop: 20,
+        marginBottom: 16,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
+    roomWrapper: {
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+    },
     room: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16
+        padding: 16,
+        backgroundColor: '#f8f8f8',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#ddd',
     },
     avatar: {
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#fd9029',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarText: {
-        color: 'white',
-        fontWeight: '700'
+        backgroundColor: '#ddd',
     },
     roomText: {
         marginLeft: 12,
@@ -187,9 +189,13 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 2
     },
-    separator: {
-        height: 1,
-        backgroundColor: '#eee',
-        width: '100%',
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#999',
     },
 });

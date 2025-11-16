@@ -41,13 +41,6 @@ export default function ParentLayout() {
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="bubble.left.and.bubble.right.fill" color={color} />,
           }}
        />
-       <Tabs.Screen
-          name="reports"
-          options={{
-          title: 'Reports',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.text.fill" color={color} />,
-          }}
-       />
       <Tabs.Screen
         name="settings"
         options={{
