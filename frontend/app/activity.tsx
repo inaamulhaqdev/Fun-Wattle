@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5DC', // Match dashboard beige background
   },
   header: {
-    backgroundColor: '#FF6B35', // Orange header to match dashboard
+    backgroundColor: '#fd9029', // Orange header to match dashboard
     paddingHorizontal: 20,
     paddingVertical: 15,
     paddingTop: 50,

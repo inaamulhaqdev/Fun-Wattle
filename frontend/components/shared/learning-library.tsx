@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { Card, Text, Searchbar } from 'react-native-paper';
 import DetailView from './unit-details';
 import { useFocusEffect } from 'expo-router';
 import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
 import { useApp } from '../../context/AppContext';
-import { API_URL } from '@/config/api';
+import { API_URL, SUPABASE_URL } from '@/config/api';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
 
@@ -33,7 +34,7 @@ function matchesFilters(
   return false;
 }
 
-export default function LearningLibrary({ data }: LibraryProps) {
+export default function LearningLibrary({ data, loading = false }: LibraryProps) {
   const { childId, session } = useApp();
   const userId = session?.user?.id;
 
@@ -45,6 +46,7 @@ export default function LearningLibrary({ data }: LibraryProps) {
 
   const [assignedUnitIds, setAssignedUnitIds] = useState<Set<string>>(new Set());
   const [completedUnitIds, setCompletedUnitIds] = useState<Set<string>>(new Set());
+
 
   useFocusEffect(
     React.useCallback(() => {
@@ -148,18 +150,33 @@ export default function LearningLibrary({ data }: LibraryProps) {
         </ScrollView>
       </View>
 
-      <FlatList
-        data={filteredData}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <Card style={styles.card} onPress={() => setSelectedItem(item)}>
-            <Card.Title title={item.title} />
-            <Card.Content>
-              <Text>{item.category}</Text>
-            </Card.Content>
-          </Card>
-        )}
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FD902B" />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredData}
+          keyExtractor={item => item.id}
+          numColumns={2}
+          columnWrapperStyle={{ justifyContent: 'space-between'}}
+          renderItem={({ item }) => {
+          const imageUrl = item.image ? `${item.image}` : null;
+
+          return (
+            <Card style={styles.card} onPress={() => setSelectedItem(item)}>
+                  {imageUrl && (
+        <Card.Cover source={{ uri: imageUrl }} />
+      )}
+                  <Card.Title title={item.title} />
+                  <Card.Content>
+                    <Text>{item.category}</Text>
+                  </Card.Content>
+                </Card>
+          );
+        }}
+        />
+      )}
     </View>
   );
 }
@@ -202,8 +219,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   categoryButtonActive: {
-    backgroundColor: '#FF6B35',
-    borderColor: '#FF6B35',
+    backgroundColor: '#fd9029',
+    borderColor: '#fd9029',
   },
   categoryUnselected: {
     color: '#000',
@@ -216,6 +233,14 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     backgroundColor: 'white',
+    width: '48%',
+  // flex: 1,
+   // marginHorizontal: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 25,

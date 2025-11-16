@@ -103,16 +103,16 @@ export default function DetailView({
         setExercises(exercisesCache[selectedItem.id]);
         return;
       }
-      
+
       if (!session?.access_token) {
         Alert.alert('Error', 'You must be authorized to perform this action');
         return;
       }
-      
+
       try {
         const response = await fetch(`${API_URL}/content/${selectedItem.id}/exercises/`, {
           method: 'GET',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session?.access_token}`,
           },
@@ -144,8 +144,8 @@ export default function DetailView({
         <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
         <Text variant="bodyMedium" style={styles.description}>{selectedItem.description}</Text>
 
-        <Text variant="titleMedium" style={styles.heading}>Activities</Text>
-        <Divider style={styles.divider} />
+      <Text variant="titleMedium" style={styles.heading}>Exercises</Text>
+      <Divider style={styles.divider} />
 
         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
           {exercises.map((exercise, index) => (
@@ -204,7 +204,7 @@ export default function DetailView({
           />
         </View>
       </ScrollView>
-      
+
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
     marginVertical: 2 },
   scrollArea: {
-    flex: 1, 
+    flex: 1,
     minHeight: 0,
   },
   scrollContent: {

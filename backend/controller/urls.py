@@ -5,6 +5,7 @@ from .views.contentViews import *
 from .views.assignmentViews import *
 from .views.resultViews import *
 from .views.azureAIViews import *
+from .views.chatViews import *
 
 urlpatterns = [
     # User Routes
@@ -45,5 +46,7 @@ urlpatterns = [
     path("AI/assess_speech/", assess_speech, name="assess_speech"), # POST
     path('AI/text_to_speech/', text_to_speech), # POST
 
-    # Dashboard Routes
+    # Chat Routes
+    path('chat/<str:profile_id>/rooms/', get_chat_rooms, name='get_chat_rooms'), # GET
+    path('chat/<str:chat_room_id>/messages/', chat_messages, name='chat_messages'), # GET, POST
 ]

@@ -161,11 +161,8 @@ export default function TherapistDashboard() {
   return (
     <PaperProvider theme={DefaultTheme}>
       <SafeAreaView style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>Good evening, {therapistName}!</Text>
-          </View>
         </View>
 
         <View style={styles.body}>
@@ -246,10 +243,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   header: {
-    backgroundColor: '#FF6B35',
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-    flexDirection: 'row',
+    backgroundColor: '#fd9029',
+    paddingTop: 65,
+    paddingBottom: 15,
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
@@ -263,6 +259,7 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+    backgroundColor: 'white',
     paddingHorizontal: 20,
     paddingTop: 20,
   }

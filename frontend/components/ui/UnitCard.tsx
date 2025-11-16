@@ -25,7 +25,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ title, duration, progress, a
                 </Text>
                 
             </View>
-            <ProgressBar progress={progress} color="#FDD652" style={styles.progressBar} />
+            <ProgressBar progress={progress} color="#fd9029" style={styles.progressBar} />
 
             </Card.Content>
       </Card>

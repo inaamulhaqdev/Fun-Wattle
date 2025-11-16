@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   loginButtonActive: {
-    backgroundColor: '#007AFF', // Blue color when form is valid
+    backgroundColor: '#fd9029', // Blue color when form is valid
   },
   loginButtonDisabled: {
     backgroundColor: '#eee',
