@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   nextButton: {
     marginTop: 30,
     borderRadius: 8,
-    backgroundColor: "#FDD652",
+    backgroundColor: "#fd9029",
   },
   cardsContainer: {
     gap: 10,

@@ -12,7 +12,10 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        // tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarStyle: { backgroundColor: '#fd9029' },
+        tabBarActiveTintColor: '#ffffff',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.7)',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarShowLabel: true,
@@ -31,6 +34,27 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="book.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="chat-rooms"
+        options={{
+        title: 'Chat',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="bubble.left.and.bubble.right.fill" color={color} />,
+        }}
+      />
+       <Tabs.Screen
+          name="reports"
+          options={{
+          title: 'Reports',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.text.fill" color={color} />,
+          }}
+       />
+      <Tabs.Screen
+          name="settings"
+          options={{
+          title: 'Settings',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
+          }}
+       />
     </Tabs>
   );
 }

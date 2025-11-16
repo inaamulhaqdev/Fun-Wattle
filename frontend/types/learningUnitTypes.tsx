@@ -26,4 +26,5 @@ export interface LearningUnit {
 
 export interface LibraryProps {
   data: LearningUnit[];
+  loading?: boolean;
 }

@@ -682,7 +682,7 @@ const DescribeExerciseComponent = () => {
               { transform: [{ scale: pointerAnim }] }
             ]}
           >
-            <FontAwesome name="hand-pointer-o" size={50} color="#FF6B35" />
+            <FontAwesome name="hand-pointer-o" size={50} color="#fd9029" />
           </Animated.View>
         )}
       </View>
@@ -753,7 +753,7 @@ const DescribeExerciseComponent = () => {
           <FontAwesome
             name={isRecording ? "microphone" : "microphone-slash"}
             size={30}
-            color={isRecording ? "#FF6B35" : "#666"}
+            color={isRecording ? "#fd9029" : "#666"}
           />
           <Text style={[
             styles.micButtonText,
@@ -927,7 +927,7 @@ const styles = StyleSheet.create({
   },
   micButtonActive: {
     backgroundColor: '#FFE8E0',
-    borderColor: '#FF6B35',
+    borderColor: '#fd9029',
   },
   micButtonText: {
     fontSize: 14,
@@ -936,7 +936,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   micButtonTextActive: {
-    color: '#FF6B35',
+    color: '#fd9029',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -945,7 +945,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 1,
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#fd9029',
     borderRadius: 10,
     paddingVertical: 15,
     alignItems: 'center',
@@ -1006,7 +1006,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FF6B35',
+    color: '#fd9029',
     textAlign: 'center',
   },
 });

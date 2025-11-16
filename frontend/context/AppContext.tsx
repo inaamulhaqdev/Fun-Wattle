@@ -7,6 +7,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 import { Exercise } from '../types/learningUnitTypes';
 
+interface ChatRoom {
+  id: string;
+  name: string;
+  profile_picture: string;
+  last_message: string;
+}
+
+interface ChatMessage {
+  id: string;
+  sender_id: string;
+  message_content: string;
+  timestamp: string;
+}
+
 interface AppContextType {
   session: any | null;
   selectedChild: any | null;
@@ -18,6 +32,12 @@ interface AppContextType {
   logout: () => Promise<void>;
   exercisesCache: Record<string, Exercise[]>;
   setExercisesForUnit: (unitId: string, exercises: Exercise[]) => Promise<void>;
+  chatRooms: ChatRoom[];
+  setChatRooms: (rooms: ChatRoom[]) => void;
+  updateRoomLastMessage: (roomId: string, lastMessage: string) => void;
+  messagesCache: Record<string, ChatMessage[]>;
+  setMessagesForRoom: (roomId: string, messages: ChatMessage[]) => void;
+  addMessageToRoom: (roomId: string, message: ChatMessage) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -30,6 +50,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState(true);
 
   const [exercisesCache, setExercisesCache] = useState<Record<string, Exercise[]>>({});
+
+  const [chatRooms, setChatRoomsState] = useState<ChatRoom[]>([]);
+  const [messagesCache, setMessagesCache] = useState<Record<string, ChatMessage[]>>({});
 
   useEffect(() => {
     (async () => {
@@ -116,6 +139,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const setChatRooms = (rooms: ChatRoom[]) => {
+    setChatRoomsState(rooms);
+  };
+
+  const updateRoomLastMessage = (roomId: string, lastMessage: string) => {
+    setChatRoomsState((previousRooms) => {
+      const updatedRooms = previousRooms.map((room) => {
+        if (room.id === roomId) {
+          return { ...room, last_message: lastMessage };
+        } else {
+          return room;
+        }
+      });
+      return updatedRooms;
+    });
+  };
+
+  const setMessagesForRoom = (roomId: string, messages: ChatMessage[]) => {
+    setMessagesCache((previousCache) => {
+      const updatedCache = { ...previousCache, [roomId]: messages };
+      return updatedCache;
+    });
+  };
+
+  const addMessageToRoom = (roomId: string, message: ChatMessage) => {
+    setMessagesCache((previousCache) => {
+      const existingMessages = previousCache[roomId] || [];
+      const updatedMessages = [...existingMessages, message];
+      const updatedCache = { ...previousCache, [roomId]: updatedMessages };
+      return updatedCache;
+    });
+  };
+
   // Function to log out, clear session and stored data
   const logout = async () => {
     await supabase.auth.signOut();
@@ -139,6 +195,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logout,
         exercisesCache,
         setExercisesForUnit,
+        chatRooms,
+        setChatRooms,
+        updateRoomLastMessage,
+        messagesCache,
+        setMessagesForRoom,
+        addMessageToRoom,
       }}
     >
       {children}

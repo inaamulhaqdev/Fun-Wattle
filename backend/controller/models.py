@@ -193,6 +193,7 @@ class Rag_Context(models.Model):
     def __str__(self):
         return f"source_name={self.source_name}, context_id={self.id}"
 
+
 class Mascot_Items(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     item_type = models.CharField(max_length=10, choices=( ('head', 'Head'), ('torso', 'Torso')))
@@ -205,7 +206,8 @@ class Mascot_Items(models.Model):
 
     def __str__(self):
         return f"item={self.id}, price={self.price}"
-    
+
+
 class Inventory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='owner')
@@ -219,5 +221,32 @@ class Inventory(models.Model):
         return f"item={self.mascot_item}, owner={self.profile}"
 
 
-    
+class Chat_Room(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    messenger_1 = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='messenger_1_chat_rooms')
+    messenger_2 = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='messenger_2_chat_rooms')
+    child = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='child_chat_rooms')
+    room_name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Chat_Room'
+
+    def __str__(self):
+        return f"room_name={self.room_name}, messenger_1={self.messenger_1.name}, messenger_2={self.messenger_2.name}, child={self.child.name}"
+
+
+class Chat_Message(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    chat_room = models.ForeignKey(Chat_Room, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='sent_messages')
+    message_content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Chat_Message'
+
+    def __str__(self):
+        return f"chat_room={self.chat_room.room_name}, sender={self.sender.name}, timestamp={self.timestamp}"
+
 

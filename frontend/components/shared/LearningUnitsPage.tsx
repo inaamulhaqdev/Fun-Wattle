@@ -8,16 +8,20 @@ import { useApp } from '../../context/AppContext';
 import LoginScreen from '@/app/login';
 
 export default function LearningUnitsPage() {
-const [data, setData] = useState<LearningUnit[]>([]);
+  const [data, setData] = useState<LearningUnit[]>([]);
+  const [loading, setLoading] = useState(true);
   const { session, childId } = useApp();
+  
   useFocusEffect(
     React.useCallback(() => {
       const fetchModules = async () => {
         // Guard: don't attempt network requests when there's no authenticated session
         if (!session?.access_token) {
+          setLoading(false);
           return;
         }
 
+        setLoading(true);
         try {
           const response = await fetch(`${API_URL}/content/learning_units/`, {
             method: 'GET',
@@ -46,11 +50,13 @@ const [data, setData] = useState<LearningUnit[]>([]);
         } catch (err) {
           console.error('Error fetching modules:', err);
           Alert.alert('Error', 'Failed to load learning units. Please try again.');
+        } finally {
+          setLoading(false);
         }
       };
 
       fetchModules();
-    }, [childId, session?.access_token])
+    }, [session?.access_token])
   );
 
   // If there's no active session, show the login screen (hooks above are still called unconditionally)
@@ -58,5 +64,5 @@ const [data, setData] = useState<LearningUnit[]>([]);
     return <LoginScreen />;
   }
 
-  return <LearningLibrary data={data} />;
-};
+  return <LearningLibrary data={data} loading={loading} />;
+}
