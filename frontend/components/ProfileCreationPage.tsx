@@ -1,5 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { KeyboardAvoidingView, Keyboard, Platform, TouchableWithoutFeedback, ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { 
+  KeyboardAvoidingView, 
+  Keyboard, 
+  Platform, 
+  ScrollView, 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert,
+  Pressable
+} from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../config/supabase';
 import { API_URL } from '../config/api';
@@ -59,7 +71,7 @@ const ProfileCreationPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorisation': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
           user_id: user.id,
@@ -87,83 +99,89 @@ const ProfileCreationPage = () => {
   const isPinComplete = pin.every(digit => digit !== '');
   const isFormValid = name.trim() && isPinComplete;
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1 }}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            <Text style={styles.title}>Complete your profile</Text>
 
-            {/* Name Input */}
-            <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Name</Text>
-              <TextInput
-                style={styles.nameInput}
-                value={name}
-                onChangeText={setName}
-                placeholder=""
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
-            </View>
+  const content = (
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Complete your profile</Text>
 
-            {/* PIN Input */}
-            <View style={styles.pinSection}>
-              <Text style={styles.pinLabel}>Choose 4 digit PIN to secure your account</Text>
+        {/* Name Input */}
+        <View style={styles.inputSection}>
+          <Text style={styles.inputLabel}>Name</Text>
+          <TextInput
+            style={styles.nameInput}
+            value={name}
+            onChangeText={setName}
+            placeholder=""
+            autoCapitalize="words"
+            autoCorrect={false}
+          />
+        </View>
 
-              <View style={styles.pinContainer}>
-                {pin.map((digit, index) => (
-                  <View key={index} style={styles.pinInputContainer}>
-                    <TextInput
-                      ref={(ref) => { pinInputRefs.current[index] = ref; }}
-                      style={styles.pinInput}
-                      value={digit}
-                      onChangeText={(value) => handlePinChange(index, value)}
-                      onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
-                      keyboardType="numeric"
-                      maxLength={1}
-                      textAlign="center"
-                      secureTextEntry={true}
-                      caretHidden={true}
-                      autoFocus={index === 0}
-                    />
-                    <View style={styles.pinDisplay}>
-                      {digit !== '' && <View style={styles.pinDot} />}
-                    </View>
-                  </View>
-                ))}
+        {/* PIN Input */}
+        <View style={styles.pinSection}>
+          <Text style={styles.pinLabel}>Choose 4 digit PIN to secure your account</Text>
+
+          <View style={styles.pinContainer}>
+            {pin.map((digit, index) => (
+              <View key={index} style={styles.pinInputContainer}>
+                <TextInput
+                  ref={(ref) => { pinInputRefs.current[index] = ref; }}
+                  style={styles.pinInput}
+                  value={digit}
+                  onChangeText={(value) => handlePinChange(index, value)}
+                  onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
+                  keyboardType="numeric"
+                  maxLength={1}
+                  textAlign="center"
+                  secureTextEntry={true}
+                />
+                <View style={styles.pinDisplay}>
+                  {digit !== '' && <View style={styles.pinDot} />}
+                </View>
               </View>
-            </View>
-          </ScrollView>
-
-          {/* Continue Button */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[
-                styles.continueButton,
-                isFormValid || loading ? styles.continueButtonActive : styles.continueButtonDisabled
-              ]}
-              onPress={handleContinue}
-              disabled={!isFormValid || loading}
-            >
-              <Text style={[
-                styles.continueButtonText,
-                isFormValid || loading ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
-              ]}>
-                {loading ? 'Loading...' : 'Continue'}
-              </Text>
-            </TouchableOpacity>
+            ))}
           </View>
         </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+      </ScrollView>
+
+      {/* Continue Button */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[
+            styles.continueButton,
+            isFormValid || loading ? styles.continueButtonActive : styles.continueButtonDisabled
+          ]}
+          onPress={handleContinue}
+          disabled={!isFormValid || loading}
+        >
+          <Text style={[
+            styles.continueButtonText,
+            isFormValid || loading ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
+          ]}>
+            {loading ? 'Loading...' : 'Continue'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
+  
+  if (Platform.OS !== 'web') {
+    return (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
+          {content}
+        </Pressable>
+      </KeyboardAvoidingView>
+    );
+  }
+  return content;
 };
 
 const styles = StyleSheet.create({
