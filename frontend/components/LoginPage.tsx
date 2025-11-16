@@ -43,7 +43,7 @@ const LoginPage = () => {
   };
 
   const goBack = () => {
-    router.back();
+    router.push('/welcome');
   };
 
   const navigateToRegister = () => {

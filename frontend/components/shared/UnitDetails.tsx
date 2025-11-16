@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, Alert } from 'react-native';
-import { Card, IconButton, Divider, Text } from 'react-native-paper';
+import { ScrollView, View, StyleSheet, Alert, Platform } from 'react-native';
+import { Card, IconButton, Divider, Text, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
 import { router } from 'expo-router';
@@ -24,8 +24,22 @@ export default function DetailView({
   const [showOverlay, setShowOverlay] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
 
-  const { childId, session } = useApp();
+  const { childId, session, exercisesCache, setExercisesForUnit } = useApp();
   const userId = session.user.id;
+
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarType, setSnackbarType] = useState<'error' | 'success'>('success');
+
+  const showMessage = (message: string, type: 'error' | 'success' = 'success') => {
+    if (Platform.OS === 'web') {
+      setSnackbarMessage(message);
+      setSnackbarType(type);
+      setSnackbarVisible(true);
+    } else {
+      Alert.alert(type === 'error' ? 'Error' : 'Success', message);
+    }
+  };
 
   const assignLearningUnit = async (
     learningUnitId: string,
@@ -35,7 +49,7 @@ export default function DetailView({
     participationType: 'required' | 'recommended',
   ) => {
     if (!session?.access_token) {
-      Alert.alert('Error', 'You must be authorized to perform this action');
+      showMessage('You must be authorized to perform this action', 'error');
       return;
     }
 
@@ -69,7 +83,7 @@ export default function DetailView({
     childId: string,
   ) => {
     if (!session?.access_token) {
-      Alert.alert('Error', 'You must be authorized to perform this action');
+      showMessage('You must be authorized to perform this action', 'error');
       return;
     }
 
@@ -90,6 +104,11 @@ export default function DetailView({
 
   useEffect(() => {
     const fetchExercises = async () => {
+      if (exercisesCache[selectedItem.id]) {
+        setExercises(exercisesCache[selectedItem.id]);
+        return;
+      }
+      
       if (!session?.access_token) {
         Alert.alert('Error', 'You must be authorized to perform this action');
         return;
@@ -108,6 +127,8 @@ export default function DetailView({
 
         const data = await response.json();
         setExercises(data);
+
+        await setExercisesForUnit(selectedItem.id, data);
       } catch (err) {
         console.error('Error fetching exercises:', err);
         Alert.alert('Error', 'Failed to load exercises.');
@@ -115,52 +136,53 @@ export default function DetailView({
     };
 
     fetchExercises();
-  }, [selectedItem.id]);
+  }, [selectedItem.id, session]);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.backButton}>
-        <IconButton icon="arrow-left" size={30} onPress={onBack} />
-      </View>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container}>
+        <View style={styles.backButton}>
+          <IconButton icon="arrow-left" size={30} onPress={onBack} />
+        </View>
 
-      <Text variant="headlineMedium" style={styles.title}>{selectedItem.title}</Text>
-      <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
-      <Text variant="bodyMedium" style={styles.description}>{selectedItem.description}</Text>
+        <Text variant="headlineMedium" style={styles.title}>{selectedItem.title}</Text>
+        <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
+        <Text variant="bodyMedium" style={styles.description}>{selectedItem.description}</Text>
 
-      <Text variant="titleMedium" style={styles.heading}>Activities</Text>
-      <Divider style={styles.divider} />
+        <Text variant="titleMedium" style={styles.heading}>Activities</Text>
+        <Divider style={styles.divider} />
 
-      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
-        {exercises.map((exercise, index) => (
-          <Card
-            key={index}
-            onPress={() =>
-              router.push({
-                pathname: '/exercise-screen',
-                params: { title: exercise.title, component: exercise.title?.replace(" ", "") },
-              })
-            }
-          >
-            <Card.Title title={exercise.title} />
-            <Card.Content>
-              <Text variant="bodyMedium" style={styles.description}>{exercise.description}</Text>
-            </Card.Content>
-          </Card>
-        ))}
-      </ScrollView>
-
-      <View style={styles.buttonWrapper}>
-        <AssignButton onPress={() => setShowOverlay(true)} />
-        <AssignmentStatus
-          visible={showOverlay}
-          status={selectedItem.status}
-          onClose={() => setShowOverlay(false)}
-          onSelect={async (newStatus, retries) => {
-            try {
-              if (!childId || !userId) {
-                Alert.alert('Error', 'Missing user or child information');
-                return;
+        <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
+          {exercises.map((exercise, index) => (
+            <Card
+              key={index}
+              onPress={() =>
+                router.push({
+                  pathname: '/exercise-screen',
+                  params: { title: exercise.title, component: exercise.title?.replace(" ", "") },
+                })
               }
+            >
+              <Card.Title title={exercise.title} />
+              <Card.Content>
+                <Text variant="bodyMedium" style={styles.description}>{exercise.description}</Text>
+              </Card.Content>
+            </Card>
+          ))}
+        </ScrollView>
+
+        <View style={styles.buttonWrapper}>
+          <AssignButton onPress={() => setShowOverlay(true)} />
+          <AssignmentStatus
+            visible={showOverlay}
+            status={selectedItem.status}
+            onClose={() => setShowOverlay(false)}
+            onSelect={async (newStatus, retries) => {
+              try {
+                if (!childId || !userId) {
+                  Alert.alert('Error', 'Missing user or child information');
+                  return;
+                }
 
               let result;
 
@@ -177,17 +199,36 @@ export default function DetailView({
 
               if (!result) return;
 
-              selectedItem.status = newStatus;
+                selectedItem.status = newStatus;
 
-              Alert.alert('Success', `Learning unit successfully ${newStatus.toLowerCase()}!`);
-            } catch (error) {
-              console.error('Error updating assignment:', error);
-              Alert.alert('Error', 'Failed to update assignment. Please try again.');
-            }
-          }}
-        />
-      </View>
-    </ScrollView>
+                showMessage(`Learning unit ${newStatus.toLowerCase()} successfully!`, 'success');
+              } catch (error) {
+                console.error('Error updating assignment:', error);
+                showMessage('Failed to update assignment. Please try again.', 'error');
+              }
+            }}
+          />
+        </View>
+      </ScrollView>
+      
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={5000}
+        style={{
+          backgroundColor: snackbarType === 'error' ? '#e77f7fff' : '#a0e2a3ff',
+          borderRadius: 8,
+          margin: 16,
+        }}
+        action={{
+          label: 'Close',
+          textColor: 'black',
+          onPress: () => setSnackbarVisible(false),
+        }}
+      >
+        <Text style={{ color: 'black' }}>{snackbarMessage}</Text>
+      </Snackbar>
+    </View>
   );
 }
 
@@ -195,7 +236,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
+    minHeight: 0,
   },
   backButton: {
     marginTop: 40,
@@ -227,7 +269,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
     marginVertical: 2 },
   scrollArea: {
-    flex: 1
+    flex: 1, 
+    minHeight: 0,
   },
   scrollContent: {
     paddingBottom: 50

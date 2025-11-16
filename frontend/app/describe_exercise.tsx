@@ -11,7 +11,7 @@ import { Buffer } from 'buffer';
 
 // Question data interfaces
 interface Question {
-  id: number;
+  id: string;
   question: string;
   image: string;
   show_pointer: boolean;
@@ -28,9 +28,11 @@ interface DescribeExercise {
 }
 
 interface ApiQuestion {
-  id: number;
-  question_data: string | object;
+  id: string;
+  question_type: string;
   order: number;
+  question_data: string | object;
+  created_at: string;
 }
 
 // Fetch questions for a specific exercise by ID
@@ -40,7 +42,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeE
   console.log('API_URL:', API_URL);
 
   try {
-    const url = `${API_URL}/questions/${exerciseId}/`;
+    const url = `${API_URL}/content/${exerciseId}/questions/`;
     console.log('Fetching questions from URL:', url);
 
     const response = await fetch(url, {
@@ -75,6 +77,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeE
     }
 
     // Transform API questions to our Question format
+    
     const transformedQuestions: Question[] = questionsData
       .sort((a: ApiQuestion, b: ApiQuestion) => a.order - b.order) // Sort by order
       .map((apiQuestion: ApiQuestion, index: number) => {
@@ -88,17 +91,19 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeE
           }
           console.log(`Question ${index + 1} data:`, questionData);
 
-          return {
-            id: index + 1,
+          const transformedQuestion = {
+            id: apiQuestion.id,
             question: questionData.question || 'Question not available',
             image: questionData.image || '',
             show_pointer: questionData.show_pointer || false,
             pointerPosition: questionData.pointerPosition || undefined
           };
+          
+          return transformedQuestion;
         } catch (parseError) {
           console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
           return {
-            id: index + 1,
+            id: apiQuestion.id,
             question: 'Error loading question',
             image: '',
             show_pointer: false,
@@ -127,29 +132,8 @@ const fallbackExercise: DescribeExercise = {
   title: 'Describe Exercise',
   questions: [
     {
-      id: 1,
+      id: '1',
       question: "Where are we?",
-      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
-      show_pointer: false,
-      pointerPosition: undefined
-    },
-    {
-      id: 2,
-      question: "What colour is the water?",
-      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
-      show_pointer: true,
-      pointerPosition: { top: "250", left: "100" }
-    },
-    {
-      id: 3,
-      question: "What is the weather like?",
-      image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
-      show_pointer: true,
-      pointerPosition: { top: "100", left: "100" }
-    },
-    {
-      id: 4,
-      question: "What else can you see?",
       image: "https://via.placeholder.com/400x300/87CEEB/000000?text=Beach+Scene",
       show_pointer: false,
       pointerPosition: undefined
@@ -239,7 +223,7 @@ const DescribeExerciseComponent = () => {
   const [sessionStartTime] = useState(Date.now()); // Used in commented backend submission
   const { session } = useApp();
   const [exerciseResponses, setExerciseResponses] = useState<{ // Used in commented backend submission
-    questionId: number;
+    questionId: string; // Now string UUID instead of number
     question: string;
     response: string; // In real app, this would be transcribed audio
     timeSpent: number;
@@ -536,7 +520,7 @@ const DescribeExerciseComponent = () => {
         setExerciseResponses(prev => [
           ...prev,
           {
-            questionId: currentQData.id,
+            questionId: currentQData.id, // Use string UUID directly
             question: currentQData.question,
             response: uri,
             timeSpent,
@@ -605,45 +589,8 @@ const DescribeExerciseComponent = () => {
     }
   };
 
-  /*
-  // Handle submit answer
-  const handleSubmit = () => {
-    if (!isRecording) return;
-
-    const currentTime = Date.now();
-    const timeSpent = currentTime - questionStartTime;
-
-    // Record the response (in real app, this would be transcribed audio)
-    const responseData = {
-      questionId: DESCRIBE_EXERCISE.questions[currentQuestion].id,
-      question: DESCRIBE_EXERCISE.questions[currentQuestion].question,
-      response: "Audio response transcription would go here", // TODO: Replace with actual transcription
-      timeSpent: timeSpent,
-      timestamp: currentTime
-    };
-
-    setExerciseResponses(prev => [...prev, responseData]);
-    setIsRecording(false);
-    setShowMascotResponse(true);
-
-    // Animate mascot response
-    Animated.spring(responseAnim, {
-      toValue: 1,
-      tension: 100,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
-
-    // Hide response after 2 seconds
-    setTimeout(() => {
-      setShowMascotResponse(false);
-      responseAnim.setValue(0);
-    }, 2000);
-  };
-*/
-
   // Handle next question
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     if (currentQuestion < exercise.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setQuestionStartTime(Date.now()); // Reset timer for next question
@@ -652,20 +599,30 @@ const DescribeExerciseComponent = () => {
       // Exercise completed
       setIsCompleted(true);
 
-      // Submit exercise results to backend (commented out)
-      // submitExerciseResults();
-
-      // Temporary navigation (remove when backend is ready)
-      setTimeout(() => {
-        router.push({
-          pathname: '/child-dashboard' as any,
-          params: {
-            completedTaskId: taskId,
-            bodyType: mascotData.bodyType,
-            accessoryId: mascotData.accessoryId?.toString() || ''
-          }
+      try {
+        const response = await fetch(`${API_URL}/result/${childId}/exercise/${exerciseId}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
         });
-      }, 2000);
+  
+        if (!response.ok) {
+          throw new Error(`Failed to submit exercise results: ${response.status}`);
+        }
+        const result = await response.json();
+        console.log('Exercise submitted successfully:', result);
+  
+        // Navigate back to dashboard after successful submission
+        router.push({
+          pathname: '/child-dashboard',
+          params: { completedTaskId: exerciseId }
+        });
+  
+      } catch (error) {
+        console.error('Error submitting exercise:', error);
+      }
     }
   };
 
@@ -710,7 +667,7 @@ const DescribeExerciseComponent = () => {
         <Image
           source={currentQ.image ? { uri: currentQ.image } : require('@/assets/images/beach.jpg')}
           style={styles.beachImage}
-          resizeMode="cover"
+          resizeMode="contain"
         />
 
         {/* Pointer for ocean question */}

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { View, StyleSheet, Animated} from "react-native";
+import { View, StyleSheet, Animated } from "react-native";
 import { Text } from "react-native-paper";
 
 type Stat = {
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   
   },
   gridItem: {
-    width: "48%",
+    flexBasis: "48%",
     height: 80,
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
