@@ -1,5 +1,6 @@
 // Fallback for using MaterialIcons on Android and web.
 
+import React from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
 import { ComponentProps } from 'react';
@@ -22,6 +23,7 @@ const MAPPING = {
   'book.fill':'menu-book',
   'document.text':'description',
   'gearshape.fill': 'settings',
+  'bubble.left.and.bubble.right.fill': 'chat',
 } as unknown as IconMapping;
 
 /**

@@ -45,6 +45,7 @@ export default function DetailView({
     learningUnitId: string,
     childId: string,
     userId: string,
+    retries: number,
     participationType: 'required' | 'recommended',
   ) => {
     if (!session?.access_token) {
@@ -63,14 +64,22 @@ export default function DetailView({
         child_id: childId,
         user_id: userId,
         participation_type: participationType,
+        num_question_attempts: retries
       }),
     });
 
+    const res = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Failed to assign learning unit (${response.status})`);
+      if (res.error) {
+        showMessage(res.error, 'error');
+      } else {
+        showMessage('Failed to assign learning unit', 'error');
+      }
+      return null;
     }
 
-    return await response.json();
+    return res;
   };
 
   const unassignLearningUnit = async (
@@ -91,7 +100,7 @@ export default function DetailView({
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to unassign learning unit (${response.status})`);
+      showMessage(`Failed to unassign learning unit (${response.status})`, 'error');
     }
 
     return await response.json();
@@ -122,7 +131,7 @@ export default function DetailView({
 
         const data = await response.json();
         setExercises(data);
-
+        
         await setExercisesForUnit(selectedItem.id, data);
       } catch (err) {
         console.error('Error fetching exercises:', err);
@@ -151,12 +160,6 @@ export default function DetailView({
           {exercises.map((exercise, index) => (
             <Card
               key={index}
-              onPress={() =>
-                router.push({
-                  pathname: '/exercise-screen',
-                  params: { title: exercise.title, component: exercise.title?.replace(" ", "") },
-                })
-              }
             >
               <Card.Title title={exercise.title} />
               <Card.Content>
@@ -172,30 +175,31 @@ export default function DetailView({
             visible={showOverlay}
             status={selectedItem.status}
             onClose={() => setShowOverlay(false)}
-            onSelect={async (newStatus) => {
+            onSelect={async (newStatus, retries) => {
               try {
                 if (!childId || !userId) {
                   Alert.alert('Error', 'Missing user or child information');
                   return;
                 }
 
+                let result;
+
                 if (newStatus === 'Unassigned') {
-                  await unassignLearningUnit(selectedItem.id, childId);
+                  result = await unassignLearningUnit(selectedItem.id, childId);
                   setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
                 } else if (newStatus === 'Assigned as Required') {
-                  console.log("Unit id:", selectedItem.id);
-                  console.log("Child id:", childId);
-                  console.log("userId", userId);
-                  await assignLearningUnit(selectedItem.id, childId, userId, 'required');
+                  result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'required');
                   setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
                 } else if (newStatus === 'Assigned as Recommended') {
-                  await assignLearningUnit(selectedItem.id, childId, userId, 'recommended');
+                  result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'recommended');
                   setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
                 }
 
+                if (!result) return;
+
                 selectedItem.status = newStatus;
 
-                showMessage(`Learning unit ${newStatus.toLowerCase()} successfully!`, 'success');
+                showMessage(`Learning unit successfully ${newStatus.toLowerCase()}!`, 'success');
               } catch (error) {
                 console.error('Error updating assignment:', error);
                 showMessage('Failed to update assignment. Please try again.', 'error');
