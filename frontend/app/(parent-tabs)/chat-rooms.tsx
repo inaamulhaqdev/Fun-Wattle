@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { API_URL } from '@/config/api';
@@ -12,6 +13,7 @@ export default function ChatRooms() {
   const { profileId, session, chatRooms, setChatRooms, updateRoomLastMessage } = useApp();
   const token = session?.access_token;
   const isFetching = React.useRef(false);
+  const [isInitialLoading, setIsInitialLoading] = React.useState(false);
 
   const fetch_rooms_data = React.useCallback(async () => {
     if (!profileId || !token || isFetching.current) {
@@ -19,6 +21,7 @@ export default function ChatRooms() {
     }
 
     isFetching.current = true;
+    setIsInitialLoading(true);
     try {
       const response = await fetch(`${API_URL}/chat/${profileId}/rooms/`, {
         method: 'GET',
@@ -33,6 +36,7 @@ export default function ChatRooms() {
       Alert.alert('Error', 'Failed to fetch chat rooms');
     } finally {
       isFetching.current = false;
+      setIsInitialLoading(false);
     }
   }, [profileId, token, setChatRooms]);
 
@@ -99,11 +103,16 @@ export default function ChatRooms() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Messages</Text>
-      <FlatList
-        data={chatRooms}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+      <Text style={styles.title}>Your Messages</Text>
+      {isInitialLoading && chatRooms.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FD902B" />
+        </View>
+      ) : (
+        <FlatList
+          data={chatRooms}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
           <TouchableOpacity style={styles.room} onPress={() => openRoom(item.id, item.name)}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
@@ -118,6 +127,7 @@ export default function ChatRooms() {
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
+      )}
     </SafeAreaView>
   );
 }
@@ -141,6 +151,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         margin: 16,
         marginTop: 8,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     room: {
         flexDirection: 'row',

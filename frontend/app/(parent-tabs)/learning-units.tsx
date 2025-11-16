@@ -9,15 +9,18 @@ import LoginScreen from '../login';
 
 export default function LearningUnits() {
   const [data, setData] = useState<LearningUnit[]>([]);
+  const [loading, setLoading] = useState(true);
   const { session, childId } = useApp();
   useFocusEffect(
     React.useCallback(() => {
       const fetchModules = async () => {
         // Guard: don't attempt network requests when there's no authenticated session
         if (!session?.access_token) {
+          setLoading(false);
           return;
         }
 
+        setLoading(true);
         try {
           const response = await fetch(`${API_URL}/content/learning_units/`, {
             method: 'GET',
@@ -46,6 +49,8 @@ export default function LearningUnits() {
         } catch (err) {
           console.error('Error fetching modules:', err);
           Alert.alert('Error', 'Failed to load learning units. Please try again.');
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -58,5 +63,5 @@ export default function LearningUnits() {
     return <LoginScreen />;
   }
 
-  return <LearningLibrary data={data} />;
+  return <LearningLibrary data={data} loading={loading} />;
 }

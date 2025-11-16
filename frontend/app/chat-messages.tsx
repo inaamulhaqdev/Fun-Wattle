@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Modal, Alert } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
@@ -155,7 +156,7 @@ export default function ChatMessages() {
       {/* chat messages */}
       {isLoadingMessages && messages.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <Text>Loading messages...</Text>
+          <ActivityIndicator size="large" color="#FD902B" />
         </View>
       ) : (
         <FlatList
