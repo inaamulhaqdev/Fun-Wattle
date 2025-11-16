@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
-import { IconButton, Divider } from 'react-native-paper';
-import RepetitionCounter from './RepeatAssignmentPillButton';
+import { Button, IconButton, Divider } from 'react-native-paper';
+import Counter from './AssignmentPillButton';
 
 interface AssignmentStatusProps {
   visible: boolean;
   onClose: () => void;
-  onSelect: (status: string) => void;
+  onSelect: (status: string, retries: number) => void;
   options?: string[];
   status: string;
-  repetitions?: number;
+  retries?: number;
 }
 
 export default function AssignmentStatus({
@@ -18,10 +18,19 @@ export default function AssignmentStatus({
   onSelect,
   options = ['Unassigned', 'Assigned as Recommended', 'Assigned as Required'],
   status,
-  repetitions: initialReps = 1,
+  retries: initialRetries = 2,
 }: AssignmentStatusProps) {
-  const [selected, setSelected] = useState(status || null);
-  const [repetitions, setRepetitions] = useState(initialReps);
+  const [selected, setSelected] = useState(status || "");
+  const [retries, setRetries] = useState(initialRetries);
+
+  useEffect(() => {
+    if (visible) {
+      setSelected(status || '');
+      setRetries(initialRetries);
+    }
+  }, [visible, status, initialRetries]);
+
+  const isAssigned = selected !== 'Unassigned';
 
   return (
     <Modal transparent visible={visible} animationType="fade">
@@ -43,18 +52,31 @@ export default function AssignmentStatus({
                 style={styles.optionContainer}
                 onPress={() => {
                   setSelected(option);
-                  onSelect(option);
                 }}
               >
                 <Text style={styles.optionText}>{option}</Text>
                 {selected === option && <Text style={styles.tick}>✓</Text>}
               </TouchableOpacity>
-
-              {option === 'Assigned as Required' && selected === 'Assigned as Required' && (
-                <RepetitionCounter value={repetitions} onChange={setRepetitions} />
-              )}
             </View>
           ))}
+
+          {isAssigned && (
+            <View style={{ marginTop: 5 }}>
+              <Counter value={retries} onChange={setRetries}/>
+            </View>
+          )}
+          
+          <Button
+            mode="contained"
+            onPress={() => {
+              onSelect(selected, retries);
+            }}
+            style={styles.confirmButton}
+            contentStyle={{ paddingVertical: 8 }}
+            textColor="black"
+          >
+            Confirm
+          </Button>        
         </View>
       </View>
     </Modal>
@@ -134,5 +156,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     fontSize: 16,
     textAlign: 'center',
+  },
+  confirmButton: {
+    backgroundColor: "#FDD652",
+    marginTop: 30,
   },
 });

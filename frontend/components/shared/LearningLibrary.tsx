@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { Card, Text, Searchbar } from 'react-native-paper';
-import DetailView from './unit-details';
+import DetailView from './UnitDetails';
 import { useFocusEffect } from 'expo-router';
 import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
 import { useApp } from '../../context/AppContext';
