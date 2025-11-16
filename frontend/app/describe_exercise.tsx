@@ -77,52 +77,33 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<DescribeE
     }
 
     // Transform API questions to our Question format
-    console.log('BEFORE TRANSFORMATION - Raw questionsData:', questionsData);
     
     const transformedQuestions: Question[] = questionsData
       .sort((a: ApiQuestion, b: ApiQuestion) => a.order - b.order) // Sort by order
       .map((apiQuestion: ApiQuestion, index: number) => {
         try {
-          console.warn('ALERT: PROCESSING QUESTION INDEX', index + 1);
-          console.warn('ALERT: RAW ID:', apiQuestion.id, 'TYPE:', typeof apiQuestion.id);
-          console.error('ERROR-LEVEL LOG - Question Data:', apiQuestion.question_data);
-          console.info('INFO: Question Order:', apiQuestion.order);
-          
           // Handle both string and object cases for question_data
           let questionData;
           if (typeof apiQuestion.question_data === 'string') {
-            console.log('🔄 Parsing question_data as JSON string');
             questionData = JSON.parse(apiQuestion.question_data);
           } else {
-            console.log('✅ Using question_data as object directly');
             questionData = apiQuestion.question_data;
           }
-          console.log(`📋 Question ${index + 1} parsed data:`, questionData);
+          console.log(`Question ${index + 1} data:`, questionData);
 
-          // DEBUG: Check if apiQuestion.id is actually present
-          console.error('🚨 CRITICAL DEBUG - apiQuestion object:', apiQuestion);
-          console.error('🚨 CRITICAL DEBUG - apiQuestion.id value:', apiQuestion.id);
-          console.error('🚨 CRITICAL DEBUG - typeof apiQuestion.id:', typeof apiQuestion.id);
-          console.error('🚨 CRITICAL DEBUG - apiQuestion.id === undefined?', apiQuestion.id === undefined);
-          
-          const finalId = apiQuestion.id || `fallback_${index + 1}`;
-          console.error('🚨 CRITICAL DEBUG - Final ID being used:', finalId);
-          
           const transformedQuestion = {
-            id: finalId, // Use finalId to debug what's actually being assigned
+            id: apiQuestion.id,
             question: questionData.question || 'Question not available',
             image: questionData.image || '',
             show_pointer: questionData.show_pointer || false,
             pointerPosition: questionData.pointerPosition || undefined
           };
           
-          console.warn(`ALERT: FINAL TRANSFORMED Question ${index + 1}:`, transformedQuestion);
-          console.error(`ERROR-LEVEL: ID IS ALREADY STRING ${apiQuestion.id} (${typeof apiQuestion.id}) → "${transformedQuestion.id}" (${typeof transformedQuestion.id})`);
           return transformedQuestion;
         } catch (parseError) {
           console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
           return {
-            id: apiQuestion.id, // Already a string UUID
+            id: apiQuestion.id,
             question: 'Error loading question',
             image: '',
             show_pointer: false,
@@ -607,43 +588,6 @@ const DescribeExerciseComponent = () => {
       console.error('Error playing feedback audio:', err);
     }
   };
-
-  /*
-  // Handle submit answer
-  const handleSubmit = () => {
-    if (!isRecording) return;
-
-    const currentTime = Date.now();
-    const timeSpent = currentTime - questionStartTime;
-
-    // Record the response (in real app, this would be transcribed audio)
-    const responseData = {
-      questionId: DESCRIBE_EXERCISE.questions[currentQuestion].id,
-      question: DESCRIBE_EXERCISE.questions[currentQuestion].question,
-      response: "Audio response transcription would go here", // TODO: Replace with actual transcription
-      timeSpent: timeSpent,
-      timestamp: currentTime
-    };
-
-    setExerciseResponses(prev => [...prev, responseData]);
-    setIsRecording(false);
-    setShowMascotResponse(true);
-
-    // Animate mascot response
-    Animated.spring(responseAnim, {
-      toValue: 1,
-      tension: 100,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
-
-    // Hide response after 2 seconds
-    setTimeout(() => {
-      setShowMascotResponse(false);
-      responseAnim.setValue(0);
-    }, 2000);
-  };
-*/
 
   // Handle next question
   const handleNextQuestion = async () => {
