@@ -16,28 +16,31 @@ interface Message {
 export default function ChatMessages() {
   const router = useRouter();
   const { chat_room_id, recipient_name } = useLocalSearchParams<{ chat_room_id: string; recipient_name: string }>();
-  const { profileId, session } = useApp();
+  const { profileId, session, messagesCache, setMessagesForRoom, addMessageToRoom, updateRoomLastMessage } = useApp();
   const token = session?.access_token;
 
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const isFetching = React.useRef(false);
+
+  const messages = messagesCache[chat_room_id || ''] || [];
 
   // Fetch messages from the database
   useEffect(() => {
     if (!chat_room_id || !token) {
-      Alert.alert('Error', 'Missing chat room ID or token');
       return;
     }
 
-    fetchMessages();
-  }, [chat_room_id, token]);
+    // We only fetch if we don't have cached messages for this room
+    if (messages.length === 0) {
+      fetchMessages();
+    }
+  }, [chat_room_id, token, messages.length]);
 
   // Subscribe to realtime message updates from Chat_Message table in Supabase
   useEffect(() => {
     if (!chat_room_id) {
-      Alert.alert('Error', 'Missing chat room ID');
       return;
     }
 
@@ -53,9 +56,8 @@ export default function ChatMessages() {
         },
         (payload) => {
           const newMessage = payload.new as Message;
-          setMessages((prevMessages) => {
-            return [...prevMessages, newMessage];
-          });
+          // Add message directly into cache
+          addMessageToRoom(chat_room_id, newMessage);
         }
       )
       .subscribe();
@@ -63,9 +65,16 @@ export default function ChatMessages() {
     return () => {
       channel.unsubscribe();
     };
-  }, [chat_room_id]);
+  }, [chat_room_id, addMessageToRoom]);
 
   const fetchMessages = async () => {
+    if (isFetching.current) {
+      return;
+    }
+
+    isFetching.current = true;
+    setIsLoadingMessages(true);
+
     try {
       const response = await fetch(`${API_URL}/chat/${chat_room_id}/messages/`, {
         method: 'GET',
@@ -80,11 +89,14 @@ export default function ChatMessages() {
       }
 
       const data = await response.json();
-      setMessages(data);
+      if (chat_room_id) {
+        setMessagesForRoom(chat_room_id, data);
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to load messages');
     } finally {
-      setLoading(false);
+      setIsLoadingMessages(false);
+      isFetching.current = false;
     }
   };
 
@@ -122,14 +134,6 @@ export default function ChatMessages() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text>Loading messages...</Text>
-      </View>
-    );
-  }
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -149,10 +153,15 @@ export default function ChatMessages() {
       </View>
 
       {/* chat messages */}
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => {
+      {isLoadingMessages && messages.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <Text>Loading messages...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => {
           const previous = messages[index - 1];
           const showTime = !previous || Math.abs(new Date(item.timestamp).getTime() - new Date(previous.timestamp).getTime()) > 10 * 60 * 1000; // show the time if 10+ min gap between messages
 
@@ -182,6 +191,7 @@ export default function ChatMessages() {
         }}
         contentContainerStyle={styles.chatArea}
       />
+      )}
 
       {/* sender message area */}
       <View style={styles.inputContainer}>
@@ -248,6 +258,11 @@ const styles = StyleSheet.create({
     color: 'white'
   },
   chatArea: { padding: 16 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   timestamp: {
     alignSelf: 'center',
     fontSize: 12,
