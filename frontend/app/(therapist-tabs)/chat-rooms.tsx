@@ -1,41 +1,98 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
 import { Alert } from 'react-native';
+import { supabase } from '@/config/supabase';
 
 export default function ChatRooms() {
   const router = useRouter();
-  const [rooms, setRooms] = React.useState<Array<{ id: string; name: string; profile_picture: string; last_message: string; }>>([]);
-  const { profileId, session } = useApp();
+  const { profileId, session, chatRooms, setChatRooms, updateRoomLastMessage } = useApp();
   const token = session?.access_token;
+  const isFetching = React.useRef(false);
+  const [isInitialLoading, setIsInitialLoading] = React.useState(false);
 
-  React.useEffect(() => {
-    // Fetch chat rooms
-    if (!profileId || !token) {
-      Alert.alert('Error', 'Missing profile ID or token');
+  const fetch_rooms_data = React.useCallback(async () => {
+    if (!profileId || !token || isFetching.current) {
       return;
     }
 
-    fetch(`${API_URL}/chat/${profileId}/rooms/`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    })
-      .then(response => response.json())
-      .then(data => {
-        // Update the rooms state with the fetched data
-        setRooms(data);
-        console.log(data);
-      })
-      .catch(error => {
-        console.error('Error fetching chat rooms:', error);
+    isFetching.current = true;
+    setIsInitialLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/chat/${profileId}/rooms/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
       });
-  }, []);
+      const data = await response.json();
+      setChatRooms(data);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch chat rooms');
+    } finally {
+      isFetching.current = false;
+      setIsInitialLoading(false);
+    }
+  }, [profileId, token, setChatRooms]);
+
+  // Subscribe to realtime message updates from Chat_Message table in Supabase (so last_message updates in the room list are realtime)
+  React.useEffect(() => {
+    if (!profileId) return;
+
+    const channel = supabase
+      .channel('chat-rooms')
+      // Listener 1: for messages where the user is messenger_1
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'Chat_Message',
+          filter: `messenger_1_id=eq.${profileId}`
+        },
+        (payload) => {
+          // Update room's last message into cache
+          const newMessage = payload.new as any;
+          if (newMessage.chat_room_id && newMessage.message_content) {
+            updateRoomLastMessage(newMessage.chat_room_id, newMessage.message_content);
+          }
+        }
+      )
+      // Listener 2: for messages where the user is messenger_2
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'Chat_Message',
+          filter: `messenger_2_id=eq.${profileId}`
+        },
+        (payload) => {
+          // Update room's last message into cache
+          const newMessage = payload.new as any;
+          if (newMessage.chat_room_id && newMessage.message_content) {
+            updateRoomLastMessage(newMessage.chat_room_id, newMessage.message_content);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profileId, updateRoomLastMessage]);
+
+  // Fetch rooms on mount only if cache is empty (typically first load)
+  React.useEffect(() => {
+    if (chatRooms.length === 0) {
+      fetch_rooms_data();
+    }
+  }, [fetch_rooms_data, chatRooms.length]);
 
   const openRoom = (roomId: string, roomName: string) => {
     router.push({
@@ -46,11 +103,16 @@ export default function ChatRooms() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Messages</Text>
-      <FlatList
-        data={rooms}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+      <Text style={styles.title}>Your Messages</Text>
+      {isInitialLoading && chatRooms.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FD902B" />
+        </View>
+      ) : (
+        <FlatList
+          data={chatRooms}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
           <TouchableOpacity style={styles.room} onPress={() => openRoom(item.id, item.name)}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
@@ -65,6 +127,7 @@ export default function ChatRooms() {
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
+      )}
     </SafeAreaView>
   );
 }
@@ -88,6 +151,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         margin: 16,
         marginTop: 8,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     room: {
         flexDirection: 'row',
