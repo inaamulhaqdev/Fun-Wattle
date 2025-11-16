@@ -98,7 +98,7 @@ export default function ChatRooms() {
 
   const openRoom = (roomId: string, roomName: string) => {
     router.push({
-      pathname: '/chat-messages',
+      pathname: './chat-messages',
       params: { chat_room_id: roomId, recipient_name: roomName }
     });
   };
