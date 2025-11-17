@@ -12,6 +12,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 const { width, height } = Dimensions.get('window');
 
@@ -212,6 +213,7 @@ export default function MultipleSelectExercise() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
+  const [totalCoinsEarned, setTotalCoinsEarned] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -544,6 +546,7 @@ export default function MultipleSelectExercise() {
       
       // Award 10 coins for correct answer
       updateCoins(10);
+      setTotalCoinsEarned(prev => prev + 10);
       
       setShowCelebration(true);
       
@@ -594,6 +597,9 @@ export default function MultipleSelectExercise() {
       return;
     }
     
+    // Show completion screen first
+    setShowCompletionScreen(true);
+    
     try {
       console.log('Complete button pressed');
       
@@ -614,11 +620,13 @@ export default function MultipleSelectExercise() {
       // Clear saved progress since exercise is completed
       clearSavedProgress();
 
-      // Navigate back to dashboard after successful submission
-      router.push({
-        pathname: '/child-dashboard',
-        params: { completedTaskId: exerciseId }
-      });
+      // Navigate back to dashboard after 3 seconds
+      setTimeout(() => {
+        router.push({
+          pathname: '/child-dashboard',
+          params: { completedTaskId: exerciseId }
+        });
+      }, 3000);
 
     } catch (error) {
       console.error('Error submitting exercise:', error);
@@ -657,6 +665,31 @@ export default function MultipleSelectExercise() {
         <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
           <Text style={styles.retryButtonText}>Go Back</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Completion Screen
+  if (showCompletionScreen) {
+    return (
+      <View style={styles.completionContainer}>
+        <Text style={styles.completionTitle}>🎉 Great Job! 🎉</Text>
+        <Text style={styles.completionSubtext}>You completed the exercise!</Text>
+        
+        <View style={styles.scoreDisplay}>
+          <Text style={styles.scoreLabel}>Your Score</Text>
+          <Text style={styles.scoreFinal}>{score} points</Text>
+        </View>
+
+        <View style={styles.coinRewardContainer}>
+          <Text style={styles.coinRewardText}>You earned</Text>
+          <View style={styles.coinAmountContainer}>
+            <MaterialCommunityIcons name="star-circle" size={40} color="#FFD700" />
+            <Text style={styles.coinAmountText}>{totalCoinsEarned} Coins!</Text>
+          </View>
+        </View>
+
+        <Text style={styles.returningText}>Returning to dashboard...</Text>
       </View>
     );
   }
@@ -953,5 +986,77 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  completionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E8F4FD',
+    padding: 20,
+  },
+  completionTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  completionSubtext: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  scoreDisplay: {
+    alignItems: 'center',
+    marginBottom: 32,
+    backgroundColor: '#f8f9fa',
+    padding: 20,
+    borderRadius: 16,
+    width: '100%',
+  },
+  scoreLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 8,
+  },
+  scoreFinal: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  coinRewardContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    padding: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    width: '100%',
+  },
+  coinRewardText: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 10,
+  },
+  coinAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  coinAmountText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  returningText: {
+    fontSize: 16,
+    color: '#999',
+    marginTop: 20,
+    fontStyle: 'italic',
   },
 });
