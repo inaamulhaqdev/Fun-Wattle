@@ -1,0 +1,42 @@
+[
+    {
+        "question_id": "10c33aa1-3e1e-4b06-9a20-fe96c135ce8e", 
+        "question_text": "What can you see the children doing?", 
+        "expected_answers": ["children are playing hide-and-seek"]
+    }, 
+    {
+        "question_id": "ce662ebc-3f74-4adc-8353-6b228599e311", 
+        "question_text": "What are the children doing?", 
+        "expected_answers": ["swinging on the swings"]
+    }, 
+    {
+        "question_id": "8a89516d-2256-489b-82fc-62f08ba8837c", 
+        "question_text": "What can you see children doing?", 
+        "expected_answers": ["playing, swinging, running, playing in the sandpit, climbing the gym"]
+    }, 
+    {
+        "question_id": "0c974d77-77d8-4c8a-b2fe-9eecce624bb4", 
+        "question_text": "What is in the sandpit?", 
+        "expected_answers": ["children", "bucket", "shovel", "rake"]
+    },
+    {
+        "question_id": "b3b4e752-4c38-42ec-995b-4635cc9532a4", 
+        "question_text": "What are they doing?", 
+        "expected_answers": ["children are running around"]
+    }, 
+    {
+        "question_id": "e9961749-99f5-43bd-9d09-63c43a49cecf", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["a child is running", "the child is hiding", "the child is counting"]
+    },
+    {
+        "question_id": "4dfaeed4-5efc-4225-a815-ad0dc3f31e56", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["some children climbing the gym"]
+    },
+    {
+        "question_id": "7ce83dce-4199-4951-ba29-5b4a3b4aa656", 
+        "question_text": "What is everyone doing?", 
+        "expected_answers": ["everyone is having fun", "everyone is playing"]
+    }
+]

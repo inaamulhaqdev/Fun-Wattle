@@ -110,24 +110,22 @@ export default function TherapistDashboard() {
         fetch(`${API_URL}/assignment/${userId}/assigned_by/`)
       ]);
 
-      if (!unitsResp.ok || !assignmentsResp.ok) throw new Error('Failed to fetch data');
+      if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
 
-      const allUnits = await unitsResp.json();
       const assignments = await assignmentsResp.json();
 
-      const childAssignments = assignments.filter((a: any) => a.assigned_to === selectedChildId);
+      const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
 
-      const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => {
-        const unit = allUnits.find((unit: any) => unit.id === assignment.learning_unit);
-        return {
-          assignmentId: assignment.id,
-          learningUnitId: assignment.learning_unit,
-          title: unit.title || '',
-          category: unit.category || '',
-          participationType: assignment.participation_type,
-          assignedDate: formatDate(assignment.assigned_at),
-        };
-      });
+
+
+      const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
+        assignmentId: assignment.id,
+        learningUnitId: assignment.learning_unit.id,
+        title: assignment.learning_unit.title || '',
+        category: assignment.learning_unit.category || '',
+        participationType: assignment.participation_type,
+        assignedDate: formatDate(assignment.assigned_at),
+      }));
 
       const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
         assignedUnitsDetails.map(async (unit) => {
@@ -141,6 +139,7 @@ export default function TherapistDashboard() {
       );
 
       setData(assignedUnitsWithStats);
+
 
     } catch (err) {
       console.error(err);

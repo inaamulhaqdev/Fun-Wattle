@@ -27,6 +27,20 @@ interface MascotData {
 
 const childId = 'some-child-id';
 
+// Helper function to clean exercise type strings
+const cleanExerciseType = (exerciseType: string | null | undefined): string => {
+  // Handle null, undefined, or empty strings
+  if (!exerciseType || typeof exerciseType !== 'string') {
+    return 'multiple_drag';
+  }
+  
+  return exerciseType
+    .trim()                    
+    .replace(/\s+/g, ' ')      
+    .replace(/[\n\r\t]/g, '')
+    .toLowerCase();          
+};
+
 // Default tasks (fallback if API fails)
 /* const defaultTasks: Task[] = [
   { id: '1', name: 'activity1', completed: true },
@@ -190,7 +204,7 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
         id: exercise.id || `exercise-${index}`,
         name: exercise.title || 'Untitled Exercise',
         completed: false, // Default to incomplete for faster loading
-        exerciseType: exercise.exercise_type || 'multiple_drag',
+        exerciseType: cleanExerciseType(exercise.exercise_type),
         exerciseId: exercise.id,
         description: exercise.description || ''
       }));
@@ -205,7 +219,7 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
           id: exercise.id || `exercise-${index}`,
           name: exercise.title || 'Untitled Exercise',
           completed: exercise.completed || false,
-          exerciseType: exercise.exercise_type || 'multiple_drag',
+          exerciseType: cleanExerciseType(exercise.exercise_type),
           exerciseId: exercise.id,
           description: exercise.description || ''
         }));
@@ -785,7 +799,13 @@ const ChildDashboard = () => {
     // Determine the route based on exercise type
     let routePath = '/multiple_drag_exercise'; // default
     if (task.exerciseType) {
-      switch (task.exerciseType) {
+      // Clean the exercise type to handle whitespace and formatting issues
+      const cleanedExerciseType = cleanExerciseType(task.exerciseType);
+      
+      console.log('Original exercise type:', JSON.stringify(task.exerciseType));
+      console.log('Cleaned exercise type:', JSON.stringify(cleanedExerciseType));
+      
+      switch (cleanedExerciseType) {
         case 'multiple_drag':
           routePath = '/multiple_drag_exercise';
           break;
@@ -799,7 +819,7 @@ const ChildDashboard = () => {
           routePath = '/ordered_drag_exercise';
           break;
         default:
-          console.warn('Unknown exercise type:', task.exerciseType, 'using default route');
+          console.warn('Unknown exercise type:', cleanedExerciseType, '(original:', JSON.stringify(task.exerciseType) + ') using default route');
           routePath = '/multiple_drag_exercise';
       }
     }

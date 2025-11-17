@@ -22,7 +22,7 @@ const formatDate = (isoString: string): string => {
 };
 
 export default function ParentDashboard() {
-  const { profileId, childId, session } = useApp();
+  const { profileId, childId, session, selectChild } = useApp();
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [parentName, setParentName] = useState('');
@@ -55,17 +55,30 @@ export default function ParentDashboard() {
         const parentProfileData = await parentProfileResponse.json();
         setParentName(parentProfileData.name);
 
-        // Get selected child profile
-        const selectedChildResponse = await fetch(`${API_URL}/profile/${childId}/data/`, {
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`
-          }
+        // Get list of profiles
+        const response = await fetch(`${API_URL}/profile/${userId}/list/`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
         });
-        if (!selectedChildResponse.ok) {
-          throw new Error(`Failed to fetch child profile (${selectedChildResponse.status})`);
+
+        if (!response.ok) throw new Error('Failed to fetch profiles');
+
+        const profiles = await response.json();
+      
+        // Filter for child profiles
+        const childProfiles = profiles.filter((p: any) => p.profile_type === 'child');
+
+        let currentChild: any = null;
+
+        if (childId) {
+          currentChild = childProfiles.find((c: any) => c.id === childId) || null;
         }
-        const selectedChildData = await selectedChildResponse.json();
-        setSelectedChildName(selectedChildData.name);
+
+        if (!currentChild && childProfiles.length > 0) {
+          currentChild = childProfiles[0];
+        }
+
+        selectChild(currentChild);
+        setSelectedChildName(currentChild.name);
 
       } catch (error: any) {
         Alert.alert('Error', error.message);
@@ -75,7 +88,7 @@ export default function ParentDashboard() {
     };
 
     fetchProfiles();
-  }, [childId]);
+  }, [childId, profileId, session]);
 
   const fetchAssignments = React.useCallback(async () => {
     try {
@@ -108,7 +121,6 @@ export default function ParentDashboard() {
       );
 
       setData(assignedUnitsWithStats);
-
 
     } catch (err) {
       console.error(err);

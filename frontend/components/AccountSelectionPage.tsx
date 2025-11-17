@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { supabase } from '../config/supabase';
@@ -14,40 +15,20 @@ export interface Account {
   isLocked?: boolean;
 }
 
-// Placeholder accounts
-const accounts: Account[] = [
-  {
-    id: '1',
-    name: 'Alice',
-    type: 'parent',
-    isLocked: true,
-  },
-  {
-    id: '2',
-    name: 'Dwight',
-    type: 'therapist',
-    isLocked: true,
-  },
-  // Add more accounts here as needed
-  // {
-  //   id: '2',
-  //   name: 'Child Profile',
-  //   type: 'child',
-  //   isLocked: false,
-  // },
-];
-
 const AccountSelectionPage = () => {
   const { session, setProfile } = useApp(); // Here useApp provides session and lets us set profile and child id's
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [firstChild, setFirstChild] = useState<Account | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAccounts = async () => {
+      setLoading(true);
       try {
         if (!session) {
           Alert.alert('No active session', 'Please log in again.');
           router.replace('/login');
+          setLoading(false);
           return;
         }
 
@@ -56,6 +37,7 @@ const AccountSelectionPage = () => {
         const response = await fetch(`${API_URL}/profile/${user.id}/list/`, {
           method: 'GET',
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${session?.access_token}`
           }
         });
@@ -83,6 +65,8 @@ const AccountSelectionPage = () => {
       } catch (error) {
         console.error('Error fetching profiles:', error);
         Alert.alert('Error', 'Failed to load profiles. Please try again.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -143,9 +127,15 @@ const AccountSelectionPage = () => {
       <View style={styles.content}>
         <Text style={styles.title}>Choose your profile</Text>
 
-        <ScrollView style={styles.accountsList} showsVerticalScrollIndicator={false}>
-          {accounts.map(account => renderAccountCard(account))}
-        </ScrollView>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FD902B" />
+          </View>
+        ) : (
+          <ScrollView style={styles.accountsList} showsVerticalScrollIndicator={false}>
+            {accounts.map(account => renderAccountCard(account))}
+          </ScrollView>
+        )}
       </View>
     </View>
   );
@@ -161,6 +151,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 32,
