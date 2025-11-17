@@ -12,8 +12,7 @@ import azure.cognitiveservices.speech as speechsdk
 from openai import AzureOpenAI
 from django.http import HttpResponse
 import re
-
-
+from django.db.models.expressions import RawSQL
 
 AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "australiaeast")

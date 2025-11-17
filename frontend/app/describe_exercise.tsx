@@ -475,6 +475,9 @@ const DescribeExerciseComponent = () => {
         formData.append('questionId', currentQData.id.toString());
         formData.append('questionText', currentQData.question);
 
+        console.log(formData.get("questionId"));
+        console.log(formData.get("questionText"));
+
         if (!session?.access_token) {
           Alert.alert('Error', 'You must be authorized to perform this action');
           return;
@@ -510,7 +513,9 @@ const DescribeExerciseComponent = () => {
 };
 
         if (!response.ok) {
-          throw new Error('Failed to upload audio');
+          const errorText = await response.text();
+          console.error("Backend error response:", errorText);
+          throw new Error("Failed to upload audio");
         }
 
         const data = await response.json();
