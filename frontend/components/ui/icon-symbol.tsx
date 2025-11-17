@@ -23,7 +23,8 @@ const MAPPING = {
   'book.fill':'menu-book',
   'document.text':'description',
   'gearshape.fill': 'settings',
-  'bubble.left.and.bubble.right.fill': 'chat',
+  'bubble.left.and.bubble.right.fill': 'chat-bubble',
+  'doc.text.fill': 'article',
 } as unknown as IconMapping;
 
 /**
