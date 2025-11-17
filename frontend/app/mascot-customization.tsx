@@ -80,7 +80,7 @@ const MascotCustomization = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          coins: -coinsToDeduct  // Negative value to deduct coins
+          amount: coinsToDeduct  // Send positive value for adding coins
         }),
       });
 

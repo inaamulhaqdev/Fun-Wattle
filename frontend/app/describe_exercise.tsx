@@ -452,9 +452,10 @@ const DescribeExerciseComponent = () => {
     try {
       const url = `${API_URL}/profile/${childId}/coins/`;
       console.log('Updating coins at:', url);
+      console.log('coinscount is:', coinsToAdd);
 
       const requestData = {
-        coins: coinsToAdd
+        amount: coinsToAdd
       };
 
       console.log('Request data:', requestData);

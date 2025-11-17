@@ -470,7 +470,7 @@ export default function MultipleDragExercise() {
       console.log('Updating coins at:', url);
 
       const requestData = {
-        coins: coinsToAdd
+        amount: coinsToAdd
       };
 
       console.log('Request data:', requestData);
