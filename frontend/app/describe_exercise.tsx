@@ -682,6 +682,27 @@ const DescribeExerciseComponent = () => {
     }
   };
 
+  // Handle back button - return to dashboard without saving
+  const handleBack = () => {
+    Alert.alert(
+      'Leave Exercise?',
+      'Your progress will not be saved. Are you sure you want to go back?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: () => {
+            router.push('/child-dashboard');
+          }
+        }
+      ]
+    );
+  };
+
   // Show loading screen while fetching exercise data
   if (isLoading) {
     return (
@@ -713,16 +734,21 @@ const DescribeExerciseComponent = () => {
 
   return (
     <View style={styles.container}>
-      {/* Progress indicator */}
-      <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>Question {currentQuestion + 1} of {exercise.questions.length}</Text>
-        <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${((currentQuestion + 1) / exercise.questions.length) * 100}%` }
-            ]}
-          />
+      {/* Header with back button and progress indicator */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <FontAwesome name="arrow-left" size={24} color="#666" />
+        </TouchableOpacity>
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>Question {currentQuestion + 1} of {exercise.questions.length}</Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${((currentQuestion + 1) / exercise.questions.length) * 100}%` }
+              ]}
+            />
+          </View>
         </View>
       </View>
 
@@ -854,9 +880,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#E8F4FD',
   },
-  progressContainer: {
-    padding: 20,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  progressContainer: {
+    flex: 1,
+    paddingVertical: 10,
   },
   progressText: {
     fontSize: 16,
