@@ -41,20 +41,10 @@ const cleanExerciseType = (exerciseType: string | null | undefined): string => {
     .toLowerCase();          
 };
 
-// Default tasks (fallback if API fails)
-/* const defaultTasks: Task[] = [
-  { id: '1', name: 'activity1', completed: true },
-  { id: '2', name: 'multiple_drag_exercise', completed: false },
-  { id: '3', name: 'describe_exercise', completed: false },
-  { id: '4', name: 'activity4', completed: false },
-  { id: '5', name: 'activity5', completed: false },
-]; */
-
 // Function to fetch child's coin balance from backend
-/*
 const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: number) => void) => {
   try {
-    const response = await fetch(`${API_URL}/coins/${childId}`, {
+    const response = await fetch(`${API_URL}/profile/${childId}/coins`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -74,7 +64,6 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
     setCoinBalance(0);
   }
 };
-*/
 
 // Function to fetch exercises for a learning unit
 const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: string): Promise<any[]> => {
@@ -473,7 +462,7 @@ const ChildDashboard = () => {
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
   // const [streakCount, setStreakCount] = useState(0);
-  // const [coinBalance, setCoinBalance] = useState(0);
+  const [coinBalance, setCoinBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isUIReady, setIsUIReady] = useState(false);
@@ -540,7 +529,7 @@ const ChildDashboard = () => {
     // Now childId will always have a value (either from context or fallback)
     console.log('Calling fetchAssignedLearningUnit with childId:', childId);
     fetchAssignedLearningUnit(childId, setTasks, setIsDataLoaded);
-    //fetchCoinBalance(childId, setCoinBalance);
+    fetchCoinBalance(childId, setCoinBalance);
     //fetchStreakCount(childId, setStreakCount);
   }, [childId, contextChildId]);
 
@@ -898,7 +887,7 @@ const ChildDashboard = () => {
           </View>
           <View style={styles.starContainer}>
             <MaterialCommunityIcons name="star-circle" size={24} color="#007ae6ff" />
-            <Text style={styles.starText}>150</Text>
+            <Text style={styles.starText}>{coinBalance}</Text>
           </View>
         </View>
       </View>
