@@ -230,7 +230,8 @@ const DescribeExerciseComponent = () => {
     timestamp: number;
   }[]>([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  const [gptFeedback, setGptFeedback] = useState<string | null>(null);// Display GPT feedback on UI - only for dev testing TODO: remove this when testing complete
+  const [gptFeedback, setGptFeedback] = useState<string | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Audio recorder set up
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -363,8 +364,14 @@ const DescribeExerciseComponent = () => {
     const currentQ = exercise.questions[currentQuestion];
     if (!currentQ?.question) return;
 
+    if (!hasInitialized) {
+      setHasInitialized(true);
+      return;
+    }
+
     handlePlayAudio(currentQ.question);
   }, [currentQuestion, exercise]);
+
 
   // const submitExerciseResults = async () => {
   //   const sessionEndTime = Date.now();
