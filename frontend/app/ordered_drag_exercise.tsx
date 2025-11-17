@@ -5,6 +5,7 @@ import { FeedbackIndicator } from "../components/ui/ExerciseFeedback";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 interface Option {
   id: string;
@@ -192,6 +193,7 @@ export const OrderedDragExercise = () => {
   const [showFeedback, setShowFeedback] = useState<"correct" | "incorrect" | null>(null);
   const [answered, setAnswered] = useState(false);
   const [score, setScore] = useState(0);
+  const [totalCoinsEarned, setTotalCoinsEarned] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
   const [sessionStartTime] = useState(Date.now());
@@ -452,6 +454,7 @@ export const OrderedDragExercise = () => {
       
       // Award 10 coins for correct answer
       updateCoins(10);
+      setTotalCoinsEarned(prev => prev + 10);
       
       // Calculate time spent on this question
       const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
@@ -631,10 +634,24 @@ export const OrderedDragExercise = () => {
       <PaperProvider>
         <View style={styles.container}>
           <View style={styles.completionContainer}>
-            <Text style={styles.completionTitle}>Exercise Complete!</Text>
-            <Text style={styles.completionScore}>
-              Score: {score} / {exercise.questions.length}
-            </Text>
+            <Text style={styles.completionTitle}>🎉 Exercise Complete! 🎉</Text>
+            <Text style={styles.completionSubtext}>Great job ordering the items!</Text>
+            
+            <View style={styles.scoreDisplay}>
+              <Text style={styles.scoreLabel}>Your Score</Text>
+              <Text style={styles.completionScore}>
+                {score} / {exercise.questions.length}
+              </Text>
+            </View>
+
+            <View style={styles.coinRewardContainer}>
+              <Text style={styles.coinRewardText}>You earned</Text>
+              <View style={styles.coinAmountContainer}>
+                <MaterialCommunityIcons name="star-circle" size={40} color="#FFD700" />
+                <Text style={styles.coinAmountText}>{totalCoinsEarned} Coins!</Text>
+              </View>
+            </View>
+
             <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
               <Text style={styles.completeButtonText}>Continue</Text>
             </TouchableOpacity>
@@ -937,12 +954,56 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#27ae60',
-    marginBottom: 20,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  completionSubtext: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 25,
+    textAlign: 'center',
+  },
+  scoreDisplay: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 15,
+    marginBottom: 25,
+    width: '100%',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  scoreLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 8,
   },
   completionScore: {
-    fontSize: 22,
-    color: '#2c3e50',
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#27ae60',
+  },
+  coinRewardContainer: {
+    alignItems: 'center',
     marginBottom: 30,
+  },
+  coinRewardText: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 10,
+  },
+  coinAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  coinAmountText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFD700',
   },
   completeButton: {
     backgroundColor: '#27ae60',
