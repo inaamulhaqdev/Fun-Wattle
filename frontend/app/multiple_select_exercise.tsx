@@ -14,8 +14,6 @@ import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-const { width, height } = Dimensions.get('window');
-
 interface Question {
   id: string;
   question: string;
@@ -679,14 +677,25 @@ export default function MultipleSelectExercise() {
 
   // Completion Screen
   if (showCompletionScreen) {
+    const totalQuestions = currentExercise.questions.length;
+    const questionsCorrect = score / 10; // Each correct answer = 10 points
+    const passed = questionsCorrect > totalQuestions / 2;
+    const accuracy = Math.round((questionsCorrect / totalQuestions) * 100);
+
     return (
       <View style={styles.completionContainer}>
-        <Text style={styles.completionTitle}>🎉 Great Job! 🎉</Text>
-        <Text style={styles.completionSubtext}>You completed the exercise!</Text>
+
+        <Text style={styles.completionTitle}>
+          {passed ? '🎉 Excellent Work! 🎉' : '✨ Good Try! ✨'}
+        </Text>
+        <Text style={styles.completionSubtext}>
+          {passed ? 'You passed the exercise!' : 'You completed the exercise!'}
+        </Text>
         
         <View style={styles.scoreDisplay}>
           <Text style={styles.scoreLabel}>Your Score</Text>
           <Text style={styles.scoreFinal}>{score} points</Text>
+          <Text style={styles.accuracyText}>{accuracy}% accuracy</Text>
         </View>
 
         <View style={styles.coinRewardContainer}>
@@ -774,11 +783,6 @@ export default function MultipleSelectExercise() {
         <View style={styles.incorrectOverlay}>
           <View style={styles.incorrectContent}>
             <Text style={styles.incorrectText}>Not quite, try again!</Text>
-            {retryCount >= 1 && (
-              <Text style={styles.correctAnswerHint}>
-                The correct answer is: {question.correctAnswer}
-              </Text>
-            )}
           </View>
         </View>
       )}
@@ -897,7 +901,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   questionImage: {
-    width: width * 0.8,
+    width: 300,
     height: 200,
     borderRadius: 12,
     marginBottom: 20,
@@ -1092,6 +1096,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
+  },
+  accuracyText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
   coinRewardContainer: {
     alignItems: 'center',
