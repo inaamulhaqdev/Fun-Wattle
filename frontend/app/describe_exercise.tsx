@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
 import { Audio } from 'expo-av';
 import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers';
@@ -437,6 +438,56 @@ const DescribeExerciseComponent = () => {
   //   }
   // };
 
+  // Update coin balance by adding coins
+  const updateCoins = async (coinsToAdd: number) => {
+    console.log('=== UPDATE COINS CALLED ===');
+    console.log('Coins to add:', coinsToAdd);
+    console.log('childId:', childId);
+    
+    if (!childId) {
+      console.log('Missing childId, cannot update coins');
+      return;
+    }
+
+    try {
+      const url = `${API_URL}/profile/${childId}/coins/`;
+      console.log('Updating coins at:', url);
+
+      const requestData = {
+        coins: coinsToAdd
+      };
+
+      console.log('Request data:', requestData);
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        console.error('Failed to update coins:', response.status, response.statusText);
+        
+        try {
+          const errorText = await response.text();
+          console.error('Error response body:', errorText);
+        } catch (bodyError) {
+          console.error('Could not read error response body:', bodyError);
+        }
+      } else {
+        const data = await response.json();
+        console.log('Coins updated successfully:', data);
+      }
+    } catch (error) {
+      console.error('Error updating coins:', error);
+    }
+  };
+
   // Handle mic button press
   const handleMicPress = async () => {
     if (!isRecording) {
@@ -614,11 +665,16 @@ const DescribeExerciseComponent = () => {
         const result = await response.json();
         console.log('Exercise submitted successfully:', result);
   
-        // Navigate back to dashboard after successful submission
-        router.push({
-          pathname: '/child-dashboard',
-          params: { completedTaskId: exerciseId }
-        });
+        // Award 50 coins for completing the entire speaking exercise
+        await updateCoins(50);
+
+        // Show completion screen for 3 seconds before navigating back
+        setTimeout(() => {
+          router.push({
+            pathname: '/child-dashboard',
+            params: { completedTaskId: exerciseId }
+          });
+        }, 3000);
   
       } catch (error) {
         console.error('Error submitting exercise:', error);
@@ -641,8 +697,16 @@ const DescribeExerciseComponent = () => {
   if (isCompleted) {
     return (
       <View style={styles.completedContainer}>
-        <Text style={styles.completedText}>Exercise Completed! 🎉</Text>
-        <Text style={styles.completedSubtext}>Great job describing the beach scene!</Text>
+        <Text style={styles.completedText}>Great Job!</Text>
+        <Text style={styles.completedSubtext}>You completed the speaking exercise!</Text>
+        <View style={styles.coinRewardContainer}>
+          <Text style={styles.coinRewardText}>You earned</Text>
+          <View style={styles.coinAmountContainer}>
+            <MaterialCommunityIcons name="star-circle" size={40} color="#FFD700" />
+            <Text style={styles.coinAmountText}>50 Coins!</Text>
+          </View>
+        </View>
+        <Text style={styles.returningText}>Returning to dashboard...</Text>
       </View>
     );
   }
@@ -996,6 +1060,40 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
     textAlign: 'center',
+    marginBottom: 30,
+  },
+  coinRewardContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+    padding: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  coinRewardText: {
+    fontSize: 20,
+    color: '#666',
+    marginBottom: 10,
+  },
+  coinAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  coinAmountText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  returningText: {
+    fontSize: 16,
+    color: '#999',
+    marginTop: 20,
+    fontStyle: 'italic',
   },
   loadingContainer: {
     flex: 1,
