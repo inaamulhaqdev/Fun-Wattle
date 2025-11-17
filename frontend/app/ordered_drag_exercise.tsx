@@ -277,6 +277,56 @@ export const OrderedDragExercise = () => {
 
   const currentQuestionData = exercise?.questions[currentQuestion];
 
+  // Update coin balance by adding coins
+  const updateCoins = async (coinsToAdd: number) => {
+    console.log('=== UPDATE COINS CALLED ===');
+    console.log('Coins to add:', coinsToAdd);
+    console.log('childId:', childId);
+    
+    if (!childId) {
+      console.log('Missing childId, cannot update coins');
+      return;
+    }
+
+    try {
+      const url = `${API_URL}/profile/${childId}/coins/`;
+      console.log('Updating coins at:', url);
+
+      const requestData = {
+        coins: coinsToAdd
+      };
+
+      console.log('Request data:', requestData);
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        console.error('Failed to update coins:', response.status, response.statusText);
+        
+        try {
+          const errorText = await response.text();
+          console.error('Error response body:', errorText);
+        } catch (bodyError) {
+          console.error('Could not read error response body:', bodyError);
+        }
+      } else {
+        const data = await response.json();
+        console.log('Coins updated successfully:', data);
+      }
+    } catch (error) {
+      console.error('Error updating coins:', error);
+    }
+  };
+
   // Submit question result to backend
   const submitQuestionResult = async (questionId: string, correct: boolean, timeSpent: number, attempts: number) => {
     console.log('=== SUBMIT QUESTION RESULT CALLED ===');
@@ -399,6 +449,9 @@ export const OrderedDragExercise = () => {
     if (isCorrect) {
       setShowFeedback("correct");
       setScore(score + 1);
+      
+      // Award 10 coins for correct answer
+      updateCoins(10);
       
       // Calculate time spent on this question
       const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
