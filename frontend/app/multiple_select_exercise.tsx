@@ -214,9 +214,11 @@ export default function MultipleSelectExercise() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [totalCoinsEarned, setTotalCoinsEarned] = useState(0);
+  const [currentQuestionCoins, setCurrentQuestionCoins] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showIncorrectFeedback, setShowIncorrectFeedback] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const [showRetryModal, setShowRetryModal] = useState(false);
@@ -547,6 +549,7 @@ export default function MultipleSelectExercise() {
       // Award 10 coins for correct answer
       updateCoins(10);
       setTotalCoinsEarned(prev => prev + 10);
+      setCurrentQuestionCoins(10);
       
       setShowCelebration(true);
       
@@ -559,14 +562,18 @@ export default function MultipleSelectExercise() {
       
       if (retryCount >= 1) {
         // After 2 incorrect attempts, show correct answer and move on
+        setShowIncorrectFeedback(true);
         setTimeout(() => {
+          setShowIncorrectFeedback(false);
           handleNextQuestion();
         }, 2000);
       } else {
-        // Allow one retry
+        // Allow one retry - show "Not quite, try again!" message
+        setShowIncorrectFeedback(true);
         setTimeout(() => {
+          setShowIncorrectFeedback(false);
           resetQuestionState();
-        }, 2000);
+        }, 1500);
       }
     }
   };
@@ -581,6 +588,7 @@ export default function MultipleSelectExercise() {
     setAnswered(false);
     setSelectedOption(null);
     setRetryCount(0);
+    setCurrentQuestionCoins(0);
     setQuestionStartTime(Date.now());
 
     if (currentQuestion < currentExercise.questions.length - 1) {
@@ -753,6 +761,24 @@ export default function MultipleSelectExercise() {
         <View style={styles.celebrationOverlay}>
           <View style={styles.celebrationContent}>
             <Text style={styles.celebrationText}>🎉 Correct! 🎉</Text>
+            <View style={styles.celebrationCoins}>
+              <MaterialCommunityIcons name="star-circle" size={32} color="#FFD700" />
+              <Text style={styles.celebrationCoinsText}>+{currentQuestionCoins} Coins!</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Incorrect Feedback */}
+      {showIncorrectFeedback && (
+        <View style={styles.incorrectOverlay}>
+          <View style={styles.incorrectContent}>
+            <Text style={styles.incorrectText}>Not quite, try again!</Text>
+            {retryCount >= 1 && (
+              <Text style={styles.correctAnswerHint}>
+                The correct answer is: {question.correctAnswer}
+              </Text>
+            )}
           </View>
         </View>
       )}
@@ -943,6 +969,48 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#4CAF50',
+    marginBottom: 15,
+  },
+  celebrationCoins: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
+  },
+  celebrationCoinsText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  incorrectOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  incorrectContent: {
+    backgroundColor: '#fff',
+    padding: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    maxWidth: '80%',
+  },
+  incorrectText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+    textAlign: 'center',
+  },
+  correctAnswerHint: {
+    fontSize: 16,
+    color: '#4CAF50',
+    marginTop: 15,
+    textAlign: 'center',
+    fontWeight: '600',
   },
   modalOverlay: {
     position: 'absolute',

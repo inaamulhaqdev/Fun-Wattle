@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 // import { useLocalSearchParams } from 'expo-router'; // Commented out - will be used with route params
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
@@ -145,6 +145,15 @@ const MascotCustomization = () => {
       fetchCoinBalance();
     }
   }, [childId, fetchCoinBalance]);
+
+  // Refetch coin balance when screen comes into focus (e.g., after completing an exercise)
+  useFocusEffect(
+    useCallback(() => {
+      if (childId) {
+        fetchCoinBalance();
+      }
+    }, [childId, fetchCoinBalance])
+  );
 
   const handleHome = () => {
     router.push({

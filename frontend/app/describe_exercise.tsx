@@ -562,6 +562,7 @@ const DescribeExerciseComponent = () => {
 };
 
         if (!response.ok) {
+          console.log('Failed to upload audio, status:', response.status);
           throw new Error('Failed to upload audio');
         }
 
