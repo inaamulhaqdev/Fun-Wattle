@@ -38,6 +38,8 @@ interface AppContextType {
   messagesCache: Record<string, ChatMessage[]>;
   setMessagesForRoom: (roomId: string, messages: ChatMessage[]) => void;
   addMessageToRoom: (roomId: string, message: ChatMessage) => void;
+  darkMode: boolean;
+  setDarkMode: (v: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -53,6 +55,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [chatRooms, setChatRoomsState] = useState<ChatRoom[]>([]);
   const [messagesCache, setMessagesCache] = useState<Record<string, ChatMessage[]>>({});
+
+  const [darkMode, setDarkModeState] = useState(false); 
 
   useEffect(() => {
     (async () => {
@@ -73,6 +77,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (storedChild) setSelectedChild(JSON.parse(storedChild));
         if (storedProfileId) setProfileId(storedProfileId);
         if (storedChildId) setChildId(storedChildId);
+
+        const storedDark = await AsyncStorage.getItem('darkMode'); 
+        if (storedDark !== null) {
+          setDarkModeState(storedDark === 'true'); 
+        }
+
       } catch (error) {
         console.error('Error loading stored data:', error);
       } finally {
@@ -97,6 +107,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return () => subscription.subscription.unsubscribe();
   }, []);
+
+  const setDarkMode = async (value: boolean) => {
+    setDarkModeState(value); 
+    await AsyncStorage.setItem('darkMode', value.toString());
+  }
 
   // Function to select a child and persist the selection (we will mostly use this for switching children)
   const selectChild = async (child: any) => {
@@ -201,6 +216,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         messagesCache,
         setMessagesForRoom,
         addMessageToRoom,
+        darkMode, 
+        setDarkMode,
       }}
     >
       {children}

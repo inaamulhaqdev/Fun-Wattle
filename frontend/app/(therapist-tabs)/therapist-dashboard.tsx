@@ -33,6 +33,8 @@ export default function TherapistDashboard() {
 
   const loading = loadingProfiles || loadingAssignments;
 
+  const { darkMode } = useApp();
+
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
@@ -150,7 +152,7 @@ export default function TherapistDashboard() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.loading}>
           <ActivityIndicator size="large" color="#FD902B" />
         </View>
