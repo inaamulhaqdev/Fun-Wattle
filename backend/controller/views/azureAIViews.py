@@ -100,25 +100,23 @@ def assess_speech(request):
         is_correct = best_score >= 0.80
 
         # RAG
-        # combined_input = f"Question: {question_text}\nChild's answer: {result.text}"
+        combined_input = f"Question: {question_text}\nChild's answer: {result.text}"
 
-        # combined_emb = emb_client.embeddings.create(
-        #    input=combined_input,
-        #    model="text-embedding-3-small"
-        # ).data[0].embedding
+        combined_emb = emb_client.embeddings.create(
+            input=combined_input,
+            model="text-embedding-3-small"
+        ).data[0].embedding
 
-        # combined_vector_literal = f"[{','.join(str(x) for x in combined_emb)}]"
+        combined_vector_literal = f"[{','.join(str(x) for x in combined_emb)}]"
 
-        # rag_sections = Document_Section.objects.annotate(
-        #     cosine=RawSQL("1 - (embedding <=> %s)", (combined_vector_literal,))
-        # ).order_by('-cosine')[:5]
+        rag_similarities = (
+            Rag_Context.objects
+            .annotate(distance=CosineDistance("embedding", combined_emb))
+            .order_by("distance")[:5]  # Top 5
+        )
 
-        # rag_contexts = [s.content for s in rag_sections]
-        # rag_context_combined = "\n\n".join(rag_contexts)
-        
-        # add --- RAG Context (Top 5 Document Sections) ---
-        # {rag_context_combined}
-        # to prompt
+        rag_contexts = [ctx.content_chunk for ctx in rag_similarities]
+        rag_context_combined = "\n\n".join(rag_contexts)
 
         # GPT Feedback
         gpt_client = AzureOpenAI(
@@ -127,7 +125,16 @@ def assess_speech(request):
             api_key=AZURE_OPENAI_KEY,
         )
 
-        system_prompt = "You are an encouraging, friendly speech therapist helping children practice pronunciation. Ensure that you are providing constructive feedback on their pronunciation. Ensure you are following the professional and ethical speech pathologist guidelines when interacting with the child."
+        system_prompt = f"""
+        You are an encouraging, friendly speech therapist helping children practice pronunciation.
+        Ensure you are providing constructive, supportive, and ethical feedback.
+        Use the reference context below ONLY to improve your pronunciation feedback.
+        Do NOT mention or reference the context directly in your output.
+
+        --- REFERENCE CONTEXT ---
+        {rag_context_combined}
+        --- END REFERENCE CONTEXT ---
+        """
         user_prompt = f"""
         Question asked: "{question_text}"
         Child's speech: "{result.text}"

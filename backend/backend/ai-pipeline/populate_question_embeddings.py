@@ -34,7 +34,7 @@ client = AzureOpenAI(
 
 # Load expected answers
 BASE_DIR = os.path.dirname(__file__)
-json_path = os.path.join(BASE_DIR, "expected_answers.json")
+json_path = os.path.join(BASE_DIR, "expted-answers-describingpics2-ex4.json")
 data = json.load(open(json_path))
 
 res = client.embeddings.create(
