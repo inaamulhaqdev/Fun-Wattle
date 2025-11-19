@@ -48,16 +48,30 @@ export default function LinkTherapistPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to link therapist to child: ${response.status}`);
+        let message = 'An error occurred with linking therapist';
+        
+        switch (response.status) {
+          case 400:
+            message = `This therapist is already assigned to ${selectedChild.name}`;
+            break;
+          case 404:
+            message = 'Profile not found';
+            break;
+          default:
+            message = `Unexpected error: ${response.status}`;
+        }
+        Alert.alert('Error', message);
+        return;
       }
 
-      Alert.alert('Success', 'Child successfully linked to therapist!');
+      Alert.alert('Success', `Therapist successfully assigned to ${selectedChild.name}!`);
 
       // Navigate back to settings after successful linking
       router.push('/(parent-tabs)/settings');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error linking therapist to child:', error);
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -70,14 +84,10 @@ export default function LinkTherapistPage() {
 
           const data = await response.json();
 
-          console.log("Data:", data);
-
           const therapists: Therapist[] = data.map((therapist: any) => ({
             profileId: therapist.id,
             name: therapist.name,
           }));
-
-          console.log("Transformed data:", therapists);
 
           setTherapistProfiles(therapists);
         } catch (err) {
