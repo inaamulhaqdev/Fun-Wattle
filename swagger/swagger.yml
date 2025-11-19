@@ -6,6 +6,8 @@ info:
 servers:
   - url: https://funwattle-web-service.onrender.com/api
     description: Backend Server
+  - url: https://localhost:7000/api
+    description: Local Development Server
 
 paths:
   /user/create/:
