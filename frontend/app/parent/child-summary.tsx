@@ -1,3 +1,4 @@
+import React from 'react';
 import AddChildSummary from "@/components/AddChildSummary"
 
 export default function ChildSummary() {

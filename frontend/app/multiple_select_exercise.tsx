@@ -12,8 +12,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
-
-const { width, height } = Dimensions.get('window');
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 interface Question {
   id: string;
@@ -212,9 +211,12 @@ export default function MultipleSelectExercise() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
+  const [totalCoinsEarned, setTotalCoinsEarned] = useState(0);
+  const [currentQuestionCoins, setCurrentQuestionCoins] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showIncorrectFeedback, setShowIncorrectFeedback] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const [showRetryModal, setShowRetryModal] = useState(false);
@@ -372,6 +374,56 @@ export default function MultipleSelectExercise() {
     }
   }, [progressRestored]);
 
+  // Update coin balance by adding coins
+  const updateCoins = async (coinsToAdd: number) => {
+    console.log('=== UPDATE COINS CALLED ===');
+    console.log('Coins to add:', coinsToAdd);
+    console.log('childId:', childId);
+    
+    if (!childId) {
+      console.log('Missing childId, cannot update coins');
+      return;
+    }
+
+    try {
+      const url = `${API_URL}/profile/${childId}/coins/`;
+      console.log('Updating coins at:', url);
+
+      const requestData = {
+        amount: coinsToAdd
+      };
+
+      console.log('Request data:', requestData);
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        console.error('Failed to update coins:', response.status, response.statusText);
+        
+        try {
+          const errorText = await response.text();
+          console.error('Error response body:', errorText);
+        } catch (bodyError) {
+          console.error('Could not read error response body:', bodyError);
+        }
+      } else {
+        const data = await response.json();
+        console.log('Coins updated successfully:', data);
+      }
+    } catch (error) {
+      console.error('Error updating coins:', error);
+    }
+  };
+
   // Submit question result to backend
   const submitQuestionResult = async (questionId: string, correct: boolean, timeSpent: number, attempts: number) => {
     console.log('=== SUBMIT QUESTION RESULT CALLED ===');
@@ -491,6 +543,12 @@ export default function MultipleSelectExercise() {
 
     if (isCorrect) {
       setScore(prev => prev + 10);
+      
+      // Award 10 coins for correct answer
+      updateCoins(10);
+      setTotalCoinsEarned(prev => prev + 10);
+      setCurrentQuestionCoins(10);
+      
       setShowCelebration(true);
       
       setTimeout(() => {
@@ -502,14 +560,18 @@ export default function MultipleSelectExercise() {
       
       if (retryCount >= 1) {
         // After 2 incorrect attempts, show correct answer and move on
+        setShowIncorrectFeedback(true);
         setTimeout(() => {
+          setShowIncorrectFeedback(false);
           handleNextQuestion();
         }, 2000);
       } else {
-        // Allow one retry
+        // Allow one retry - show "Not quite, try again!" message
+        setShowIncorrectFeedback(true);
         setTimeout(() => {
+          setShowIncorrectFeedback(false);
           resetQuestionState();
-        }, 2000);
+        }, 1500);
       }
     }
   };
@@ -524,6 +586,7 @@ export default function MultipleSelectExercise() {
     setAnswered(false);
     setSelectedOption(null);
     setRetryCount(0);
+    setCurrentQuestionCoins(0);
     setQuestionStartTime(Date.now());
 
     if (currentQuestion < currentExercise.questions.length - 1) {
@@ -539,6 +602,9 @@ export default function MultipleSelectExercise() {
       console.error('No exercise data available');
       return;
     }
+    
+    // Show completion screen first
+    setShowCompletionScreen(true);
     
     try {
       console.log('Complete button pressed');
@@ -560,11 +626,13 @@ export default function MultipleSelectExercise() {
       // Clear saved progress since exercise is completed
       clearSavedProgress();
 
-      // Navigate back to dashboard after successful submission
-      router.push({
-        pathname: '/child-dashboard',
-        params: { completedTaskId: exerciseId }
-      });
+      // Navigate back to dashboard after 3 seconds
+      setTimeout(() => {
+        router.push({
+          pathname: '/child-dashboard',
+          params: { completedTaskId: exerciseId }
+        });
+      }, 3000);
 
     } catch (error) {
       console.error('Error submitting exercise:', error);
@@ -603,6 +671,42 @@ export default function MultipleSelectExercise() {
         <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
           <Text style={styles.retryButtonText}>Go Back</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Completion Screen
+  if (showCompletionScreen) {
+    const totalQuestions = currentExercise.questions.length;
+    const questionsCorrect = score / 10; // Each correct answer = 10 points
+    const passed = questionsCorrect > totalQuestions / 2;
+    const accuracy = Math.round((questionsCorrect / totalQuestions) * 100);
+
+    return (
+      <View style={styles.completionContainer}>
+
+        <Text style={styles.completionTitle}>
+          {passed ? '🎉 Excellent Work! 🎉' : '✨ Good Try! ✨'}
+        </Text>
+        <Text style={styles.completionSubtext}>
+          {passed ? 'You passed the exercise!' : 'You completed the exercise!'}
+        </Text>
+        
+        <View style={styles.scoreDisplay}>
+          <Text style={styles.scoreLabel}>Your Score</Text>
+          <Text style={styles.scoreFinal}>{score} points</Text>
+          <Text style={styles.accuracyText}>{accuracy}% accuracy</Text>
+        </View>
+
+        <View style={styles.coinRewardContainer}>
+          <Text style={styles.coinRewardText}>You earned</Text>
+          <View style={styles.coinAmountContainer}>
+            <MaterialCommunityIcons name="star-circle" size={40} color="#FFD700" />
+            <Text style={styles.coinAmountText}>{totalCoinsEarned} Coins!</Text>
+          </View>
+        </View>
+
+        <Text style={styles.returningText}>Returning to dashboard...</Text>
       </View>
     );
   }
@@ -666,6 +770,19 @@ export default function MultipleSelectExercise() {
         <View style={styles.celebrationOverlay}>
           <View style={styles.celebrationContent}>
             <Text style={styles.celebrationText}>🎉 Correct! 🎉</Text>
+            <View style={styles.celebrationCoins}>
+              <MaterialCommunityIcons name="star-circle" size={32} color="#FFD700" />
+              <Text style={styles.celebrationCoinsText}>+{currentQuestionCoins} Coins!</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Incorrect Feedback */}
+      {showIncorrectFeedback && (
+        <View style={styles.incorrectOverlay}>
+          <View style={styles.incorrectContent}>
+            <Text style={styles.incorrectText}>Not quite, try again!</Text>
           </View>
         </View>
       )}
@@ -784,7 +901,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   questionImage: {
-    width: width * 0.8,
+    width: 300,
     height: 200,
     borderRadius: 12,
     marginBottom: 20,
@@ -856,6 +973,48 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#4CAF50',
+    marginBottom: 15,
+  },
+  celebrationCoins: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
+  },
+  celebrationCoinsText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  incorrectOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  incorrectContent: {
+    backgroundColor: '#fff',
+    padding: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    maxWidth: '80%',
+  },
+  incorrectText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+    textAlign: 'center',
+  },
+  correctAnswerHint: {
+    fontSize: 16,
+    color: '#4CAF50',
+    marginTop: 15,
+    textAlign: 'center',
+    fontWeight: '600',
   },
   modalOverlay: {
     position: 'absolute',
@@ -899,5 +1058,83 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  completionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E8F4FD',
+    padding: 20,
+  },
+  completionTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  completionSubtext: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  scoreDisplay: {
+    alignItems: 'center',
+    marginBottom: 32,
+    backgroundColor: '#f8f9fa',
+    padding: 20,
+    borderRadius: 16,
+    width: '100%',
+  },
+  scoreLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 8,
+  },
+  scoreFinal: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  accuracyText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  coinRewardContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    padding: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    width: '100%',
+  },
+  coinRewardText: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 10,
+  },
+  coinAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  coinAmountText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  returningText: {
+    fontSize: 16,
+    color: '#999',
+    marginTop: 20,
+    fontStyle: 'italic',
   },
 });

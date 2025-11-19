@@ -12,8 +12,7 @@ import azure.cognitiveservices.speech as speechsdk
 from openai import AzureOpenAI
 from django.http import HttpResponse
 import re
-
-
+from pgvector.django import CosineDistance
 
 AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "australiaeast")
@@ -90,16 +89,13 @@ def assess_speech(request):
 
         # cosine distance → convert to similarity
         similarities = question_embeddings.annotate(
-            cosine=RawSQL(
-                f"1 - (embedding <=> %s)",
-                (vector_literal,)
-            )
-        ).order_by('-cosine')
+            distance=CosineDistance('embedding', child_emb)
+        ).order_by('distance')
 
         best = similarities.first()
         if best is None:
             return Response({"error": "No embeddings exist for this question"}, status=500)
-        best_score = best.cosine
+        best_score = 1 - best.distance        
         best_answer = best.expected_answer_text
         is_correct = best_score >= 0.80
 
