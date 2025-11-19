@@ -42,7 +42,7 @@ export default function LinkTherapistPage() {
           'Authorization': `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({
-          therapist_id: therapistId,
+          therapist: therapistId,
           child: childId,
         }),
       });
