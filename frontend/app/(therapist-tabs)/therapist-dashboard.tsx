@@ -30,7 +30,7 @@ const getGreeting = () => {
 }
 
 export default function TherapistDashboard() {
-  const { childId, session } = useApp();
+  const { childId, selectChild, session } = useApp();
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [therapistName, setTherapistName] = useState('');
@@ -85,6 +85,7 @@ export default function TherapistDashboard() {
         const childrenFull = transformedData.filter(p => p.type === 'child');
         setChildList(childrenFull);
         if (childrenFull.length > 0) {
+          selectChild(childrenFull[0]);
           setSelectedChild(childrenFull[0].name);
           setSelectedChildId(childrenFull[0].id);
         }
@@ -181,7 +182,7 @@ export default function TherapistDashboard() {
 
           const assignments = await assignmentsResp.json();
 
-          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === selectedChildId);
+          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
 
           const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
             assignmentId: assignment.id,
@@ -214,7 +215,7 @@ export default function TherapistDashboard() {
       };
 
       if (selectedChildId) fetchAssignments();
-    }, [selectedChildId, userId])
+    }, [childId, userId])
   );
 
   if (loading) {
@@ -260,6 +261,7 @@ export default function TherapistDashboard() {
                   valueField="value"
                   onChange={(item) => {
                     setSelectedChildId(item.value);
+                    selectChild(item);
                     setSelectedChild(item.label);
                   }}
                 />
@@ -284,7 +286,7 @@ export default function TherapistDashboard() {
                 <Text style={{ marginTop: 10, color: "#555" }}>Loading learning units...</Text>
               </View>
             ) : (
-              <Filters assignedUnits={data} selectedChildId={selectedChildId}/>
+              <Filters assignedUnits={data} />
             )
           )}
         </View>
