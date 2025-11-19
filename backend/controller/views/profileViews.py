@@ -120,7 +120,7 @@ def get_profile(request, profile_id):
 @api_view(['GET', 'POST'])
 def therapist(request):
 	if request.method == 'GET':
-		therapist = Profiles.objects.filter(profile_type='therapist')
+		therapist = Profile.objects.filter(profile_type='therapist')
 		serializer = ProfileSerializer(therapists, many=True)
 		return Response(serializer.data, status=200)
 	elif request.method == 'POST':
@@ -129,10 +129,8 @@ def therapist(request):
 		# Therapist User ID
 		try:
 			profile = Profile.objects.get(id=child_id)
-			therapist = Therapist.objects.get(id=therapist_id)
+			users = User.objects.get(id=therapist_ui)
 		except Profile.DoesNotExist:
 			return Response({'error': 'Profile not found'}, status=404)
-		except Therapist.DoesNotExist:
-			return Response({'error': 'Therapist not found'}, status=404)
 		user_profile = User_Profile.objects.create(user=user, profile=profile)
 		return Response({'message':'Therapist set successfully'}, status=200)
