@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, Menu, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { Text, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { Dropdown } from "react-native-element-dropdown";
 import Filters from "../../components/home_screen/CategoryFilters";
 import { supabase } from '@/config/supabase';
 import { API_URL } from '@/config/api';
@@ -21,17 +22,35 @@ const formatDate = (isoString: string): string => {
   });
 };
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning"; 
+  if (hour < 18) return "Good afternoon"; 
+  return "Good evening"; 
+}
+
 export default function TherapistDashboard() {
   const { childId, session } = useApp();
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [therapistName, setTherapistName] = useState('');
-  const [childList, setChildList] = useState<string[]>([]);
+  const [childList, setChildList] = useState<Account[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
-  const [menuVisible, setMenuVisible] = React.useState(false);
+  const [selectedChildId, setSelectedChildId] = useState<string>('');
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
-
+  const [childLoading, setChildLoading] = useState(false);
   const loading = loadingProfiles || loadingAssignments;
+
+  const [greeting, setGreeting] = useState(getGreeting());
+
+  // every 60 seconds, checks if the greeting should be changed according to time (eg. app left open, time switches from morning to midday; greeting changes to 'Good afternoon' without reload)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGreeting(getGreeting());
+    }, 60 * 1000); 
+
+    return () => clearInterval(interval); 
+  }, []);
 
   const { darkMode } = useApp();
 
@@ -65,10 +84,13 @@ export default function TherapistDashboard() {
         const therapistProfile = transformedData.find(profile => profile.type === 'therapist');
         if (therapistProfile) setTherapistName(therapistProfile.name);
 
-        const children = transformedData.filter(p => p.type === 'child').map(p => p.name);
-        setChildList(children);
+        const childrenFull = transformedData.filter(p => p.type === 'child');
+        setChildList(childrenFull);
+        if (childrenFull.length > 0) {
+          setSelectedChild(childrenFull[0].name);
+          setSelectedChildId(childrenFull[0].id);
+        }
 
-        if (children.length > 0) setSelectedChild(children[0]);
       } catch (error) {
         console.error('Error fetching profiles:', error);
         Alert.alert('Error', 'Failed to load profiles. Please try again.');
@@ -83,13 +105,20 @@ export default function TherapistDashboard() {
   const userId = session.user.id
   const fetchAssignments = React.useCallback(async () => {
     try {
-      const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
+      setLoadingAssignments(true);
+
+      const [unitsResp, assignmentsResp] = await Promise.all([
+        fetch(`${API_URL}/content/learning_units/`),
+        fetch(`${API_URL}/assignment/${userId}/assigned_by/`)
+      ]);
 
       if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
 
       const assignments = await assignmentsResp.json();
 
-      const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
+      const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
+
+
 
       const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
         assignmentId: assignment.id,
@@ -144,17 +173,57 @@ export default function TherapistDashboard() {
   }, [fetchAssignments]);
 
   // Get assignments on focus
-    useFocusEffect(
-      React.useCallback(() => {
-        fetchAssignments();
-      }, [fetchAssignments])
-    );
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchAssignments = async () => {
+        try {
+          const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
+
+          if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
+
+          const assignments = await assignmentsResp.json();
+
+          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === selectedChildId);
+
+          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
+            assignmentId: assignment.id,
+            learningUnitId: assignment.learning_unit.id,
+            title: assignment.learning_unit.title || '',
+            category: assignment.learning_unit.category || '',
+            participationType: assignment.participation_type,
+            assignedDate: formatDate(assignment.assigned_at),
+          }));
+
+          const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
+            assignedUnitsDetails.map(async (unit) => {
+              const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, selectedChildId);
+              return {
+                ...unit,
+                time: totalDuration,
+                status,
+              };
+            })
+          );
+
+          setData(assignedUnitsWithStats);
+
+        } catch (err) {
+          console.error(err);
+          Alert.alert('Error', 'Failed to load learning units.');
+        } finally {
+          setLoadingAssignments(false);
+        }
+      };
+
+      if (selectedChildId) fetchAssignments();
+    }, [selectedChildId, userId])
+  );
 
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#FD902B" />
+          <ActivityIndicator size="large" color="#fd9029" />
         </View>
       </SafeAreaView>
     );
@@ -164,44 +233,62 @@ export default function TherapistDashboard() {
     <PaperProvider theme={DefaultTheme}>
       <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.header}>
-            <Text style={styles.headerTitle}>Good evening, {therapistName}!</Text>
+            <Text style={styles.headerTitle}>
+              {getGreeting()}, {therapistName}!
+              </Text>
         </View>
 
         <View style={styles.body}>
           <View style={styles.subtitleRow}>
             {childList.length > 0 ? (
               <>
-                <Menu
-                  visible={menuVisible}
-                  onDismiss={() => setMenuVisible(false)}
-                  anchor={
-                    <TouchableOpacity style={styles.childButton} onPress={() => setMenuVisible(true)}>
-                      <Text style={styles.childText}>{selectedChild}</Text>
-                    </TouchableOpacity>
-                  }
-                  style={[styles.menuContainer, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}
-                >
-                  {childList.map((child) => (
-                    <Menu.Item
-                        key={child}
-                        onPress={() => {
-                          setSelectedChild(child);
-                          setMenuVisible(false);
-                        }}
-                        title={child}
-                        titleStyle={{ color: "#000", fontWeight: "500" }}
-                        style={{ backgroundColor: "#f7f7f7" }}
-                      />
-                  ))}
-                </Menu>
+              {childList.length > 1 ? (
+              <View style={{ width: 160 }}>
+                <Dropdown
+                  style={{
+                    height: 40,
+                    borderColor: "#ccc",
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                  }}
+                  placeholder="Select child"
+                  value={selectedChildId}
+                  data={childList.map((child) => ({
+                    label: child.name,
+                    value: child.id,
+                  }))}
+                  labelField="label"
+                  valueField="value"
+                  onChange={(item) => {
+                    setSelectedChildId(item.value);
+                    setSelectedChild(item.label);
+                  }}
+                />
+              </View>
+            ) : (
+              <View style={styles.childButton}>
+                <Text style={styles.childText}>{selectedChild}</Text>
+              </View>
+            )}
 
-                <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos;s progress this week.</Text>
+
+                <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos; progress this week.</Text>
               </>
             ) : (
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
             )}
           </View>
-          {childList.length > 0 && <Filters assignedUnits={data} />}
+          {childList.length > 0 && (
+            loadingAssignments ? (
+              <View style={{ marginTop: 40, alignItems: "center" }}>
+                <ActivityIndicator size="large" color="#fd9029"/>
+                <Text style={{ marginTop: 10, color: "#555" }}>Loading learning units...</Text>
+              </View>
+            ) : (
+              <Filters assignedUnits={data} selectedChildId={selectedChildId}/>
+            )
+          )}
         </View>
       </SafeAreaView>
     </PaperProvider>
@@ -243,11 +330,21 @@ const styles = StyleSheet.create({
   menuContainer: {
     backgroundColor: "#fff",
     borderRadius: 12,
+    elevation: 4, 
+    paddingVertical: 4,
+  },
+  menuItem: {
+    backgroundColor: "#ffffff", 
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    paddingVertical: 6,
+    borderRadius: 0,
   },
   header: {
     backgroundColor: '#fd9029',
-    paddingTop: 65,
-    paddingBottom: 15,
+    paddingTop: 30,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
@@ -263,6 +360,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 20,
+    marginBottom: -33,
     backgroundColor: "transparent",
   }
 });

@@ -17,7 +17,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ title, duration, progress, a
             <Card.Content style={{ justifyContent: "space-between"}}>
             <Text variant="titleLarge" style={styles.title}>{title}</Text>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-              <Chip icon="clock-outline" style={{ backgroundColor: "#fff" }} textStyle={{ color: theme.colors.primary }}>
+              <Chip icon="clock-outline" style={{ backgroundColor: "#fff" }} textStyle={{ color: "#fd9029" }}>
                     {duration}
                 </Chip>
                 <Text variant="labelLarge" style={{ fontWeight: "600" }}>
@@ -60,6 +60,7 @@ const styles = StyleSheet.create({
     borderRadius: 4, 
     width: "100%",
     marginTop: 4,
+    color: "#fd9029",
   }, 
   progressText: {
     alignSelf: "flex-end",

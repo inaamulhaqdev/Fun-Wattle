@@ -116,7 +116,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Function to select a child and persist the selection (we will mostly use this for switching children)
   const selectChild = async (child: any) => {
     setSelectedChild(child);
+    setChildId(child.id);
     await AsyncStorage.setItem('selectedChild', JSON.stringify(child));
+    await AsyncStorage.setItem('childId', child.id);
   };
 
   // Function to set profile when first logging in and optionally child (parents/therapists select first child when logging in)

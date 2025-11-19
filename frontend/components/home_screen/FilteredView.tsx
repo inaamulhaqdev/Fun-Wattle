@@ -57,8 +57,8 @@ export default function FilteredView({ units, category, statistics, fetchingStat
         {tasks.length === 0 ? (
           <View>
             <Text style={[{ color: darkMode ? '#fff' : '#000' }]}>No tasks assigned</Text>
-            <Text style={{ paddingTop: 50, alignSelf: "center" }}>Assign tasks over at</Text>
-            <Text variant={"titleSmall"} style={{ paddingTop: 15, alignSelf: "center", fontSize: 20 }}>Learning Units</Text>
+            <Text style={{ paddingTop: 50, alignSelf: "center", color: darkMode ? '#fff' : '#000' }}>Assign tasks over at</Text>
+            <Text variant={"titleSmall"} style={{ paddingTop: 15, alignSelf: "center", fontSize: 20, color: darkMode ? '#fff' : '#000' }}>Learning Units</Text>
           </View>
         ) : (
           tasks.map((task) => (

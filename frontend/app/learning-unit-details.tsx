@@ -124,7 +124,12 @@ export default function LearningUnitDetails() {
 
   return (
     <PaperProvider theme={DefaultTheme}>
+<<<<<<< HEAD
       <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+=======
+      <View style={styles.container}>
+        
+>>>>>>> b07feadcda379b960fa2438ce6175f0a9d267030
         <TouchableOpacity>
           <UnitCard
             title={`${title} \n ${category}`}
@@ -134,8 +139,8 @@ export default function LearningUnitDetails() {
           />
         </TouchableOpacity>
 
-        <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600", fontSize: 20, marginLeft: 13 }}>
-          Activities
+        <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600", fontSize: 20, marginLeft: 13, color: "white" }}>
+          Exercises
         </Text>
 
         {loading ? (
@@ -166,7 +171,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
+<<<<<<< HEAD
     // backgroundColor: "#fff7de",
+=======
+    backgroundColor: "#fd9029",
+>>>>>>> b07feadcda379b960fa2438ce6175f0a9d267030
   },
   scrollContainer: {
     paddingBottom: 16,
