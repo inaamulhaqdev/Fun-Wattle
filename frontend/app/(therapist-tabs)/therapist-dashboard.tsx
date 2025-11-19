@@ -30,15 +30,13 @@ const getGreeting = () => {
 }
 
 export default function TherapistDashboard() {
-  const { childId, session } = useApp();
+  const { childId, session, selectChild } = useApp();
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [therapistName, setTherapistName] = useState('');
   const [childList, setChildList] = useState<Account[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
-  const [selectedChildId, setSelectedChildId] = useState<string>('');
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
-  const [childLoading, setChildLoading] = useState(false);
   const loading = loadingProfiles || loadingAssignments;
 
   const [greeting, setGreeting] = useState(getGreeting());
@@ -87,8 +85,12 @@ export default function TherapistDashboard() {
         const childrenFull = transformedData.filter(p => p.type === 'child');
         setChildList(childrenFull);
         if (childrenFull.length > 0) {
-          setSelectedChild(childrenFull[0].name);
-          setSelectedChildId(childrenFull[0].id);
+          const initialChild = childrenFull[0];
+          selectChild({
+            id: initialChild.id,
+            name: initialChild.name,
+            type: initialChild.type,
+          });
         }
 
       } catch (error) {
@@ -105,20 +107,13 @@ export default function TherapistDashboard() {
   const userId = session.user.id
   const fetchAssignments = React.useCallback(async () => {
     try {
-      setLoadingAssignments(true);
-
-      const [unitsResp, assignmentsResp] = await Promise.all([
-        fetch(`${API_URL}/content/learning_units/`),
-        fetch(`${API_URL}/assignment/${userId}/assigned_by/`)
-      ]);
+      const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
 
       if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
 
       const assignments = await assignmentsResp.json();
 
-      const childAssignments = assignments.filter((a: any) => a.assigned_to === childId);
-
-
+      const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
 
       const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
         assignmentId: assignment.id,
@@ -142,7 +137,6 @@ export default function TherapistDashboard() {
 
       setData(assignedUnitsWithStats);
 
-
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Failed to load learning units.');
@@ -151,72 +145,35 @@ export default function TherapistDashboard() {
     }
   }, [childId, userId]);
 
+  // Subscribe to Supabase changes
   useEffect(() => {
-    const channel = supabase
+    const channelResults = supabase
       .channel('schema-db-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: '*', // Listen to all events (insert, update, delete)
           schema: 'public',
           table: 'Assignment'
         },
         () => {
+          // Refresh assignments when Exercise_Result table changes
           fetchAssignments();
         }
       )
       .subscribe();
 
+    // Cleanup subscription on unmount
     return () => {
-      channel.unsubscribe();
+      channelResults.unsubscribe();
     };
   }, [fetchAssignments]);
 
   // Get assignments on focus
   useFocusEffect(
     React.useCallback(() => {
-      const fetchAssignments = async () => {
-        try {
-          const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
-
-          if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
-
-          const assignments = await assignmentsResp.json();
-
-          const childAssignments = assignments.filter((a: any) => a.assigned_to.id === selectedChildId);
-
-          const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
-            assignmentId: assignment.id,
-            learningUnitId: assignment.learning_unit.id,
-            title: assignment.learning_unit.title || '',
-            category: assignment.learning_unit.category || '',
-            participationType: assignment.participation_type,
-            assignedDate: formatDate(assignment.assigned_at),
-          }));
-
-          const assignedUnitsWithStats: AssignedLearningUnit[] = await Promise.all(
-            assignedUnitsDetails.map(async (unit) => {
-              const { totalDuration, status } = await fetchUnitStats(unit.learningUnitId, selectedChildId);
-              return {
-                ...unit,
-                time: totalDuration,
-                status,
-              };
-            })
-          );
-
-          setData(assignedUnitsWithStats);
-
-        } catch (err) {
-          console.error(err);
-          Alert.alert('Error', 'Failed to load learning units.');
-        } finally {
-          setLoadingAssignments(false);
-        }
-      };
-
-      if (selectedChildId) fetchAssignments();
-    }, [selectedChildId, userId])
+      fetchAssignments();
+    }, [fetchAssignments])
   );
 
   if (loading) {
@@ -259,15 +216,19 @@ export default function TherapistDashboard() {
                   itemTextStyle={{ color: "#000" }}              
                   activeColor="#f2f2f2"          
                   placeholder="Select child"
-                  value={selectedChildId}
+                  value={childId}
                   data={childList.map((child) => ({
                     label: child.name,
                     value: child.id,
                   }))}
                   labelField="label"
                   valueField="value"
-                  onChange={(item) => {
-                    setSelectedChildId(item.value);
+                  onChange={(item: any) => {
+                    selectChild({
+                      id: item.value,
+                      name: item.label,
+                      type: 'child'
+                    });
                     setSelectedChild(item.label);
                   }}
                 />
@@ -292,7 +253,7 @@ export default function TherapistDashboard() {
                 <Text style={{ marginTop: 10, color: "#555" }}>Loading learning units...</Text>
               </View>
             ) : (
-              <Filters assignedUnits={data} selectedChildId={selectedChildId}/>
+              <Filters assignedUnits={data} />
             )
           )}
         </View>
