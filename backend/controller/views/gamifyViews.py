@@ -80,10 +80,10 @@ def update_inv(request, profile_id, item_id):
 		return Response({'error': 'Profile not found'}, status=404)
 	except Mascot_Items.DoesNotExist:
 		return Response({'error': 'Mascot Item not found'}, status=404)
-	prev_purchase = Inventory.objects.get(
+	prev_purchase = Inventory.objects.filter(
 		profile = profile.id,
 		mascot_item = item
-	)
+	).exists()
 	if prev_purchase:
 		return Response({'error':'Item has already been purchased'}, status=400)
 	if profile.coins < item.price:
