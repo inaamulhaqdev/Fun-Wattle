@@ -78,8 +78,8 @@ def chat_messages(request, chat_room_id):
 
 def create_chats(profile):
     # Create chat room between a therapist and parent
-    user = User_Profile.objects.get(profile=profile).user
-    children = User_Profile.objects.filter(user=user, profile__profile_type='child')
+    user = User_Profile.objects.get(profile=profile)
+    children = User_Profile.objects.filter(user_id =user.user_id, profile_id__profile_type='child')
     for child in children:
         existing_chat = Chat_Room.objects.filter(
             child_profile=child.profile).first()
