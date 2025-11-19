@@ -173,9 +173,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden"
   },
   backgroundImage: {
     position: 'absolute',
@@ -183,8 +180,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    width: '60%',
+    width: '120%',
     height: '100%',
+    objectFit: "cover",
     opacity: 0.5
   },
   scrollContainer: {
