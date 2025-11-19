@@ -813,12 +813,12 @@ paths:
                 child:
                   type: string
                   format: uuid
-                therapist_id:
+                therapist:
                   type: string
                   format: uuid
               required:
                 - child
-                - therapist_id
+                - therapist
       responses:
         '200':
           description: Success
