@@ -129,7 +129,7 @@ def therapist(request):
 		# Therapist User ID
 		try:
 			profile = Profile.objects.get(id=child_profile)
-			user = User_Profile.objects.get(profile_id=therapist_profile.id)
+			user = User_Profile.objects.get(profile_id=therapist_profile)
 		except (Profile.DoesNotExist):
 			return Response({'error': 'Child not found'}, status=404)
 		except (User_Profile.DoesNotExist):
