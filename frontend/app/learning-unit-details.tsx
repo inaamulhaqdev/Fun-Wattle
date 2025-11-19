@@ -44,6 +44,8 @@ export default function LearningUnitDetails() {
   const [unitAccuracy, setUnitAccuracy] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const { darkMode } = useApp();
+
   useEffect(() => {
     const fetchExercises = async () => {
       if (!id || !childId) return;
@@ -112,8 +114,8 @@ export default function LearningUnitDetails() {
 
   if (loading) {
     return (
-      <PaperProvider theme={DefaultTheme}>
-        <View style={styles.loadingContainer}>
+      <PaperProvider>
+        <View style={[styles.loadingContainer, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
           <ActivityIndicator size="large" color="#FD902B" />
         </View>
       </PaperProvider>
@@ -122,7 +124,7 @@ export default function LearningUnitDetails() {
 
   return (
     <PaperProvider theme={DefaultTheme}>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
         <TouchableOpacity>
           <UnitCard
             title={`${title} \n ${category}`}
@@ -132,8 +134,8 @@ export default function LearningUnitDetails() {
           />
         </TouchableOpacity>
 
-        <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600", fontSize: 20, marginLeft: 13 }}>
-          Activities
+        <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600", fontSize: 20, marginLeft: 13, color: "white" }}>
+          Exercises
         </Text>
 
         {loading ? (
@@ -141,7 +143,7 @@ export default function LearningUnitDetails() {
             <ActivityIndicator size="large" color="#FD902B" />
           </View>
         ) : (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContainer}>
+          <ScrollView style={{ flex: 1, backgroundColor: darkMode ? '#000' : '#fff' }} contentContainerStyle={styles.scrollContainer}>
             {exercises.map((exercise) => (
               <ActivityCards
                 key={exercise.id}
@@ -164,14 +166,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    backgroundColor: "#fff7de",
+    // backgroundColor: "#fff7de",
   },
   scrollContainer: {
     paddingBottom: 16,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#fff7de",
+    //backgroundColor: "#fff7de",
     justifyContent: "center",
     alignItems: "center",
   },

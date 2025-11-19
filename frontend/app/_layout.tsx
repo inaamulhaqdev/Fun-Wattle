@@ -2,20 +2,26 @@ import React from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { router, Stack } from 'expo-router';
 import 'react-native-reanimated';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { IconButton, Provider as PaperProvider, MD3LightTheme as DefaultPaperTheme, MD3LightTheme } from 'react-native-paper';
+import { IconButton, Provider as PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
 import { RegistrationProvider } from '../context/RegistrationContext';
 import { ChildProvider } from '@/context/ChildContext';
-import { AppProvider } from '../context/AppContext';
+import { AppProvider, useApp } from '../context/AppContext';
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import { ActivityIndicator } from 'react-native';
 
-// export const unstable_settings = {
-//   anchor: '(tabs)',
-// };
-
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  return (
+    <AppProvider>
+      <InnerLayout />
+    </AppProvider>
+  );
+}
+
+// ---------------------------
+// SAFE INNER LAYOUT (useApp works here)
+// ---------------------------
+function InnerLayout() {
+  const { darkMode } = useApp();
 
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -27,7 +33,7 @@ export default function RootLayout() {
   }
 
   const paperTheme = {
-    ...MD3LightTheme,
+    ...(darkMode ? MD3DarkTheme : MD3LightTheme),
     fonts: {
       ...MD3LightTheme.fonts,
       bodyLarge: { ...MD3LightTheme.fonts.bodyLarge, fontFamily: 'Poppins_400Regular'},
@@ -37,11 +43,11 @@ export default function RootLayout() {
       labelLarge: { ...MD3LightTheme.fonts.labelLarge, fontFamily: 'Poppins_600SemiBold'},
       labelMedium: { ...MD3LightTheme.fonts.labelMedium, fontFamily: 'Poppins_600SemiBold'},
       labelSmall: { ...MD3LightTheme.fonts.labelSmall, fontFamily: 'Poppins_400Regular'},
-
     }
   };
 
-  const navTheme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navTheme = darkMode ? DarkTheme : DefaultTheme;
+
   const headerStyle = {
     headerTitleStyle: { fontFamily: 'Poppins_600SemiBold' },
     headerBackTitleStyle: { fontFamily: 'Poppins_400Regular' },
