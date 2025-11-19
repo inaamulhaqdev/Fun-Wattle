@@ -143,7 +143,7 @@ export default function ChatMessages() {
       {/* header - recipient's name */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => router.push('/(parent-tabs)/chat-rooms')}
+          onPress={() => router.back()}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
