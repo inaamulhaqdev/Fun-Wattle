@@ -360,6 +360,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
-    marginBottom: -33,
+    marginBottom: -34,
   }
 });
