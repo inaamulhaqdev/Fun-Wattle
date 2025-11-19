@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { Card, Text, Searchbar } from 'react-native-paper';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import { useApp } from '../context/AppContext';
 import { API_URL } from '@/config/api';
 
@@ -33,9 +33,9 @@ export default function LinkTherapistPage() {
   const [therapistProfiles, setTherapistProfiles] = useState<Therapist[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-/* const handleLinkTherapist = async (therapistId: string) => {      
+  const handleLinkTherapist = async (therapistId: string) => {      
     try {
-      const response = await fetch(`${API_URL}/<insert route for linking therapist>`, {
+      const response = await fetch(`${API_URL}/therapist/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,22 +50,22 @@ export default function LinkTherapistPage() {
       if (!response.ok) {
         throw new Error(`Failed to link therapist to child: ${response.status}`);
       }
-      const result = await response.json();
+
       Alert.alert('Success', 'Child successfully linked to therapist!');
 
-      // Navigate back to settings after successful submission
-      router.push('/parent-settings');
+      // Navigate back to settings after successful linking
+      router.push('/(parent-tabs)/settings');
 
     } catch (error) {
       console.error('Error linking therapist to child:', error);
     }
-  }; */
+  };
 
-  /* useFocusEffect(
+  useFocusEffect(
     React.useCallback(() => {
       const fetchTherapists = async () => {
         try {
-          const response = await fetch(`${API_URL}/<insert route for retrieving list of therapist profiles>`, { method: 'GET' });
+          const response = await fetch(`${API_URL}/therapist/`, { method: 'GET' });
           if (!response.ok) throw new Error(`Failed to fetch therapist profiles (${response.status})`);
 
           const therapists = await response.json();
@@ -80,7 +80,7 @@ export default function LinkTherapistPage() {
       };
       fetchTherapists();
     }, [childId, userId])
-  ); */
+  );
 
   // Library view
   return (
@@ -106,7 +106,7 @@ export default function LinkTherapistPage() {
           columnWrapperStyle={{ justifyContent: 'space-between'}}
           renderItem={({ item }) => {
             return (
-              <Card style={styles.card} onPress={() => {/* handleLinkTherapist(item.userId) */}}>
+              <Card style={styles.card} onPress={() => {handleLinkTherapist(item.userId)}}>
                 <Card.Title title={item.name} />
               </Card>
             );
