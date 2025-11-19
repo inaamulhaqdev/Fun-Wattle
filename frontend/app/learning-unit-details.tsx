@@ -124,12 +124,7 @@ export default function LearningUnitDetails() {
 
   return (
     <PaperProvider theme={DefaultTheme}>
-<<<<<<< HEAD
       <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
-=======
-      <View style={styles.container}>
-        
->>>>>>> b07feadcda379b960fa2438ce6175f0a9d267030
         <TouchableOpacity>
           <UnitCard
             title={`${title} \n ${category}`}
