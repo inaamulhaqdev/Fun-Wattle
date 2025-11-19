@@ -162,7 +162,7 @@ export default function TherapistDashboard() {
 
   return (
     <PaperProvider theme={DefaultTheme}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.header}>
             <Text style={styles.headerTitle}>Good evening, {therapistName}!</Text>
         </View>
@@ -179,23 +179,23 @@ export default function TherapistDashboard() {
                       <Text style={styles.childText}>{selectedChild}</Text>
                     </TouchableOpacity>
                   }
-                  style={styles.menuContainer}
+                  style={[styles.menuContainer, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}
                 >
                   {childList.map((child) => (
                     <Menu.Item
-                      key={child}
-                      onPress={() => {
-                        setSelectedChild(child);
-                        setMenuVisible(false);
-                      }}
-                      title={child}
-                      titleStyle={{ color: "#000000ff", fontWeight: "500" }}
-                      style={{ backgroundColor: "#f7f7f7", borderRadius: 10 }}
-                    />
+                        key={child}
+                        onPress={() => {
+                          setSelectedChild(child);
+                          setMenuVisible(false);
+                        }}
+                        title={child}
+                        titleStyle={{ color: "#000", fontWeight: "500" }}
+                        style={{ backgroundColor: "#f7f7f7" }}
+                      />
                   ))}
                 </Menu>
 
-                <Text variant="bodyMedium" style={styles.subtitle}>&apos;s progress this week.</Text>
+                <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos;s progress this week.</Text>
               </>
             ) : (
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
@@ -211,7 +211,7 @@ export default function TherapistDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffff",
+    backgroundColor: "transparent",
   },
   loading: {
     flex: 1,
@@ -261,8 +261,8 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    backgroundColor: 'white',
     paddingHorizontal: 20,
     paddingTop: 20,
+    backgroundColor: "transparent",
   }
 });

@@ -5,6 +5,7 @@ import TaskCard from "../ui/TaskCard";
 import StatsGrid from "../ui/StatsGrid";
 import { router } from "expo-router";
 import { AssignedLearningUnit } from "@/types/learningUnitTypes";
+import { useApp } from "@/context/AppContext";
 
 interface FilterViewProps {
   units: AssignedLearningUnit[];
@@ -22,6 +23,8 @@ export default function FilteredView({ units, category, statistics, fetchingStat
     { label: "Total Activities Done", value: `${statistics.completed_exercises} / ${statistics.total_exercises}` },
     { label: "Total Practice Time", value: statistics.total_time_spent },
   ];
+
+  const { darkMode } = useApp(); 
 
   let filteredUnits: AssignedLearningUnit[] = [];
   if (category === "total") {
@@ -53,7 +56,7 @@ export default function FilteredView({ units, category, statistics, fetchingStat
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {tasks.length === 0 ? (
           <View>
-            <Text>No tasks assigned</Text>
+            <Text style={[{ color: darkMode ? '#fff' : '#000' }]}>No tasks assigned</Text>
             <Text style={{ paddingTop: 50, alignSelf: "center" }}>Assign tasks over at</Text>
             <Text variant={"titleSmall"} style={{ paddingTop: 15, alignSelf: "center", fontSize: 20 }}>Learning Units</Text>
           </View>
