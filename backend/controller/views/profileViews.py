@@ -139,6 +139,6 @@ def therapist(request):
 		try:
 			User_Profile.objects.get(user_id=user.user_id, profile_id=profile)
 		except (User_Profile.DoesNotExist):
-			User_Profile.objects.create(user_id=user.user_id, profile_id=profile)
+			User_Profile.objects.create(user_id=user.user_id, profile_id=profile.id)
 			return Response({'message':'Therapist set successfully'}, status=200)
 		return Response({'error':'Profile connection exists'}, status=400)	
