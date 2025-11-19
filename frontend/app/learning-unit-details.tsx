@@ -128,9 +128,6 @@ export default function LearningUnitDetails() {
           source={require('@/assets/images/child-dashboard-background.jpg')}
           style={styles.backgroundImage}
           resizeMode="cover"
-          onLoad={() => {
-            console.log('Background image loaded');
-          }}
         />
         <TouchableOpacity>
           <UnitCard
@@ -173,7 +170,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    // backgroundColor: "#fff",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backgroundImage: {
     position: 'absolute',
