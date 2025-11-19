@@ -43,6 +43,8 @@ const Filters = ({ assignedUnits }: FiltersProps) => {
 
   const { session, childId } = useApp();
 
+  const { darkMode } = useApp();
+
   useFocusEffect(
     useCallback(() => {
       if (!childId) return;
@@ -87,7 +89,7 @@ const Filters = ({ assignedUnits }: FiltersProps) => {
             onPress={() => setSelected(seg.value)}
             style={styles.segment}
             buttonColor={selected === seg.value ? "#fd9029" : ""}
-            textColor="#000"
+            textColor={darkMode ? "#fff" : "#000"}
             labelStyle={{ fontSize: 12 }}
           >
             {seg.label}

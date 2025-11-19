@@ -44,6 +44,8 @@ export default function LearningUnitDetails() {
   const [unitAccuracy, setUnitAccuracy] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const { darkMode } = useApp();
+
   useEffect(() => {
     const fetchExercises = async () => {
       if (!id || !childId) return;
@@ -112,8 +114,8 @@ export default function LearningUnitDetails() {
 
   if (loading) {
     return (
-      <PaperProvider theme={DefaultTheme}>
-        <View style={styles.loadingContainer}>
+      <PaperProvider>
+        <View style={[styles.loadingContainer, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
           <ActivityIndicator size="large" color="#FD902B" />
         </View>
       </PaperProvider>
@@ -150,7 +152,7 @@ export default function LearningUnitDetails() {
             <ActivityIndicator size="large" color="#FD902B" />
           </View>
         ) : (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContainer}>
+          <ScrollView style={{ flex: 1, backgroundColor: darkMode ? '#000' : '#fff' }} contentContainerStyle={styles.scrollContainer}>
             {exercises.map((exercise) => (
               <ActivityCards
                 key={exercise.id}
