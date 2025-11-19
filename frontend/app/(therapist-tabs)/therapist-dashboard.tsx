@@ -271,7 +271,7 @@ export default function TherapistDashboard() {
             )}
 
 
-                <Text variant="bodyMedium" style={styles.subtitle}>'s progress this week.</Text>
+                <Text variant="bodyMedium" style={styles.subtitle}>&apos; progress this week.</Text>
               </>
             ) : (
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
