@@ -129,9 +129,11 @@ def therapist(request):
 		# Therapist User ID
 		try:
 			profile = Profile.objects.get(id=child_profile)
-			user = User_Profile.objects.get(profile_id=therapist_profile)
-		except (Profile.DoesNotExist, User_Profile.DoesNotExist):
-			return Response({'error': 'Profile not found'}, status=404)
+			user = User_Profile.objects.get(profile_id=therapist_profile.id)
+		except (Profile.DoesNotExist):
+			return Response({'error': 'Child not found'}, status=404)
+		except (User_Profile.DoesNotExist):
+			return Response({'error': 'Therapist not found'}, status=404)
 		if User_Profile.objects.filter(user_id=user, profile_id=profile).exists():
 			return Response({'error':'Profile connection exists'})
 		user_profile = User_Profile.objects.create(user_id=user, profile_id=profile)
