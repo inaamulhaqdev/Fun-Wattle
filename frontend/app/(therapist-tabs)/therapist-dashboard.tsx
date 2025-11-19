@@ -52,6 +52,8 @@ export default function TherapistDashboard() {
     return () => clearInterval(interval); 
   }, []);
 
+  const { darkMode } = useApp();
+
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
@@ -219,7 +221,7 @@ export default function TherapistDashboard() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.loading}>
           <ActivityIndicator size="large" color="#fd9029" />
         </View>
@@ -229,7 +231,7 @@ export default function TherapistDashboard() {
 
   return (
     <PaperProvider theme={DefaultTheme}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.header}>
             <Text style={styles.headerTitle}>
               {getGreeting()}, {therapistName}!
@@ -249,7 +251,13 @@ export default function TherapistDashboard() {
                     borderWidth: 1,
                     borderRadius: 8,
                     paddingHorizontal: 10,
+                    backgroundColor: "#fff"  
                   }}
+                  placeholderStyle={{ color: "#555" }}
+                  selectedTextStyle={{ color: "#000" }}
+                  containerStyle={{ backgroundColor: "#fff" }}   
+                  itemTextStyle={{ color: "#000" }}              
+                  activeColor="#f2f2f2"          
                   placeholder="Select child"
                   value={selectedChildId}
                   data={childList.map((child) => ({
@@ -271,7 +279,7 @@ export default function TherapistDashboard() {
             )}
 
 
-                <Text variant="bodyMedium" style={styles.subtitle}>&apos; progress this week.</Text>
+                <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos; progress this week.</Text>
               </>
             ) : (
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
@@ -296,7 +304,7 @@ export default function TherapistDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fd9029",
+    backgroundColor: "transparent",
   },
   loading: {
     flex: 1,
@@ -356,10 +364,9 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    backgroundColor: 'white',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
-    marginBottom: -34,
+    marginBottom: -33,
   }
 });
