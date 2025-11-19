@@ -251,7 +251,13 @@ export default function TherapistDashboard() {
                     borderWidth: 1,
                     borderRadius: 8,
                     paddingHorizontal: 10,
+                    backgroundColor: "#fff"  
                   }}
+                  placeholderStyle={{ color: "#555" }}
+                  selectedTextStyle={{ color: "#000" }}
+                  containerStyle={{ backgroundColor: "#fff" }}   
+                  itemTextStyle={{ color: "#000" }}              
+                  activeColor="#f2f2f2"          
                   placeholder="Select child"
                   value={selectedChildId}
                   data={childList.map((child) => ({

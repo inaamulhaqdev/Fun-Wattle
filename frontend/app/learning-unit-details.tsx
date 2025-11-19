@@ -166,11 +166,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-<<<<<<< HEAD
     // backgroundColor: "#fff7de",
-=======
-    backgroundColor: "#fd9029",
->>>>>>> b07feadcda379b960fa2438ce6175f0a9d267030
   },
   scrollContainer: {
     paddingBottom: 16,
