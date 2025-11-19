@@ -50,6 +50,7 @@ const MascotCustomization = () => {
   };
 
   // Function to fetch child's coin balance from backend
+  /*
   const fetchCoinBalance = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/profile/${childId}/coins`, {
@@ -70,6 +71,9 @@ const MascotCustomization = () => {
       console.error('Error fetching coin balance:', error);
     }
   }, [childId]);
+  */
+
+
 
   // Function to update child's coin balance in backend (deduct coins for purchase)
   const updateCoinBalance = async (coinsToDeduct: number) => {
@@ -136,15 +140,17 @@ const MascotCustomization = () => {
     unlocked: boolean
   } | null>(null);
   const [selectedBody, setSelectedBody] = useState(bodyOptions[0]); // Default to first body option
-  const [coinBalance, setCoinBalance] = useState(0);
+  const [coinBalance, setCoinBalance] = useState(1150); // Initial coin balance for testing
   const [unlockedAccessories, setUnlockedAccessories] = useState<number[]>([]); // Track unlocked accessory IDs
 
   // Fetch coin balance on component mount
+  /*
   useEffect(() => {
     if (childId) {
       fetchCoinBalance();
     }
   }, [childId, fetchCoinBalance]);
+  */
 
   // Refetch coin balance when screen comes into focus (e.g., after completing an exercise)
   useFocusEffect(
