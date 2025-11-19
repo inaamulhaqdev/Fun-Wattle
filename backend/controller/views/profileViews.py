@@ -267,6 +267,7 @@ def mascot(request, profile_id):
 		items = equipped_items(profile.id)
 		return Response(items, staus=200)
 
+
 @api_view(['GET', 'POST'])
 def therapist(request):
 	if request.method == 'GET':
@@ -279,8 +280,10 @@ def therapist(request):
 		# Therapist User ID
 		try:
 			profile = Profile.objects.get(id=child_profile)
-			user = User_Profile.objects.get(profile=therapist_profile)
-		except (Profile.DoesNotExist, User.DoesNotExist):
+			user = User_Profile.objects.get(profile_id=therapist_profile)
+		except (Profile.DoesNotExist, User_Profile.DoesNotExist):
 			return Response({'error': 'Profile not found'}, status=404)
-		user_profile = User_Profile.objects.create(user=user, profile=profile)
+		if User_Profile.objects.filter(user_id=user, profile_id=profile).exists():
+			return Response({'error':'Profile connection exists'})
+		user_profile = User_Profile.objects.create(user_id=user, profile_id=profile)
 		return Response({'message':'Therapist set successfully'}, status=200)
