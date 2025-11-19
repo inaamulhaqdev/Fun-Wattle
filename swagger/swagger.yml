@@ -912,8 +912,6 @@ paths:
                   toros:
                     $ref: '#/components/schemas/Shop_Item'
                     nullable: true
-        '400':
-          description: More then 2 items are equipped (DB error)
         '401':
           description: Item has not been purchased 
         '404':

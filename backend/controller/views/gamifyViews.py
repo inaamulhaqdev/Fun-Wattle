@@ -121,9 +121,6 @@ def mascot(request, profile_id):
 		profile = Profile.objects.get(id=profile_id)
 	except Profile.DoesNotExist:
 		return Response({'error': 'Profile not found'}, status=404)
-	eqipped_items = equipped_items(profile.id)
-	if equipped_items.length > 2:
-		return Response({'error':'Cannot equip more than 2 items'}, status=400)
 	if request.method == 'GET':
 		items = equipped_items(profile.id)
 		return Response(items, status=200)
