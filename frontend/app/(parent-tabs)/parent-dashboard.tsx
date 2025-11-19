@@ -84,7 +84,8 @@ export default function ParentDashboard() {
         // Filter for child profiles
         const childProfiles = profiles.filter((p: any) => p.profile_type === 'child');
 
-        if (!childProfiles) {
+        if (childProfiles.length === 0) {
+          setSelectedChildName('');
           return;
         }
 
@@ -102,7 +103,9 @@ export default function ParentDashboard() {
           selectChild(currentChild);
         }
         
-        setSelectedChildName(currentChild.name);
+        if (currentChild) { 
+          setSelectedChildName(currentChild.name);
+        }
 
       } catch (error: any) {
         Alert.alert('Error', error.message);
