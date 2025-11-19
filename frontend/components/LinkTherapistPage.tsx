@@ -7,7 +7,7 @@ import { useApp } from '../context/AppContext';
 import { API_URL } from '@/config/api';
 
 type Therapist = {
-  userId: string;
+  profileId: string;
   name: string;
 };
 
@@ -42,8 +42,8 @@ export default function LinkTherapistPage() {
           'Authorization': `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({
-          user_id: therapistId,
-          child_id: childId,
+          therapist_id: therapistId,
+          child: childId,
         }),
       });
 
@@ -68,7 +68,16 @@ export default function LinkTherapistPage() {
           const response = await fetch(`${API_URL}/therapist/`, { method: 'GET' });
           if (!response.ok) throw new Error(`Failed to fetch therapist profiles (${response.status})`);
 
-          const therapists = await response.json();
+          const data = await response.json();
+
+          console.log("Data:", data);
+
+          const therapists: Therapist[] = data.map((therapist: any) => ({
+            profileId: therapist.id,
+            name: therapist.name,
+          }));
+
+          console.log("Transformed data:", therapists);
 
           setTherapistProfiles(therapists);
         } catch (err) {
@@ -101,10 +110,10 @@ export default function LinkTherapistPage() {
       ) : (
         <FlatList
           data={therapistProfiles.filter(item => matchesFilters(item, searchQuery))}
-          keyExtractor={item => item.userId}
+          keyExtractor={item => item.profileId}
           renderItem={({ item }) => {
             return (
-              <Card style={styles.card} onPress={() => {handleLinkTherapist(item.userId)}}>
+              <Card style={styles.card} onPress={() => {handleLinkTherapist(item.profileId)}}>
                 <Card.Title title={item.name} />
               </Card>
             );
@@ -120,17 +129,18 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#fff',
+    alignContent: 'center'
   },
   searchbar: {
     marginTop: 30,
-    marginBottom: 10,
+    marginBottom: 20,
     backgroundColor: 'white',
     borderColor: 'black',
     borderWidth: 1,
   },
   card: {
     marginBottom: 16,
-    backgroundColor: 'white',
+    backgroundColor: '#fd9029',
     width: '48%',
   },
   loadingContainer: {
@@ -143,5 +153,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontWeight: '600',
     color: '#000',
+    alignSelf: 'center'
   },
 });
