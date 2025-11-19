@@ -125,18 +125,19 @@ def therapist(request):
 		return Response(serializer.data, status=200)
 	elif request.method == 'POST':
 		child_profile = request.data.get('child')
-		therapist_id = request.data.get('therapist')
+		therapist_profile = request.data.get('therapist')
 		# Therapist User ID
 		try:
 			profile = Profile.objects.get(id=child_profile)
-			therapist_pf = Profile.objects.get(id=therapist_id)
+			therapist = Profile.objects.get(id=therapist)
 		except (Profile.DoesNotExist):
 			return Response({'error': 'Either not found'}, status=404)
 		try:
-			user = User_Profile.objects.get(profile_id=therapist_pf)
+			user = User_Profile.objects.get(profile_id=therapist)
 		except (User_Profile.DoesNotExist):
 			return Response({'error': 'Therapist not found'}, status=404)
-		if User_Profile.objects.filter(user_id=user, profile_id=profile).exists():
+		if not User_Profile.objects.get(user_id=user.user_id, profile_id=profile):
+			User_Profile.objects.create(user_id=user.user_id, profile_id=profile)
+			return Response({'message':'Therapist set successfully'}, status=200)
+		else:
 			return Response({'error':'Profile connection exists'})
-		user_profile = User_Profile.objects.create(user_id=user, profile_id=profile)
-		return Response({'message':'Therapist set successfully'}, status=200)
