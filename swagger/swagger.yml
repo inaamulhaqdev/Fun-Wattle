@@ -821,24 +821,11 @@ paths:
                 - therapist_id
       responses:
         '200':
-          description: Item Equipped
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  head:
-                    $ref: '#/components/schemas/Shop_Item'
-                    nullable: true
-                  toros:
-                    $ref: '#/components/schemas/Shop_Item'
-                    nullable: true
+          description: Success
         '400':
-          description: More then 2 items are equipped (DB error)
-        '401':
-          description: Item has not been purchased 
+          description: Connection exists
         '404':
-          description: Profile not found
+          description: Profile (either) not found
   /profile/{profile_id}/mascot/:
     get:
       summary: Get the equipped mascot items for a profile
