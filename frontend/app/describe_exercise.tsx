@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
 import { Audio } from 'expo-av';
-import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers';
+import { requestAudioPermissions } from '@/components/util/audioHelpers';
 import { API_URL } from '../config/api';
 import { useApp } from '@/context/AppContext';
 import { Buffer } from 'buffer';
@@ -33,6 +32,49 @@ interface ApiQuestion {
   order: number;
   question_data: string | object;
   created_at: string;
+}
+
+let recording: Audio.Recording | null = null;
+
+export async function startRecordingAV() {
+  try {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+    });
+
+    const { recording: rec } = await Audio.Recording.createAsync(
+      Audio.RecordingOptionsPresets.HIGH_QUALITY
+    );
+
+    recording = rec;
+    return true;
+  } catch (err) {
+    console.error("Error starting recording:", err);
+    return false;
+  }
+}
+
+export async function stopRecordingAV() {
+  try {
+    if (!recording) return null;
+
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: false,
+      playThroughEarpieceAndroid: false,
+    });
+
+    return uri;
+  } catch (err) {
+    console.error("Error stopping recording:", err);
+    return null;
+  }
 }
 
 // Fetch questions for a specific exercise by ID
@@ -230,12 +272,7 @@ const DescribeExerciseComponent = () => {
     timestamp: number;
   }[]>([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  const [gptFeedback, setGptFeedback] = useState<string | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
-
-  // Audio recorder set up
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const recorderState = useAudioRecorderState(audioRecorder);
 
   // Animation values
   const speechBubbleAnim = React.useRef(new Animated.Value(0)).current;
@@ -353,12 +390,6 @@ const DescribeExerciseComponent = () => {
   }, [currentQuestion, pointerAnim, exercise.questions]);
 
   useEffect(() => {
-    if (gptFeedback) {
-      handlePlayAudio(gptFeedback);
-    }
-  }, [gptFeedback]);
-
-  useEffect(() => {
     if (!exercise || !exercise.questions) return;
 
     const currentQ = exercise.questions[currentQuestion];
@@ -451,10 +482,10 @@ const DescribeExerciseComponent = () => {
       if (!hasPermission) return;
 
       setQuestionStartTime(Date.now());
-      const started = await startRecording(audioRecorder);
+      const started = await startRecordingAV();
       if (started) setIsRecording(true);
     } else {
-      const uri = await stopRecording(audioRecorder);
+      const uri = await stopRecordingAV();
       setIsRecording(false);
 
       if (!uri) return;
@@ -527,7 +558,7 @@ const DescribeExerciseComponent = () => {
 
         const data = await response.json();
         console.log('Audio successfully sent:', data);
-        setGptFeedback(data.feedback);
+        handlePlayAudio(data.feedback);
 
         setExerciseResponses(prev => [
           ...prev,
@@ -566,6 +597,14 @@ const DescribeExerciseComponent = () => {
     if (!text) return;
 
     try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false, 
+      });
+
       const response = await fetch(`${API_URL}/AI/text_to_speech/`, {
         method: 'POST',
         headers: {
@@ -573,7 +612,7 @@ const DescribeExerciseComponent = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text: text,
+          text,
           voice: 'en-AU-NatashaNeural',
         }),
       });
@@ -597,7 +636,7 @@ const DescribeExerciseComponent = () => {
 
       await sound.playAsync();
     } catch (err) {
-      console.error('Error playing feedback audio:', err);
+      console.error('Error playing audio:', err);
     }
   };
 
