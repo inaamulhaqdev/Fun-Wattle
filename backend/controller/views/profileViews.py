@@ -129,15 +129,16 @@ def therapist(request):
 		# Therapist User ID
 		try:
 			profile = Profile.objects.get(id=child_profile)
-			therapist = Profile.objects.get(id=therapist)
+			therapist = Profile.objects.get(id=therapist_profile)
 		except (Profile.DoesNotExist):
 			return Response({'error': 'Either not found'}, status=404)
 		try:
 			user = User_Profile.objects.get(profile_id=therapist)
 		except (User_Profile.DoesNotExist):
 			return Response({'error': 'Therapist not found'}, status=404)
-		if not User_Profile.objects.get(user_id=user.user_id, profile_id=profile):
-			User_Profile.objects.create(user_id=user.user_id, profile_id=profile)
+		try:
+			User_Profile.objects.get(user_id=user.user_id, profile_id=profile)
+		except (User_Profile.DoesNotExist):
+			User_Profile.objects.create(user_id=user.user_id, profile_id=profile.id)
 			return Response({'message':'Therapist set successfully'}, status=200)
-		else:
-			return Response({'error':'Profile connection exists'})
+		return Response({'error':'Profile connection exists'}, status=400)	
