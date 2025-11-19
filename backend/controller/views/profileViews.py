@@ -270,8 +270,8 @@ def mascot(request, profile_id):
 @api_view(['GET', 'POST'])
 def therapist(request):
 	if request.method == 'GET':
-		therapists = Therapist.objects.all()
-		serializer = TherapistSerializer(therapists, many=True)
+		therapist = Profiles.objects.filter(profile_type='therapist')
+		serializer = ProfileSerializer(therapists, many=True)
 		return Response(serializer.data, status=200)
 	elif request.method == 'POST':
 		child_profile = request.data.get('child')
