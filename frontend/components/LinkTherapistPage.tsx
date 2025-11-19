@@ -102,8 +102,6 @@ export default function LinkTherapistPage() {
         <FlatList
           data={therapistProfiles.filter(item => matchesFilters(item, searchQuery))}
           keyExtractor={item => item.userId}
-          numColumns={1}
-          columnWrapperStyle={{ justifyContent: 'space-between'}}
           renderItem={({ item }) => {
             return (
               <Card style={styles.card} onPress={() => {handleLinkTherapist(item.userId)}}>
