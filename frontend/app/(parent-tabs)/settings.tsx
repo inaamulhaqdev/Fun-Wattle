@@ -6,7 +6,7 @@ import { useApp } from "@/context/AppContext";
 
 const SettingsPage = () => {
 
-  const { logout } = useApp();
+  // const { logout } = useApp();
 
   type SettingItemProps = {
     title: string;
@@ -47,6 +47,11 @@ const SettingsPage = () => {
           <SettingItem
             title="Add Child"
             onPress={() => router.push('/parent/add-child-details')}
+          />
+
+          <SettingItem
+            title="Add Therapist"
+            onPress={() => router.push('/link-therapist')}
           />
 
           <SettingItem
