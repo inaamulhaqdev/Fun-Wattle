@@ -803,12 +803,6 @@ paths:
       description:  Link a therapist to a child profile
       tags:
         - Therapist
-      parameters:
-        - name: profile_id
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
