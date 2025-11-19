@@ -125,15 +125,15 @@ def therapist(request):
 		return Response(serializer.data, status=200)
 	elif request.method == 'POST':
 		child_profile = request.data.get('child')
-		therapist_profile = request.data.get('therapist')
+		therapist_id = request.data.get('therapist')
 		# Therapist User ID
 		try:
 			profile = Profile.objects.get(id=child_profile)
-			therapist = Profile.objects.get(id=therapist)
+			therapist_pf = Profile.objects.get(id=therapist_id)
 		except (Profile.DoesNotExist):
 			return Response({'error': 'Either not found'}, status=404)
 		try:
-			user = User_Profile.objects.get(profile_id=therapist)
+			user = User_Profile.objects.get(profile_id=therapist_pf)
 		except (User_Profile.DoesNotExist):
 			return Response({'error': 'Therapist not found'}, status=404)
 		if User_Profile.objects.filter(user_id=user, profile_id=profile).exists():
