@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View, Alert } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View, Alert, Image } from "react-native";
 import { Text, DefaultTheme, Provider as PaperProvider, ActivityIndicator } from "react-native-paper";
 import { ActivityCards } from "@/components/ui/ActivityCards";
 import { UnitCard } from "@/components/ui/UnitCard";
@@ -123,6 +123,15 @@ export default function LearningUnitDetails() {
   return (
     <PaperProvider theme={DefaultTheme}>
       <View style={styles.container}>
+        {/* Background Image */}
+        <Image
+          source={require('@/assets/images/child-dashboard-background.jpg')}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+          onLoad={() => {
+            console.log('Background image loaded');
+          }}
+        />
         <TouchableOpacity>
           <UnitCard
             title={`${title} \n ${category}`}
@@ -164,14 +173,24 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    backgroundColor: "#fff7de",
+    // backgroundColor: "#fff",
+  },
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0.5,
   },
   scrollContainer: {
     paddingBottom: 16,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#fff7de",
+    backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
   },
