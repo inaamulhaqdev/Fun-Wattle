@@ -63,7 +63,7 @@ class MascotItemsSerializer(serializers.ModelSerializer):
         model = Mascot_Items
         fields = '__all__'
 
-class Inventory(serializers.ModelSerializer):
+class InventorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Inventory
         fields = '__all__'
