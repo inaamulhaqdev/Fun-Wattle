@@ -282,7 +282,5 @@ def therapist(request):
 			therapist = Profile.objects.get(id=therapist_id)
 		except Profile.DoesNotExist:
 			return Response({'error': 'Profile not found'}, status=404)
-		except Therapist.DoesNotExist:
-			return Response({'error': 'Therapist not found'}, status=404)
 		user_profile = User_Profile.objects.create(user=user, profile=profile)
 		return Response({'message':'Therapist set successfully'}, status=200)
