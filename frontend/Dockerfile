@@ -9,6 +9,7 @@ COPY package*.json ./
 RUN npm install -g expo-cli
 RUN npm install
 RUN npm install buffer
+RUN npm install react-native-element-dropdown
 
 # Copy source code
 COPY . .
