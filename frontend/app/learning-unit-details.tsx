@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View, Alert } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View, Alert, Image } from "react-native";
 import { Text, DefaultTheme, Provider as PaperProvider, ActivityIndicator } from "react-native-paper";
 import { ActivityCards } from "@/components/ui/ActivityCards";
 import { UnitCard } from "@/components/ui/UnitCard";
 import { useLocalSearchParams } from "expo-router";
 import { useApp } from "@/context/AppContext";
 import { API_URL } from "../config/api";
+import { Asset } from 'expo-asset';
 
 interface Exercise {
   id: string;
@@ -43,6 +44,8 @@ export default function LearningUnitDetails() {
   const [progress, setProgress] = useState(0);
   const [unitAccuracy, setUnitAccuracy] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const [bgLoaded, setBgLoaded] = useState(false);
 
   const { darkMode } = useApp();
 
@@ -106,13 +109,28 @@ export default function LearningUnitDetails() {
     fetchExercises();
   }, [id, childId]);
 
+  useEffect(() => {
+    async function loadBackground() {
+      try {
+        const asset = Asset.fromModule(require('@/assets/images/child-dashboard-background.jpg'));
+        await asset.downloadAsync();
+        setBgLoaded(true);
+      } catch (err) {
+        console.error("Image preload failed", err);
+        setBgLoaded(true);
+      }
+    }
+
+    loadBackground();
+  }, []);
+
   function formatTime(seconds: number) {
     if (seconds === undefined) return "0";
     if (seconds >= 60) return `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
     return `${seconds} sec`;
   }
 
-  if (loading) {
+  if (loading || !bgLoaded) {
     return (
       <PaperProvider>
         <View style={[styles.loadingContainer, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
@@ -124,7 +142,19 @@ export default function LearningUnitDetails() {
 
   return (
     <PaperProvider theme={DefaultTheme}>
-      <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+      <View style={styles.container}>
+        {/* Background Image */}
+        <Image
+          source={require('@/assets/images/child-dashboard-background.jpg')}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+          onLoad={() => {
+            console.log('Background image loaded');
+          }}
+        />
+
+        {/* {darkMode && <View style={styles.darkOverlay} />} */}
+
         <TouchableOpacity>
           <UnitCard
             title={`${title} \n ${category}`}
@@ -134,7 +164,7 @@ export default function LearningUnitDetails() {
           />
         </TouchableOpacity>
 
-        <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600", fontSize: 20, marginLeft: 13, color: "white" }}>
+        <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600", fontSize: 20, marginLeft: 13, color: darkMode ? "white" : "black" }}>
           Exercises
         </Text>
 
@@ -143,7 +173,7 @@ export default function LearningUnitDetails() {
             <ActivityIndicator size="large" color="#FD902B" />
           </View>
         ) : (
-          <ScrollView style={{ flex: 1, backgroundColor: darkMode ? '#000' : '#fff' }} contentContainerStyle={styles.scrollContainer}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContainer}>
             {exercises.map((exercise) => (
               <ActivityCards
                 key={exercise.id}
@@ -166,14 +196,33 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    // backgroundColor: "#fff7de",
   },
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '120%',
+    height: '120%',
+    objectFit: "cover",
+    opacity: 0.5
+  },
+/*   darkOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    zIndex: 1,
+  }, */
   scrollContainer: {
     paddingBottom: 16,
   },
   loadingContainer: {
     flex: 1,
-    //backgroundColor: "#fff7de",
+    backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
   },

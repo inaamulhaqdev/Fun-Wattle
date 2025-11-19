@@ -21,6 +21,13 @@ const formatDate = (isoString: string): string => {
   });
 };
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning"; 
+  if (hour < 18) return "Good afternoon"; 
+  return "Good evening"; 
+}
+
 export default function ParentDashboard() {
   const { profileId, childId, session, selectChild } = useApp();
   const [loadingProfiles, setLoadingProfiles] = useState(true);
@@ -28,6 +35,16 @@ export default function ParentDashboard() {
   const [parentName, setParentName] = useState('');
   const [selectedChildName, setSelectedChildName] = useState('');
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
+
+  const [greeting, setGreeting] = useState(getGreeting());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGreeting(getGreeting());
+    }, 60 * 1000); 
+
+    return () => clearInterval(interval); 
+  }, []);
 
   const loading = loadingProfiles || loadingAssignments;
 
@@ -67,6 +84,11 @@ export default function ParentDashboard() {
         // Filter for child profiles
         const childProfiles = profiles.filter((p: any) => p.profile_type === 'child');
 
+        if (childProfiles.length === 0) {
+          setSelectedChildName('');
+          return;
+        }
+
         let currentChild: any = null;
 
         if (childId) {
@@ -77,8 +99,13 @@ export default function ParentDashboard() {
           currentChild = childProfiles[0];
         }
 
-        selectChild(currentChild);
-        setSelectedChildName(currentChild.name);
+        if (currentChild) {
+          selectChild(currentChild);
+        }
+        
+        if (currentChild) { 
+          setSelectedChildName(currentChild.name);
+        }
 
       } catch (error: any) {
         Alert.alert('Error', error.message);
@@ -180,7 +207,7 @@ export default function ParentDashboard() {
         </>
       ) : (
         <>
-          <Text variant='titleLarge' style={styles.title}>Good evening, {parentName}!</Text>
+          <Text variant='titleLarge' style={styles.title}>{getGreeting()}, {parentName}!</Text>
           <Text variant="bodyMedium" style={styles.subtitle}>{selectedChildName}&apos;s progress this week.</Text>
           <Filters assignedUnits={data} />
         </>

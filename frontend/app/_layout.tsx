@@ -93,7 +93,7 @@ function InnerLayout() {
                 <Stack.Screen name="(therapist-tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
                 <Stack.Screen name="learning-unit-details" options={{
-                  title: 'Unit Details',
+                  title: 'Progress Details',
                   headerLeft: ({ tintColor}) => (
                     <IconButton
                       icon="arrow-left"
@@ -110,6 +110,19 @@ function InnerLayout() {
                 <Stack.Screen name="parent" options={{ headerShown: false }} />
                 <Stack.Screen name="switch-child" options={{
                   title: 'Switch Child',
+                  headerLeft: ({ tintColor}) => (
+                    <IconButton
+                      icon="arrow-left"
+                      size={24}
+                      onPress={() => {
+                        router.back();
+                      }}
+                      iconColor={tintColor}
+                    />
+                  )
+                  }} />
+                <Stack.Screen name="link-therapist" options={{
+                  title: 'Add Therapist',
                   headerLeft: ({ tintColor}) => (
                     <IconButton
                       icon="arrow-left"
