@@ -271,7 +271,7 @@ def mascot(request, profile_id):
 def therapist(request):
 	if request.method == 'GET':
 		therapist = Profile.objects.filter(profile_type='therapist')
-		serializer = ProfileSerializer(therapists, many=True)
+		serializer = ProfileSerializer(therapist, many=True)
 		return Response(serializer.data, status=200)
 	elif request.method == 'POST':
 		child_profile = request.data.get('child')
@@ -280,7 +280,7 @@ def therapist(request):
 		try:
 			profile = Profile.objects.get(id=child_id)
 			users = User.objects.get(id=therapist_ui)
-		except Profile.DoesNotExist:
+		except (Profile.DoesNotExist, User.DoesNotExist):
 			return Response({'error': 'Profile not found'}, status=404)
 		user_profile = User_Profile.objects.create(user=user, profile=profile)
 		return Response({'message':'Therapist set successfully'}, status=200)
