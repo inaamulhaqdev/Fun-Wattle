@@ -279,7 +279,7 @@ def therapist(request):
 		# Therapist User ID
 		try:
 			profile = Profile.objects.get(id=child_id)
-			therapist = Profile.objects.get(id=therapist_id)
+			users = User.objects.get(id=therapist_ui)
 		except Profile.DoesNotExist:
 			return Response({'error': 'Profile not found'}, status=404)
 		user_profile = User_Profile.objects.create(user=user, profile=profile)
