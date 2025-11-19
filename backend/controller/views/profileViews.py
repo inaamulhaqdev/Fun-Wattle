@@ -266,3 +266,23 @@ def mascot(request, profile_id):
 		inv_item_to_equip.save()
 		items = equipped_items(profile.id)
 		return Response(items, staus=200)
+
+@api_view(['GET', 'POST'])
+def therapist(request):
+	if request.method == 'GET':
+		therapists = Therapist.objects.all()
+		serializer = TherapistSerializer(therapists, many=True)
+		return Response(serializer.data, status=200)
+	elif request.method == 'POST':
+		child_profile = request.data.get('child')
+		therapist_ui = request.data.get('therapist_id')
+		# Therapist User ID
+		try:
+			profile = Profile.objects.get(id=child_id)
+			therapist = Therapist.objects.get(id=therapist_id)
+		except Profile.DoesNotExist:
+			return Response({'error': 'Profile not found'}, status=404)
+		except Therapist.DoesNotExist:
+			return Response({'error': 'Therapist not found'}, status=404)
+		user_profile = User_Profile.objects.create(user=user, profile=profile)
+		return Response({'message':'Therapist set successfully'}, status=200)

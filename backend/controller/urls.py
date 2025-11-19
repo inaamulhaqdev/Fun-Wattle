@@ -24,6 +24,9 @@ urlpatterns = [
     path('profile/<str:profile_id>/inv/<str:item_id>/', update_inv, name='update_inventory'), # POST
     path('profile/<str:profile_id>/mascot/', mascot, name='manage_mascot'), # GET, PUT
 
+    # therapist 
+    path('therapist/', therapist, name='therapist' ), # GET, POST
+
     # Content Library Routes
     path('content/learning_units/', get_all_learning_units, name='get_all_learning_units'), # GET
     path('content/<str:learning_unit_id>/exercises/', get_exercises_for_learning_unit, name='get_exercises_for_learning_unit'), # GET
