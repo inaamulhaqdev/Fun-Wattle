@@ -14,7 +14,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ title, duration, progress, a
 
     return (
         <Card style={styles.unitCard} mode='elevated'>
-            <Card.Content style={{ justifyContent: "space-between"}}>
+            <Card.Content style={{ justifyContent: "space-between" }}>
             <Text variant="titleLarge" style={styles.title}>{title}</Text>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
               <Chip icon="clock-outline" style={{ backgroundColor: "#fff" }} textStyle={{ color: "#fd9029" }}>

@@ -112,7 +112,11 @@ export default function LearningUnitDetails() {
   useEffect(() => {
     async function loadBackground() {
       try {
-        const asset = Asset.fromModule(require('@/assets/images/child-dashboard-background.jpg'));
+        const asset = Asset.fromModule(
+          darkMode
+            ? require('@/assets/images/child-dashboard-background-dark.jpg')
+            : require('@/assets/images/child-dashboard-background.jpg')
+        );
         await asset.downloadAsync();
         setBgLoaded(true);
       } catch (err) {
@@ -122,7 +126,7 @@ export default function LearningUnitDetails() {
     }
 
     loadBackground();
-  }, []);
+  }, [darkMode]);
 
   function formatTime(seconds: number) {
     if (seconds === undefined) return "0";
@@ -145,15 +149,17 @@ export default function LearningUnitDetails() {
       <View style={styles.container}>
         {/* Background Image */}
         <Image
-          source={require('@/assets/images/child-dashboard-background.jpg')}
+          source={
+            darkMode
+              ? require('@/assets/images/child-dashboard-background-dark.jpg')
+              : require('@/assets/images/child-dashboard-background.jpg')
+          }
           style={styles.backgroundImage}
           resizeMode="cover"
           onLoad={() => {
             console.log('Background image loaded');
           }}
         />
-
-        {/* {darkMode && <View style={styles.darkOverlay} />} */}
 
         <TouchableOpacity>
           <UnitCard
@@ -208,15 +214,6 @@ const styles = StyleSheet.create({
     objectFit: "cover",
     opacity: 0.5
   },
-/*   darkOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    zIndex: 1,
-  }, */
   scrollContainer: {
     paddingBottom: 16,
   },

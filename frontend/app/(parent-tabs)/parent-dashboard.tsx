@@ -38,6 +38,8 @@ export default function ParentDashboard() {
 
   const [greeting, setGreeting] = useState(getGreeting());
 
+  const { darkMode } = useApp();
+
   useEffect(() => {
     const interval = setInterval(() => {
       setGreeting(getGreeting());
@@ -101,9 +103,6 @@ export default function ParentDashboard() {
 
         if (currentChild) {
           selectChild(currentChild);
-        }
-        
-        if (currentChild) { 
           setSelectedChildName(currentChild.name);
         }
 
@@ -119,6 +118,7 @@ export default function ParentDashboard() {
 
   const fetchAssignments = React.useCallback(async () => {
     try {
+
       const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
 
       if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
@@ -190,7 +190,7 @@ export default function ParentDashboard() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.loading}>
           <ActivityIndicator size="large" color="#FD902B" />
         </View>
@@ -199,28 +199,48 @@ export default function ParentDashboard() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {!selectedChildName ? (
-        <>
-          <Text variant='titleLarge' style={styles.title}>Welcome, {parentName}!</Text>
-          <AddChild />
-        </>
-      ) : (
-        <>
-          <Text variant='titleLarge' style={styles.title}>{getGreeting()}, {parentName}!</Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>{selectedChildName}&apos;s progress this week.</Text>
-          <Filters assignedUnits={data} />
-        </>
-      )}
-    </SafeAreaView>
+    <>
+      <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
+        {!selectedChildName ? (
+          <>
+            <View style={styles.header}>
+              <Text variant='titleLarge' style={styles.title}>Welcome, {parentName}!</Text>
+            </View>
+            <View style={styles.content}>
+              <AddChild />
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.header}>
+              <Text variant='titleLarge' style={styles.title}>{getGreeting()}, {parentName}!</Text>
+            </View>
+            <View style={styles.content}>
+              <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#f8f9fa' : '#000' }]}>{selectedChildName}&apos;s progress this week.</Text>
+              <Filters assignedUnits={data} />
+            </View>
+          </>
+        )}
+      </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
+    backgroundColor: '#fd9029',
     paddingHorizontal: 20,
-    backgroundColor: "#ffff",
+    paddingTop: 100,
+    justifyContent: 'center',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
   loading: {
     flex: 1,
@@ -228,13 +248,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    paddingTop: "20%",
+    paddingLeft: 8,
+    paddingBottom: 20,
     fontWeight: "bold",
-    color: "black",
+    color: "white",
   },
   subtitle: {
     color: "black",
     paddingTop: 5,
+    paddingLeft: 6,
     fontSize: 15,
   }
 });

@@ -22,6 +22,7 @@ export interface LearningUnit {
   description: string;
   exercises?: Exercise[];
   status: string;
+  image?: string;
 }
 
 export interface LibraryProps {

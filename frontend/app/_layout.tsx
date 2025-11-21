@@ -54,91 +54,89 @@ function InnerLayout() {
   };
 
   return (
-    <AppProvider>
-      <RegistrationProvider>
-        <ChildProvider>
-          <PaperProvider theme={paperTheme}>
-            <ThemeProvider value={navTheme}>
-              <Stack screenOptions={headerStyle}>
-                <Stack.Screen
-                  name="index"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="intro-video"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="welcome"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen name="login" options={{ headerShown: false }} />
-                <Stack.Screen name="register" options={{ headerShown: false }} />
-                <Stack.Screen name="terms" options={{ headerShown: false }} />
-                <Stack.Screen name="confirmation" options={{ headerShown: false }} />
-                <Stack.Screen name="membership" options={{ headerShown: false }} />
-                <Stack.Screen name="profile-creation" options={{ headerShown: false }} />
-                <Stack.Screen name="profile-confirmation" options={{ headerShown: false }} />
-                <Stack.Screen name="account-selection" options={{ headerShown: false }} />
-                <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
-                <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
-                <Stack.Screen name="child-dashboard" options={{ headerShown: false }} />
-                <Stack.Screen name="child-stats" options={{ headerShown: false }} />
-                <Stack.Screen name="activity" options={{ headerShown: false }} />
-                <Stack.Screen name="multiple_drag_exercise" options={{ headerShown: false }} />
-                <Stack.Screen name="multiple_select_exercise" options={{ headerShown: false }} />
-                <Stack.Screen name="ordered_drag_exercise" options={{ headerShown: false }} />
-                <Stack.Screen name="describe_exercise" options={{ headerShown: false }} />
-                <Stack.Screen name="mascot-customization" options={{ headerShown: false }} />
-                <Stack.Screen name="(therapist-tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-                <Stack.Screen name="learning-unit-details" options={{
-                  title: 'Progress Details',
-                  headerLeft: ({ tintColor}) => (
-                    <IconButton
-                      icon="arrow-left"
-                      size={24}
-                      onPress={() => {
-                        router.back();
-                      }}
-                      iconColor={tintColor}
-                    />
-                  )
-                  }} />
-                <Stack.Screen name="chat-messages" options={{ headerShown: false }} />
-                <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="parent" options={{ headerShown: false }} />
-                <Stack.Screen name="switch-child" options={{
-                  title: 'Switch Child',
-                  headerLeft: ({ tintColor}) => (
-                    <IconButton
-                      icon="arrow-left"
-                      size={24}
-                      onPress={() => {
-                        router.back();
-                      }}
-                      iconColor={tintColor}
-                    />
-                  )
-                  }} />
-                <Stack.Screen name="link-therapist" options={{
-                  title: 'Add Therapist',
-                  headerLeft: ({ tintColor}) => (
-                    <IconButton
-                      icon="arrow-left"
-                      size={24}
-                      onPress={() => {
-                        router.back();
-                      }}
-                      iconColor={tintColor}
-                    />
-                  )
-                  }} />
-              </Stack>
-            </ThemeProvider>
-          </PaperProvider>
-        </ChildProvider>
-      </RegistrationProvider>
-    </AppProvider>
+    <RegistrationProvider>
+      <ChildProvider>
+        <PaperProvider theme={paperTheme}>
+          <ThemeProvider value={navTheme}>
+            <Stack screenOptions={headerStyle}>
+              <Stack.Screen
+                name="index"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="intro-video"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="welcome"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen name="login" options={{ headerShown: false }} />
+              <Stack.Screen name="register" options={{ headerShown: false }} />
+              <Stack.Screen name="terms" options={{ headerShown: false }} />
+              <Stack.Screen name="confirmation" options={{ headerShown: false }} />
+              <Stack.Screen name="membership" options={{ headerShown: false }} />
+              <Stack.Screen name="profile-creation" options={{ headerShown: false }} />
+              <Stack.Screen name="profile-confirmation" options={{ headerShown: false }} />
+              <Stack.Screen name="account-selection" options={{ headerShown: false }} />
+              <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
+              <Stack.Screen name="parent-introduction" options={{ headerShown: false }} />
+              <Stack.Screen name="child-dashboard" options={{ headerShown: false }} />
+              <Stack.Screen name="child-stats" options={{ headerShown: false }} />
+              <Stack.Screen name="activity" options={{ headerShown: false }} />
+              <Stack.Screen name="multiple_drag_exercise" options={{ headerShown: false }} />
+              <Stack.Screen name="multiple_select_exercise" options={{ headerShown: false }} />
+              <Stack.Screen name="ordered_drag_exercise" options={{ headerShown: false }} />
+              <Stack.Screen name="describe_exercise" options={{ headerShown: false }} />
+              <Stack.Screen name="mascot-customization" options={{ headerShown: false }} />
+              <Stack.Screen name="(therapist-tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+              <Stack.Screen name="learning-unit-details" options={{
+                title: 'Progress Details',
+                headerLeft: ({ tintColor}) => (
+                  <IconButton
+                    icon="arrow-left"
+                    size={24}
+                    onPress={() => {
+                      router.back();
+                    }}
+                    iconColor={tintColor}
+                  />
+                )
+                }} />
+              <Stack.Screen name="chat-messages" options={{ headerShown: false }} />
+              <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="parent" options={{ headerShown: false }} />
+              <Stack.Screen name="switch-child" options={{
+                title: 'Switch Child',
+                headerLeft: ({ tintColor}) => (
+                  <IconButton
+                    icon="arrow-left"
+                    size={24}
+                    onPress={() => {
+                      router.back();
+                    }}
+                    iconColor={tintColor}
+                  />
+                )
+                }} />
+              <Stack.Screen name="link-therapist" options={{
+                title: 'Add Therapist',
+                headerLeft: ({ tintColor}) => (
+                  <IconButton
+                    icon="arrow-left"
+                    size={24}
+                    onPress={() => {
+                      router.back();
+                    }}
+                    iconColor={tintColor}
+                  />
+                )
+                }} />
+            </Stack>
+          </ThemeProvider>
+        </PaperProvider>
+      </ChildProvider>
+    </RegistrationProvider>
   );
 }

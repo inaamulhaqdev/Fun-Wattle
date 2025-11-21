@@ -5,7 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { router } from "expo-router";
 
 export default function SwitchChildPage() {
-  const { session, childId, selectChild } = useApp();
+  const { darkMode, session, childId, selectChild } = useApp();
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,8 +53,8 @@ export default function SwitchChildPage() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Your Child Profiles</Text>
+    <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+      <Text style={[styles.header, { color: darkMode ? '#fff' : '#000' }]}>Your Child Profiles</Text>
 
       <FlatList
         data={children}

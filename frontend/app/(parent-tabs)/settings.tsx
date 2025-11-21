@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useApp } from "@/context/AppContext";
 
 const SettingsPage = () => {
 
-  // const { logout } = useApp();
+  const { darkMode, setDarkMode } = useApp(); 
 
   type SettingItemProps = {
     title: string;
@@ -18,58 +18,76 @@ const SettingsPage = () => {
   const SettingItem: React.FC<SettingItemProps> = ({ title, subtitle, onPress, rightComponent }) => (
     <TouchableOpacity style={styles.settingItem} onPress={onPress}>
       <View style={styles.settingContent}>
-        <Text style={styles.settingTitle}>{title}</Text>
-        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+        <Text style={[styles.settingTitle, { color: darkMode ? '#fff' : '#000' }]}>{title}</Text>
+        {subtitle && <Text style={[styles.settingSubtitle, { color: darkMode ? '#fff' : '#000' }]}>{subtitle}</Text>}
       </View>
-      {rightComponent || <Feather name="chevron-right" size={20} color="#666" />}
+      {rightComponent || <Feather name="chevron-right" size={20} color={darkMode ? '#fff' : '#000'} />}
     </TouchableOpacity>
   );
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
-      </View>
-
-      <ScrollView style={styles.content}>
-        {/* General Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>General</Text>
-
-          <SettingItem
-            title="Switch Child"
-            onPress={() => router.push('/switch-child')}
-          />
-
-          <SettingItem
-            title="Add Child"
-            onPress={() => router.push('/parent/add-child-details')}
-          />
-
-          <SettingItem
-            title="Add Therapist"
-            onPress={() => router.push('/link-therapist')}
-          />
-
-          <SettingItem
-            title="Change Profile"
-            onPress={() => router.push('/account-selection')}
-          />
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settings</Text>
         </View>
 
-        {/* Logout Section */}
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.logoutButton} onPress={() => {/* TODO: Handle logout */}}>
-            <Text style={styles.logoutText}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
+        <ScrollView style={[styles.content, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+          {/* General Settings */}
+          <View style={[styles.section, { backgroundColor: darkMode ? '#393939ff' : '#fff' }]}>
+            <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#000' }]}>General</Text>
 
-        {/* Bottom padding */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+            <SettingItem
+              title="Switch Child"
+              onPress={() => router.push('/switch-child')}
+            />
+
+            <SettingItem
+              title="Add Child"
+              onPress={() => router.push('/parent/add-child-details')}
+            />
+
+            <SettingItem
+              title="Add Therapist"
+              onPress={() => router.push('/link-therapist')}
+            />
+
+            <SettingItem
+              title="Change Profile"
+              onPress={() => router.push('/account-selection')}
+            />
+          </View>
+
+          {/* Accessibility Settings */}
+          <View style={[styles.section, { backgroundColor: darkMode ? '#393939ff' : '#fff' }]}>
+            <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#000' }]}>Accessibility</Text>
+            
+            <SettingItem
+              title="Dark Mode"
+              subtitle="Switch between light and dark mode"
+              rightComponent={
+                <Switch
+                  value={darkMode}
+                  onValueChange={setDarkMode}
+                  trackColor={{ false: '#ddd', true: '#4CAF50' }}
+                  thumbColor={ darkMode ? '#fff' : '#f4f3f4' }
+                />
+              }
+            />
+          </View>
+
+          {/* Logout Section */}
+          <View style={[styles.section, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+            <TouchableOpacity style={styles.logoutButton} onPress={() => {/* TODO: Handle logout */}}>
+              <Text style={styles.logoutText}>Sign Out</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom padding */}
+          <View style={{ height: 100 }} />
+        </ScrollView>
       </View>
     </>
   );

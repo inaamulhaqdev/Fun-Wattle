@@ -35,7 +35,6 @@ export default function LearningUnitsPage() {
           }
 
           const json_resp = await response.json();
-          console.log('Fetched learning units:', json_resp);
 
           // Transform backend data to LearningUnit
           const learningUnits: LearningUnit[] = json_resp.map((unit: any) => ({

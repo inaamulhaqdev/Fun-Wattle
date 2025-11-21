@@ -26,7 +26,7 @@ export default function TaskCard({
       <Card style={styles.card}>
         <Card.Content>
           <View style={styles.row}>
-            <Text variant="titleMedium" style={{ fontSize: 12 }}>{title}</Text>
+            <Text variant="titleMedium" style={{ fontSize: 12, color: 'black' }}>{title}</Text>
             <Text variant="titleSmall" style={styles.status}>{status}</Text>
           </View>
 
@@ -61,6 +61,7 @@ const styles = StyleSheet.create({
   status: {
     fontWeight: "bold",
     fontSize: 12,
+    color: 'black'
   },
   details: {
     paddingVertical: 5,

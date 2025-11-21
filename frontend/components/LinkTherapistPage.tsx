@@ -25,7 +25,7 @@ function matchesFilters(
 }
 
 export default function LinkTherapistPage() {
-  const { selectedChild, childId, session } = useApp();
+  const { darkMode, selectedChild, childId, session } = useApp();
   const userId = session.user.id;
 
   const [loading, setLoading] = useState(true);
@@ -103,14 +103,14 @@ export default function LinkTherapistPage() {
 
   // Library view
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Assign a Therapist to {selectedChild.name}</Text>
+    <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+      <Text style={[styles.title, { color: darkMode ? '#fff' : '#000' }]}>Assign a Therapist to {selectedChild.name}</Text>
 
       <Searchbar
         placeholder="Search therapists..."
         value={searchQuery}
         onChangeText={setSearchQuery}
-        style={styles.searchbar}
+        style={[styles.searchbar, { backgroundColor: darkMode ? '#404040ff' : '#fff' }]}
       />
 
       {loading ? (
@@ -120,10 +120,11 @@ export default function LinkTherapistPage() {
       ) : (
         <FlatList
           data={therapistProfiles.filter(item => matchesFilters(item, searchQuery))}
+          contentContainerStyle={{ paddingBottom: 40 }}
           keyExtractor={item => item.profileId}
           renderItem={({ item }) => {
             return (
-              <Card style={styles.card} onPress={() => {handleLinkTherapist(item.profileId)}}>
+              <Card style={[styles.card, { backgroundColor: darkMode ? '#9f4d00ff' : '#ffaf65ff' }]} onPress={() => {handleLinkTherapist(item.profileId)}}>
                 <Card.Title title={item.name} />
               </Card>
             );
@@ -150,8 +151,10 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    backgroundColor: '#fd9029',
-    width: '48%',
+    borderColor: '#fd9029',
+    borderWidth: 2,
+    width: '90%',
+    alignSelf: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -160,7 +163,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    marginTop: 20,
+    marginTop: 10,
     fontWeight: '600',
     color: '#000',
     alignSelf: 'center'
