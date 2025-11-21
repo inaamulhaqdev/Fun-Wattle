@@ -37,7 +37,8 @@ export default function TherapistDashboard() {
   const [childList, setChildList] = useState<Account[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
-  const loading = loadingProfiles || loadingAssignments;
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [switchChild, setSwitchChild] = useState(false);
 
   const [greeting, setGreeting] = useState(getGreeting());
 
@@ -107,6 +108,8 @@ export default function TherapistDashboard() {
   const userId = session.user.id
   const fetchAssignments = React.useCallback(async () => {
     try {
+      if (!firstLoad) setLoadingAssignments(true);
+
       const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
 
       if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
@@ -141,7 +144,11 @@ export default function TherapistDashboard() {
       console.error(err);
       Alert.alert('Error', 'Failed to load learning units.');
     } finally {
-      setLoadingAssignments(false);
+      if (firstLoad) {
+        setFirstLoad(false); // <-- turn off first-load after the initial fetch
+      } else {
+        setLoadingAssignments(false); // <-- only used for child switches
+      }
     }
   }, [childId, userId]);
 
@@ -176,7 +183,18 @@ export default function TherapistDashboard() {
     }, [fetchAssignments])
   );
 
-  if (loading) {
+  const handleSwitchChild = async (item: any) => {
+    setSwitchChild(true);
+    selectChild({ id: item.value, name: item.label, type: 'child' });
+    setSelectedChild(item.label);
+    try {
+      await fetchAssignments();
+    } finally {
+      setTimeout(() => setSwitchChild(false), 5000);
+    }
+  };
+
+  if (firstLoad || loadingProfiles) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.loading}>
@@ -188,13 +206,12 @@ export default function TherapistDashboard() {
 
   return (
     <PaperProvider theme={DefaultTheme}>
-      <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
-        <View style={styles.header}>
-            <Text style={styles.headerTitle}>
-              {getGreeting()}, {therapistName}!
-              </Text>
-        </View>
-
+      <View style={styles.header}>
+        <Text variant='titleLarge' style={styles.headerTitle}>
+          {getGreeting()}, {therapistName}!
+        </Text>
+      </View>
+      <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.body}>
           <View style={styles.subtitleRow}>
             {childList.length > 0 ? (
@@ -217,20 +234,13 @@ export default function TherapistDashboard() {
                   activeColor="#f2f2f2"          
                   placeholder="Select child"
                   value={childId}
-                  data={childList.map((child) => ({
+                  data={childList.map((child: any) => ({
                     label: child.name,
                     value: child.id,
                   }))}
                   labelField="label"
                   valueField="value"
-                  onChange={(item: any) => {
-                    selectChild({
-                      id: item.value,
-                      name: item.label,
-                      type: 'child'
-                    });
-                    setSelectedChild(item.label);
-                  }}
+                  onChange={(item: any) => {handleSwitchChild(item)}}
                 />
               </View>
             ) : (
@@ -240,24 +250,23 @@ export default function TherapistDashboard() {
             )}
 
 
-                <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos; progress this week.</Text>
+                <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos;s progress this week.</Text>
               </>
             ) : (
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
             )}
           </View>
           {childList.length > 0 && (
-            loadingAssignments ? (
-              <View style={{ marginTop: 40, alignItems: "center" }}>
-                <ActivityIndicator size="large" color="#fd9029"/>
-                <Text style={{ marginTop: 10, color: "#555" }}>Loading learning units...</Text>
-              </View>
-            ) : (
-              <Filters assignedUnits={data} />
-            )
+            <Filters assignedUnits={data} />
           )}
         </View>
-      </SafeAreaView>
+        {switchChild && (
+          <View style={styles.overlay}>
+            <Text style={{ color: "#fff", marginBottom: 10 }}>Loading…</Text>
+            <ActivityIndicator size="large" color="#fff" />
+          </View>
+        )}
+      </View>
     </PaperProvider>
   );
 }
@@ -266,18 +275,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "transparent",
+    position: 'relative'
   },
   loading: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-
   subtitleRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
-    marginTop: 5,
   },
   childText: {
     fontWeight: "600",
@@ -309,19 +317,15 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#fd9029',
-    paddingTop: 30,
-    paddingBottom: 30,
     paddingHorizontal: 20,
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  headerLeft: {
-    flex: 1,
+    paddingTop: 100,
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    paddingLeft: 8,
+    paddingBottom: 20,
+    fontWeight: "bold",
+    color: "white",
   },
   body: {
     flex: 1,
@@ -329,5 +333,16 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 20,
     marginBottom: -33,
+  },
+  overlay: {
+    position: "absolute",
+    top: "40%",
+    left: 0,
+    right: 0,
+    height: "70%",
+    backgroundColor: "rgba(0,0,0,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
   }
 });
