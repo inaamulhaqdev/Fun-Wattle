@@ -110,7 +110,7 @@ export default function LinkTherapistPage() {
         placeholder="Search therapists..."
         value={searchQuery}
         onChangeText={setSearchQuery}
-        style={styles.searchbar}
+        style={[styles.searchbar, { backgroundColor: darkMode ? '#404040ff' : '#fff' }]}
       />
 
       {loading ? (
@@ -124,7 +124,7 @@ export default function LinkTherapistPage() {
           keyExtractor={item => item.profileId}
           renderItem={({ item }) => {
             return (
-              <Card style={styles.card} onPress={() => {handleLinkTherapist(item.profileId)}}>
+              <Card style={[styles.card, { backgroundColor: darkMode ? '#9f4d00ff' : '#ffaf65ff' }]} onPress={() => {handleLinkTherapist(item.profileId)}}>
                 <Card.Title title={item.name} />
               </Card>
             );
@@ -151,7 +151,6 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    backgroundColor: '#ffaf65ff',
     borderColor: '#fd9029',
     borderWidth: 2,
     width: '90%',
