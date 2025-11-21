@@ -86,6 +86,12 @@ def create_chats(profile):
         if existing_chat: continue
         therapist_user = User_Profile.objects.get(user=therapist, profile__profile_type='child').first()
         therapist_profile = User_Profile.objects.get(user=therapist_user, profile__profile_type='therapist').profile
+        Chat_Room.objects.create(
+            messenger_1 = profile,
+            messenger_2 = therapist_profile,
+            child = child,
+            room_name = child.name
+        )
 
         
 
