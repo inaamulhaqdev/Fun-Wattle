@@ -145,9 +145,9 @@ export default function TherapistDashboard() {
       Alert.alert('Error', 'Failed to load learning units.');
     } finally {
       if (firstLoad) {
-        setFirstLoad(false); // <-- turn off first-load after the initial fetch
+        setFirstLoad(false);
       } else {
-        setLoadingAssignments(false); // <-- only used for child switches
+        setLoadingAssignments(false);
       }
     }
   }, [childId, userId]);
@@ -248,17 +248,13 @@ export default function TherapistDashboard() {
                 <Text style={styles.childText}>{selectedChild}</Text>
               </View>
             )}
-
-
-                <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos;s progress this week.</Text>
+              <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos;s progress this week.</Text>
               </>
             ) : (
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
             )}
           </View>
-          {childList.length > 0 && (
-            <Filters assignedUnits={data} />
-          )}
+          {childList.length > 0 && (<Filters assignedUnits={data} />)}
         </View>
         {switchChild && (
           <View style={styles.overlay}>
