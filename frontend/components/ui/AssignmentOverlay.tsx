@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { Button, IconButton, Divider } from 'react-native-paper';
 import Counter from './AssignmentPillButton';
+import { useApp } from '@/context/AppContext';
 
 interface AssignmentStatusProps {
   visible: boolean;
@@ -23,6 +24,8 @@ export default function AssignmentStatus({
   const [selected, setSelected] = useState(status || "");
   const [retries, setRetries] = useState(initialRetries);
 
+  const { darkMode } = useApp();
+
   useEffect(() => {
     if (visible) {
       setSelected(status || '');
@@ -35,7 +38,7 @@ export default function AssignmentStatus({
   return (
     <Modal transparent visible={visible} animationType="fade">
       <View style={styles.overlay}>
-        <View style={styles.box}>
+        <View style={[styles.box, { backgroundColor: darkMode ? '#373737ff' : '#fff' }]}>
           <IconButton
             icon="close"
             size={25}
@@ -43,7 +46,7 @@ export default function AssignmentStatus({
             style={styles.closeButton}
           />
 
-          <Text style={styles.title}>Assignment Status</Text>
+          <Text style={[styles.title, { color: darkMode ? '#fff' : '#000' }]}>Assignment Status</Text>
 
           {options.map((option) => (
             <View key={option}>
@@ -54,7 +57,7 @@ export default function AssignmentStatus({
                   setSelected(option);
                 }}
               >
-                <Text style={styles.optionText}>{option}</Text>
+                <Text style={[styles.optionText, { color: darkMode ? '#fff' : '#000' }]}>{option}</Text>
                 {selected === option && <Text style={styles.tick}>✓</Text>}
               </TouchableOpacity>
             </View>

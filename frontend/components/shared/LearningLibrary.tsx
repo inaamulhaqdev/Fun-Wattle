@@ -6,7 +6,7 @@ import DetailView from './UnitDetails';
 import { useFocusEffect } from 'expo-router';
 import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
 import { useApp } from '../../context/AppContext';
-import { API_URL, SUPABASE_URL } from '@/config/api';
+import { API_URL } from '@/config/api';
 
 const categories = ['Articulation', 'Language Building', 'Comprehension'];
 
@@ -35,7 +35,7 @@ function matchesFilters(
 }
 
 export default function LearningLibrary({ data, loading = false }: LibraryProps) {
-  const { childId, session } = useApp();
+  const { childId, session, darkMode } = useApp();
   const userId = session?.user?.id;
 
   const [selectedItem, setSelectedItem] = useState<LearningUnit | null>(null);
@@ -46,7 +46,6 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
 
   const [assignedUnitIds, setAssignedUnitIds] = useState<Set<string>>(new Set());
   const [completedUnitIds, setCompletedUnitIds] = useState<Set<string>>(new Set());
-
 
   useFocusEffect(
     React.useCallback(() => {
@@ -102,81 +101,89 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
 
   // Library view
   return (
-    <View style={styles.container}>
-      <Searchbar
-        placeholder="Search learning units..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={styles.searchbar}
-      />
+    <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+      <View style={styles.header}><Text style={styles.headerTitle}>Unit Library</Text></View>
+      
+      <View style={{ padding: 16 }}> 
 
-      {/* Filter by Status */}
-      <View style={styles.statusRow}>
-        {['All Units', 'Assigned', 'Completed'].map(label => (
-          <TouchableOpacity key={label} onPress={() => setStatusFilter(label as any)}>
-            <Text style={[styles.statusText, statusFilter === label && styles.statusActive]}>
-              {label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <Searchbar
+          placeholder="Search learning units..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={[styles.searchbar, { backgroundColor: darkMode ? '#404040ff' : '#fff' }]}
+        />
 
-      {/* Filter by Learning Skill (Category) */}
-      <View style={{ height: 40, marginBottom: 10 }}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 8, alignItems: 'center' }}
-        >
-          {categories.map(category => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryButton,
-                categoryFilter === category && styles.categoryButtonActive
-              ]}
-              onPress={() => toggleCategory(category)}
-            >
-              <Text
-                style={[
-                  styles.categoryUnselected,
-                  categoryFilter === category && styles.categorySelected
-                ]}
-              >
-                {category}
+        {/* Filter by Status */}
+        <View style={styles.statusRow}>
+          {['All Units', 'Assigned', 'Completed'].map(label => (
+            <TouchableOpacity key={label} onPress={() => setStatusFilter(label as any)}>
+              <Text style={[styles.statusText, statusFilter === label && styles.statusActive, { color: darkMode ? '#ffa550ff' : '#000' }]}>
+                {label}
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FD902B" />
         </View>
-      ) : (
-        <FlatList
-          data={filteredData}
-          keyExtractor={item => item.id}
-          numColumns={2}
-          columnWrapperStyle={{ justifyContent: 'space-between'}}
-          renderItem={({ item }) => {
-          const imageUrl = item.image ? `${item.image}` : null;
 
-          return (
-            <Card style={styles.card} onPress={() => setSelectedItem(item)}>
-                  {imageUrl && (
-        <Card.Cover source={{ uri: imageUrl }} />
-      )}
-                  <Card.Title title={item.title} />
-                  <Card.Content>
-                    <Text>{item.category}</Text>
-                  </Card.Content>
-                </Card>
-          );
-        }}
-        />
-      )}
+        {/* Filter by Learning Skill (Category) */}
+        <View style={{ height: 40, marginBottom: 20 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 8, alignItems: 'center' }}
+          >
+            {categories.map(category => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.categoryButton,
+                  { backgroundColor: darkMode ? '#404040ff' : '#fff' },
+                  categoryFilter === category && styles.categoryButtonActive,
+                ]}
+                onPress={() => toggleCategory(category)}
+              >
+                <Text
+                  style={[
+                    categoryFilter === category
+                      ? styles.categorySelected
+                      : { color: darkMode ? '#fff' : '#000' }
+                  ]}
+                >
+                  {category}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FD902B" />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredData}
+            keyExtractor={item => item.id}
+            numColumns={2}
+            contentContainerStyle={styles.scrollContent}
+            columnWrapperStyle={{ justifyContent: 'space-between'}}
+            renderItem={({ item }) => {
+            const imageUrl = item.image ? `${item.image}` : null;
+
+            return (
+              <Card style={[styles.card, { backgroundColor: darkMode ? "#3d3d3dff" : 'white' }]} onPress={() => setSelectedItem(item)}>
+                {imageUrl && (
+                   <Card.Cover source={{ uri: imageUrl }} />
+                )}
+                <Card.Title title={item.title} />
+                <Card.Content>
+                  <Text>{item.category}</Text>
+                </Card.Content>
+              </Card>
+            );
+          }}
+          />
+        )}
+      </View>
     </View>
   );
 }
@@ -184,11 +191,24 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#fff',
   },
+  headerTitle: {
+    fontSize: 20,
+    paddingBottom: 15,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  header: {
+    backgroundColor: '#fd9029',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   searchbar: {
-    marginTop: 40,
+    marginTop: 5,
     marginBottom: 10,
     backgroundColor: 'white',
     borderColor: 'black',
@@ -232,21 +252,13 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    backgroundColor: 'white',
     width: '48%',
-  // flex: 1,
-   // marginHorizontal: 4,
   },
   loadingContainer: {
     flex: 1,
+    marginTop: '50%',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  title: {
-    fontSize: 25,
-    marginTop: 30,
-    fontWeight: '600',
-    color: '#000',
   },
   category: {
     fontSize: 20,
@@ -287,6 +299,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 150,
+    paddingBottom: 250,
   },
 });

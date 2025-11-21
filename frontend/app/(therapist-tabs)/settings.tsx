@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { Feather, FontAwesome5, FontAwesome6, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 
 const SettingsPage = () => {
@@ -9,35 +9,6 @@ const SettingsPage = () => {
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
 
   const { darkMode, setDarkMode } = useApp(); 
-  
-  const handleHome = () => {
-    router.push('/child-dashboard');
-  };
-
-  const handleStats = () => {
-    router.push('/child-stats');
-  };
-
-  const handleMascotCustomization = () => {
-    router.push('/mascot-customization');
-  };
-
-  // Animated Navigation Button Component
-  const AnimatedNavButton = ({ children, style, onPress = () => {} }: {
-    children: React.ReactNode;
-    style: any;
-    onPress?: () => void;
-  }) => {
-    return (
-      <TouchableOpacity
-        style={style}
-        onPress={onPress}
-        activeOpacity={0.8}
-      >
-        {children}
-      </TouchableOpacity>
-    );
-  };
 
   type SettingItemProps = {
     title: string;
@@ -49,10 +20,10 @@ const SettingsPage = () => {
   const SettingItem: React.FC<SettingItemProps> = ({ title, subtitle, onPress, rightComponent }) => (
     <TouchableOpacity style={styles.settingItem} onPress={onPress}>
       <View style={styles.settingContent}>
-        <Text style={styles.settingTitle}>{title}</Text>
-        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+        <Text style={[styles.settingTitle, { color: darkMode ? '#fff' : '#000' }]}>{title}</Text>
+        {subtitle && <Text style={[styles.settingSubtitle, { color: darkMode ? '#fff' : '#000' }]}>{subtitle}</Text>}
       </View>
-      {rightComponent || <Feather name="chevron-right" size={20} color="#666" />}
+      {rightComponent || <Feather name="chevron-right" size={20} color={darkMode ? '#fff' : '#000'} />}
     </TouchableOpacity>
   );
 
@@ -65,10 +36,10 @@ const SettingsPage = () => {
         <Text style={styles.headerTitle}>Settings</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={[styles.content, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
         {/* General Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>General</Text>
+        <View style={[styles.section, { backgroundColor: darkMode ? '#393939ff' : '#fff' }]}>
+          <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#000' }]}>General</Text>
           
           <SettingItem
             title="Sound Effects"
@@ -85,8 +56,8 @@ const SettingsPage = () => {
         </View>
 
         {/* Accessibility Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Accessibility</Text>
+        <View style={[styles.section, { backgroundColor: darkMode ? '#393939ff' : '#fff' }]}>
+          <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#000' }]}>Accessibility</Text>
           
           <SettingItem
             title="Dark Mode"
@@ -103,8 +74,8 @@ const SettingsPage = () => {
         </View>
 
         {/* Support & Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support & Information</Text>
+        <View style={[styles.section, { backgroundColor: darkMode ? '#393939ff' : '#fff' }]}>
+          <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#000' }]}>Support & Information</Text>
           
           <SettingItem
             title="Help & FAQ"

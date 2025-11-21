@@ -12,7 +12,7 @@ const genericProfilePic = require('@/assets/images/default-profile-pic.jpeg');
 
 export default function ChatRooms() {
   const router = useRouter();
-  const { profileId, session, chatRooms, setChatRooms, updateRoomLastMessage } = useApp();
+  const { darkMode, profileId, session, chatRooms, setChatRooms, updateRoomLastMessage } = useApp();
   const token = session?.access_token;
   const isFetching = React.useRef(false);
   const hasFetched = React.useRef(false);
@@ -107,39 +107,45 @@ export default function ChatRooms() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Your Messages</Text>
-      {isInitialLoading && chatRooms.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FD902B" />
-        </View>
-      ) : chatRooms.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>You have no messages yet.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={chatRooms}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.roomWrapper} onPress={() => openRoom(item.id, item.name)}>
-              <View style={styles.room}>
-                <Image
-                  source={item.profile_picture ? { uri: item.profile_picture } : genericProfilePic}
-                  style={styles.avatar}
-                />
-                <View style={styles.roomText}>
-                  <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
-                    {item.last_message}
-                  </Text>
+    <>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Your Messages</Text>
+      </View>
+
+      <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+        {isInitialLoading && chatRooms.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FD902B" />
+          </View>
+        ) : chatRooms.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>You have no messages yet.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={chatRooms}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.roomWrapper} onPress={() => openRoom(item.id, item.name)}>
+                <View style={styles.room}>
+                  <Image
+                    source={item.profile_picture ? { uri: item.profile_picture } : genericProfilePic}
+                    style={styles.avatar}
+                  />
+                  <View style={styles.roomText}>
+                    <Text style={styles.name}>{item.name}</Text>
+                    <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+                      {item.last_message}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          )}
-      />
-      )}
-    </SafeAreaView>
+              </TouchableOpacity>
+            )}
+        />
+        )}
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -149,11 +155,18 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff'
     },
     title: {
-        fontSize: 28,
-        fontWeight: '600',
-        marginLeft: 24,
-        marginTop: 20,
-        marginBottom: 16,
+      fontSize: 20,
+      paddingBottom: 15,
+      fontWeight: 'bold',
+      color: '#fff',
+      textAlign: 'center',
+    },
+    header: {
+      backgroundColor: '#fd9029',
+      paddingHorizontal: 20,
+      paddingTop: 50,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     loadingContainer: {
         flex: 1,
