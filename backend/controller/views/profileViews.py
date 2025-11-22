@@ -115,8 +115,8 @@ def get_profile(request, profile_id):
 
     if profile.profile_type == "child":
     	calc_streak(profile)
-    else:
-    	create_chats(profile)
+    # else:
+    # 	create_chats(profile)
 
     serializer = ProfileSerializer(profile)
     return Response(serializer.data, status=200)
@@ -145,4 +145,4 @@ def therapist(request):
 		except (User_Profile.DoesNotExist):
 			User_Profile.objects.create(user_id=user.user_id, profile_id=profile.id)
 			return Response({'message':'Therapist set successfully'}, status=200)
-		return Response({'error':'Profile connection exists'}, status=400)	
+		return Response({'error':'Profile connection exists'}, status=400)
