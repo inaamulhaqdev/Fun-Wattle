@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { ActivityIndicator, Text, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
 import { Dropdown } from "react-native-element-dropdown";
 import Filters from "../../components/home_screen/CategoryFilters";
 import { supabase } from '@/config/supabase';
