@@ -185,23 +185,58 @@ export default function DetailView({
                 }
 
                 let result;
+                let message = '';
 
-                if (newStatus === 'Unassigned') {
-                  result = await unassignLearningUnit(selectedItem.id, childId);
-                  setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
-                } else if (newStatus === 'Assigned as Required') {
-                  result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'required');
-                  setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
-                } else if (newStatus === 'Assigned as Recommended') {
-                  result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'recommended');
-                  setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
+                switch (newStatus) {
+                  case "Unassign": {
+
+                    result = await unassignLearningUnit(selectedItem.id, childId);
+                    message = "Unassigned";
+
+                    setAssignedUnitIds(prev =>
+                      new Set([...prev].filter(id => id !== selectedItem.id))
+                    );
+                    break;
+                  }
+
+                  case "Assign as Required": {
+                    result = await assignLearningUnit(
+                      selectedItem.id,
+                      childId,
+                      userId,
+                      retries,
+                      "required"
+                    );
+                    message = "Assigned as Required";
+
+                    setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
+                    break;
+                  }
+
+                  case "Assign as Recommended": {
+                    result = await assignLearningUnit(
+                      selectedItem.id,
+                      childId,
+                      userId,
+                      retries,
+                      "recommended"
+                    );
+                    message = "Assigned as Recommended";
+
+                    setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
+                    break;
+                  }
+
+                  default:
+                    console.warn("Unknown status:", newStatus);
+                    return;
                 }
 
                 if (!result) return;
 
                 selectedItem.status = newStatus;
 
-                showMessage(`Learning unit successfully ${newStatus.toLowerCase()}!`, 'success');
+                showMessage(`Learning unit successfully ${message.toLowerCase()}`, 'success');
               } catch (error) {
                 console.error('Error updating assignment:', error);
                 showMessage('Failed to update assignment. Please try again.', 'error');

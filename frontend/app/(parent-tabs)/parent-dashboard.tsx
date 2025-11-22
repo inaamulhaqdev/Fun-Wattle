@@ -3,7 +3,7 @@ import { StyleSheet, Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, ActivityIndicator } from "react-native-paper";
 import Filters from "@/components/home_screen/CategoryFilters";
-import AddChild from '@/components/AddChildCard';
+import AddChild from '@/components/ui/AddChildCard';
 import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
 import { router, useFocusEffect } from "expo-router";
