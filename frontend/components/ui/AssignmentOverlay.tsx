@@ -17,7 +17,7 @@ export default function AssignmentStatus({
   visible,
   onClose,
   onSelect,
-  options = ['Unassigned', 'Assigned as Recommended', 'Assigned as Required'],
+  options = ['Unassign', 'Assign as Recommended', 'Assign as Required'],
   status,
   retries: initialRetries = 2,
 }: AssignmentStatusProps) {
@@ -33,7 +33,7 @@ export default function AssignmentStatus({
     }
   }, [visible, status, initialRetries]);
 
-  const isAssigned = selected !== 'Unassigned';
+  const isAssigned = selected !== 'Unassign';
 
   return (
     <Modal transparent visible={visible} animationType="fade">
