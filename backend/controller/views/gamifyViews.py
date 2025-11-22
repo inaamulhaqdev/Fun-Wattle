@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from ..models import *
 from ..serializers import *
 
+# Gamification tests
 
 @api_view(['GET', 'PUT'])
 def coins(request, profile_id):
@@ -131,21 +132,21 @@ def mascot(request, profile_id):
 			item = Mascot_Items.objects.get(id=item_id)
 		except Mascot_Items.DoesNotExist:
 			return Response({'error': 'Mascot Item not found'}, status=404)
-		inv_item_to_equip = Inventory.objects.get(
+		inv_item_to_equip = Inventory.objects.filter(
 			profile = profile.id,
 			mascot_item = item
-		)
+		).first()
 		if not inv_item_to_equip:
 			return Response({'error':'Item has not been purchased'}, status=401)
-		inv_item_to_unequip = Inventory.objects.get(
+		inv_item_to_unequip = Inventory.objects.filter(
 			profile = profile.id,
 			equipped = True,
 			mascot_item__item_type = item.item_type,
-		)
+		).first()
 		if inv_item_to_unequip:
 			inv_item_to_unequip.equipped = False
 			inv_item_to_unequip.save()
 		inv_item_to_equip.equipped = True
 		inv_item_to_equip.save()
 		items = equipped_items(profile.id)
-		return Response(items, staus=200)
+		return Response(items, status=200)
