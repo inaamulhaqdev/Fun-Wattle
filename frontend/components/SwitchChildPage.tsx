@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, FlatList } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, FlatList } from "react-native";
+import { ActivityIndicator } from 'react-native-paper';
 import { API_URL } from "@/config/api";
 import { useApp } from "@/context/AppContext";
 import { router } from "expo-router";
+import AddChild from '@/components/ui/AddChildCard';
 
 export default function SwitchChildPage() {
   const { darkMode, session, childId, selectChild } = useApp();
@@ -46,7 +48,7 @@ export default function SwitchChildPage() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={styles.loading}>
         <ActivityIndicator size="large" color="#FD902B" />
       </View>
     );
@@ -56,24 +58,28 @@ export default function SwitchChildPage() {
     <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
       <Text style={[styles.header, { color: darkMode ? '#fff' : '#000' }]}>Your Child Profiles</Text>
 
-      <FlatList
-        data={children}
-        keyExtractor={(child) => child.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[
-              styles.childOption,
-              item.id === childId && styles.activeChild
-            ]}
-            onPress={() => 
-              handleSelect(item)
-            }
-          >
-            <Text style={styles.childName}>{item.name}</Text>
-            {item.id === childId && <Text style={styles.currentLabel}>Current</Text>}
-          </TouchableOpacity>
-        )}
-      />
+      {!childId ? (
+        <AddChild />
+      ) : (
+        <FlatList
+          data={children}
+          keyExtractor={(child: any) => child.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.childOption,
+                item.id === childId && styles.activeChild
+              ]}
+              onPress={() => 
+                handleSelect(item)
+              }
+            >
+              <Text style={styles.childName}>{item.name}</Text>
+              {item.id === childId && <Text style={styles.currentLabel}>Current</Text>}
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -84,8 +90,9 @@ const styles = StyleSheet.create({
     padding: 20, 
     backgroundColor: "#fff" 
   },
-  center: { 
+  loading: { 
     flex: 1,
+    backgroundColor: '#fff',
     justifyContent: "center", 
     alignItems: "center" 
   },
