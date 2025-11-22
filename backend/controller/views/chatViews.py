@@ -74,3 +74,25 @@ def chat_messages(request, chat_room_id):
 
         serializer = ChatMessageSerializer(chat_message)
         return Response(serializer.data, status=201)
+
+
+def create_chats(profile):
+    # Create chat room between a therapist and parent
+    user = User_Profile.objects.get(profile=profile)
+    children = User_Profile.objects.filter(user_id =user.user_id, profile_id__profile_type='child')
+    for child in children:
+        existing_chat = Chat_Room.objects.filter(
+            child_profile=child.profile).first()
+        if existing_chat: continue
+        therapist_user = User_Profile.objects.get(user=therapist, profile__profile_type='child').first()
+        therapist_profile = User_Profile.objects.get(user=therapist_user, profile__profile_type='therapist').profile
+        Chat_Room.objects.create(
+            messenger_1 = profile,
+            messenger_2 = therapist_profile,
+            child = child,
+            room_name = child.name
+        )
+
+        
+
+

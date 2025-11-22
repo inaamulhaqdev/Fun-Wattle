@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from ..models import *
 from ..serializers import *
 from datetime import datetime
+from .chatViews import create_chats
 
 @api_view(['POST'])
 def create_profile(request):
@@ -112,7 +113,10 @@ def get_profile(request, profile_id):
     except Profile.DoesNotExist:
         return Response({'error': 'Profile not found'}, status=404)
 
-    calc_streak(profile)
+    if profile.profile_type == "child":
+    	calc_streak(profile)
+    else:
+    	create_chats(profile)
 
     serializer = ProfileSerializer(profile)
     return Response(serializer.data, status=200)
