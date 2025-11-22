@@ -15,6 +15,82 @@ interface Task {
 }
 
 const StatsPage = () => {
+  const { childId } = useApp();
+  const [allExerciseResults, setAllExerciseResults] = useState<any[]>([]);
+  const [completedThisWeek, setCompletedThisWeek] = useState<number>(0);
+  // Fetch all exercise results for the child
+  useEffect(() => {
+    const fetchAllExerciseResults = async () => {
+      if (!childId) return;
+      try {
+        const res = await fetch(`${API_URL}/result/${childId}/all/`);
+        const data = res.ok ? await res.json() : [];
+        setAllExerciseResults(Array.isArray(data) ? data : []);
+        // Calculate how many exercises completed this week
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+        const completed = (Array.isArray(data) ? data : []).filter((result) => {
+          if (!result.completed_at) return false;
+          const completedDate = new Date(result.completed_at);
+          return completedDate >= startOfWeek && completedDate <= now;
+        }).length;
+        setCompletedThisWeek(completed);
+      } catch (err) {
+        console.error('Error fetching all exercise results:', err);
+        setAllExerciseResults([]);
+        setCompletedThisWeek(0);
+      }
+    };
+    fetchAllExerciseResults();
+  }, [childId]);
+  const [exerciseResults, setExerciseResults] = useState<any[]>([]);
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string>("");
+  // Fetch results for a specific exercise for the child
+  useEffect(() => {
+    const fetchExerciseResults = async () => {
+      if (!childId || !selectedExerciseId) return;
+      try {
+        const res = await fetch(`${API_URL}/result/${childId}/exercise/${selectedExerciseId}/`);
+        const data = res.ok ? await res.json() : [];
+        setExerciseResults(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error fetching exercise results:', err);
+        setExerciseResults([]);
+      }
+    };
+    fetchExerciseResults();
+  }, [childId, selectedExerciseId]);
+  const [streakCount, setStreakCount] = useState<number>(0);
+  // Fetch streak count for child
+  useEffect(() => {
+    const fetchStreak = async () => {
+      try {
+        const res = await fetch(`${API_URL}/profile/${childId}/streak/`);
+        const data = res.ok ? await res.json() : { streak: 0 };
+        setStreakCount(data.streak || 0);
+      } catch (err) {
+        console.error('Error fetching streak count:', err);
+        setStreakCount(0);
+      }
+    };
+    if (childId) fetchStreak();
+  }, [childId]);
+  const [coinCount, setCoinCount] = useState<number>(0);
+  // Fetch coin count for child
+  useEffect(() => {
+    const fetchCoins = async () => {
+      try {
+        const res = await fetch(`${API_URL}/profile/${childId}/coins`);
+        const data = res.ok ? await res.json() : { coins: 0 };
+        setCoinCount(data.coins || 0);
+      } catch (err) {
+        console.error('Error fetching coin count:', err);
+        setCoinCount(0);
+      }
+    };
+    if (childId) fetchCoins();
+  }, [childId]);
   const navigation = useNavigation();
 
   useFocusEffect(
@@ -45,7 +121,6 @@ const StatsPage = () => {
     router.push('/child-settings');
   };
 
-  const { childId } = useApp();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   // Fetch recommended tasks assigned to the child
@@ -87,7 +162,7 @@ const StatsPage = () => {
         setTasks(formattedTasks);
 
       } catch (err) {
-        console.error('Error fetching assigned tasks:', err);
+        console.log('Error fetching recommended tasks:', err);
       }
     };
 
@@ -163,16 +238,36 @@ const StatsPage = () => {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Main Stats Grid */}
           <View style={styles.statsGrid}>
+            {/* Example: Exercise Results Section */}
+            {selectedExerciseId ? (
+              <View style={{ marginVertical: 12 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Exercise Results</Text>
+                {exerciseResults.length > 0 ? (
+                  exerciseResults.map((result) => (
+                    <View key={result.id} style={{ marginVertical: 8, padding: 8, backgroundColor: '#F0F8FF', borderRadius: 8 }}>
+                      <Text>Exercise: {result.exercise?.title || 'N/A'}</Text>
+                      <Text>Accuracy: {result.accuracy ?? 'N/A'}%</Text>
+                      <Text>Correct: {result.num_correct ?? 'N/A'}</Text>
+                      <Text>Incorrect: {result.num_incorrect ?? 'N/A'}</Text>
+                      <Text>Time Spent: {result.time_spent ?? 'N/A'}s</Text>
+                      <Text>Completed At: {result.completed_at ? new Date(result.completed_at).toLocaleString() : 'N/A'}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text>No results found for this exercise.</Text>
+                )}
+              </View>
+            ) : null}
             <StatCard
               title="Coins Collected"
-              value="856"
+              value={coinCount.toString()}
               subtitle="Total earned"
               icon={<FontAwesome5 name="coins" size={32} color="#FFD700" />}
               backgroundColor="#FFF9E6"
             />
             <StatCard
               title="Current Streak"
-              value="12 days"
+              value={streakCount + ' days'}
               subtitle="Keep it up!"
               icon={<FontAwesome6 name="fire" size={32} color="#FF4500" />}
               backgroundColor="#FFF2E6"
@@ -185,9 +280,9 @@ const StatsPage = () => {
               backgroundColor="#E8F5E8"
             />
             <StatCard
-              title="Exercsises Completed"
-              value="4 down"
-              subtitle="Weekly progress"
+              title="Exercises Completed"
+              value={completedThisWeek + " this week"}
+              subtitle="Good job!"
               icon={<FontAwesome5 name="book" size={32} color="#9C27B0" />}
               backgroundColor="#F3E5F5"
             />
