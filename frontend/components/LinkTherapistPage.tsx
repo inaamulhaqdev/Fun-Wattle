@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, FlatList, StyleSheet, Alert } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { Card, Text, Searchbar } from 'react-native-paper';
 import { useFocusEffect, router } from 'expo-router';
 import { useApp } from '../context/AppContext';
 import { API_URL } from '@/config/api';
+import AddChild from '@/components/ui/AddChildCard';
 
 type Therapist = {
   profileId: string;
@@ -101,10 +102,13 @@ export default function LinkTherapistPage() {
     }, [childId, userId])
   );
 
-  // Library view
   return (
     <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
-      <Text style={[styles.title, { color: darkMode ? '#fff' : '#000' }]}>Assign a Therapist to {selectedChild.name}</Text>
+      {!childId? (
+        <Text style={[styles.title, { color: darkMode ? '#fff' : '#000' }]}>Assign a Therapist</Text>
+      ) : (
+        <Text style={[styles.title, { color: darkMode ? '#fff' : '#000' }]}>Assign a Therapist to {selectedChild.name}</Text>
+      )}
 
       <Searchbar
         placeholder="Search therapists..."
@@ -113,7 +117,9 @@ export default function LinkTherapistPage() {
         style={[styles.searchbar, { backgroundColor: darkMode ? '#404040ff' : '#fff' }]}
       />
 
-      {loading ? (
+      {!childId ? (
+        <AddChild />
+      ) : loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FD902B" />
         </View>
