@@ -187,6 +187,7 @@ def assess_speech(request):
             "is_correct": is_correct,
             "similarity_score": best_score,
             "matched_answer": best_answer,
+            "RAG_context": rag_context_combined,
         }, status=200)
 
     finally:
