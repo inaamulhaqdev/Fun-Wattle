@@ -58,7 +58,7 @@ export default function SwitchChildPage() {
     <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
       <Text style={[styles.header, { color: darkMode ? '#fff' : '#000' }]}>Your Child Profiles</Text>
 
-      {!childId ? (
+      {children.length == 0 ? (
         <AddChild />
       ) : (
         <FlatList
