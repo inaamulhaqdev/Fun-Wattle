@@ -8,7 +8,7 @@ export default function AddChildInviteTherapist () {
   const handleBack = () => router.back();
 
   // TODO: Ask how this should work? Do we send an email to the therapist to sign up? 
-  const handleNext = () => router.push('/parent/consent');
+  const handleNext = () => router.push('/child-onboarding/consent');
 
   const [therapistName, setTherapistName] = useState('');
   const [clinic, setClinic] = useState('');
@@ -40,17 +40,20 @@ export default function AddChildInviteTherapist () {
           <Text style={styles.title}>Invite a Therapist</Text>
         </View>
 
-        {/* Ask for child to be assigned a therapist (at random) */}
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setAssignTherapist(!assignTherapist)}
+        <Button
+          mode="text"
+          onPress={() => {
+            setAssignTherapist(true);
+            setTherapistName('');
+            setClinic('');
+            setEmail('');
+            setPhone('');
+          }}
+          textColor="#FD902B"
+          style={{ alignSelf: 'flex-end', marginBottom: 10 }}
         >
-          <Checkbox.Android
-            status={assignTherapist ? 'checked' : 'unchecked'}
-            color="#FD902B"
-          />
-          <Text style={styles.checkboxLabel}>Assign my child a therapist</Text>
-        </TouchableOpacity>
+          Skip for now
+        </Button>
 
         <TextInput
           label="Speech Therapist’s Name*"

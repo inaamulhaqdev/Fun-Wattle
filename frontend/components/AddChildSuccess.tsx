@@ -15,7 +15,7 @@ export default function AddChildSuccess() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{childName} is now ready to have fun with FunWattle</Text>
+      <Text style={styles.title}>{childName} is now ready to have fun with FunWattle!</Text>
 
       <Button
           mode="contained"
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 25,
-    marginTop: 30,
+    marginTop: "50%",
     paddingBottom: 20,
     fontWeight: 'bold',
     textAlign: 'center',

@@ -46,7 +46,7 @@ const SettingsPage = () => {
 
             <SettingItem
               title="Add Child"
-              onPress={() => router.push('/parent/add-child-details')}
+              onPress={() => router.push('/child-onboarding/add-child-details')}
             />
 
             <SettingItem

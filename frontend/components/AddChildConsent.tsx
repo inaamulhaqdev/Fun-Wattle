@@ -67,7 +67,7 @@ export default function AddChildExtraQs() {
       }
 
       // Navigate to child added confirmation
-      router.replace('/parent/child-added');
+      router.replace('/child-onboarding/child-added');
     } catch (error) {
       Alert.alert('Child Profile Creation Error', 'Child Profile Creation failed. Please try again and contact support if the issue persists.');
       setLoading(false);

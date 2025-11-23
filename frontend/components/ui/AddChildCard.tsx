@@ -7,7 +7,7 @@ const AddChild = () => {
   const { darkMode } = useApp();
 
   const handleAddChild = () => {
-    router.push('/parent/add-child-details'); 
+    router.push('/child-onboarding/add-child-details'); 
   };
 
   return (
