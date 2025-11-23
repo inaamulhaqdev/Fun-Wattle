@@ -166,7 +166,7 @@ export default function LearningUnitDetails() {
             title={`${title} \n ${category}`}
             duration={formatTime(totalDuration)}
             progress={progress}
-            accuracy={`${(unitAccuracy * 100).toFixed(0)}%`}
+            accuracy={`${unitAccuracy.toFixed(0)}%`}
           />
         </TouchableOpacity>
 
@@ -187,7 +187,7 @@ export default function LearningUnitDetails() {
                 completed={exercise.completed ? "Completed" : "Not started"}
                 correct={exercise.num_correct}
                 incorrect={exercise.num_incorrect}
-                accuracy={exercise.accuracy != null ? `${(exercise.accuracy * 100).toFixed(0)}%` : ""}
+                accuracy={exercise.accuracy != null ? `${exercise.accuracy.toFixed(0)}%` : ""}
               />
             ))}
           </ScrollView>
