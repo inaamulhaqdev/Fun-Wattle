@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, FlatList, StyleSheet, Alert } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { Card, Text, Searchbar } from 'react-native-paper';
@@ -32,7 +32,36 @@ export default function LinkTherapistPage() {
   const [loading, setLoading] = useState(true);
 
   const [therapistProfiles, setTherapistProfiles] = useState<Therapist[]>([]);
+  const [children, setChildren] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const response = await fetch(`${API_URL}/profile/${userId}/list/`, {
+          headers: { 
+            'Authorization': `Bearer ${session.access_token}`
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch profiles`);
+        }
+
+        const profiles = await response.json();
+
+        const childProfiles = profiles.filter((p: any) => p.profile_type === "child");
+
+        setChildren(childProfiles);
+      } catch (err: any) {
+        Alert.alert("Error", err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfiles();
+  }, []);
 
   const handleLinkTherapist = async (therapistId: string) => {      
     try {
@@ -104,7 +133,7 @@ export default function LinkTherapistPage() {
 
   return (
     <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
-      {!childId? (
+      {children.length === 0 ? (
         <Text style={[styles.title, { color: darkMode ? '#fff' : '#000' }]}>Assign a Therapist</Text>
       ) : (
         <Text style={[styles.title, { color: darkMode ? '#fff' : '#000' }]}>Assign a Therapist to {selectedChild.name}</Text>
@@ -117,12 +146,12 @@ export default function LinkTherapistPage() {
         style={[styles.searchbar, { backgroundColor: darkMode ? '#404040ff' : '#fff' }]}
       />
 
-      {!childId ? (
-        <AddChild />
-      ) : loading ? (
+      {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FD902B" />
         </View>
+      ) : children.length === 0 ? (
+        <AddChild />
       ) : (
         <FlatList
           data={therapistProfiles.filter(item => matchesFilters(item, searchQuery))}

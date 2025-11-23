@@ -106,7 +106,7 @@ function InnerLayout() {
                 }} />
               <Stack.Screen name="chat-messages" options={{ headerShown: false }} />
               <Stack.Screen name="(parent-tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="parent" options={{ headerShown: false }} />
+              <Stack.Screen name="child-onboarding" options={{ headerShown: false }} />
               <Stack.Screen name="switch-child" options={{
                 title: 'Switch Child',
                 headerLeft: ({ tintColor}) => (
