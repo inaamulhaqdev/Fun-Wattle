@@ -231,7 +231,6 @@ const DescribeExerciseComponent = () => {
     timestamp: number;
   }[]>([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  const [gptFeedback, setGptFeedback] = useState<string | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
 
   // Audio recorder set up
@@ -352,12 +351,6 @@ const DescribeExerciseComponent = () => {
       };
     }
   }, [currentQuestion, pointerAnim, exercise.questions]);
-
-  useEffect(() => {
-    if (gptFeedback) {
-      handlePlayAudio(gptFeedback);
-    }
-  }, [gptFeedback]);
 
   useEffect(() => {
     if (!exercise || !exercise.questions) return;
@@ -579,7 +572,7 @@ const DescribeExerciseComponent = () => {
 
         const data = await response.json();
         console.log('Audio successfully sent:', data);
-        setGptFeedback(data.feedback);
+        handlePlayAudio(data.feedback);
 
         setExerciseResponses(prev => [
           ...prev,

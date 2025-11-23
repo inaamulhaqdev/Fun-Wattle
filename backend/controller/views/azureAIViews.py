@@ -18,7 +18,7 @@ AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "australiaeast")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
-AZURE_OPENAI_EMB_ENDPOINT = "https://taker-mh6ts5xf-eastus2.cognitiveservices.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2023-05-15"
+AZURE_OPENAI_EMB_ENDPOINT = os.getenv("AZURE_OPENAI_EMB_ENDPOINT")
 
 @api_view(['POST'])
 def assess_speech(request):
@@ -84,8 +84,6 @@ def assess_speech(request):
         ).data[0].embedding
 
         question_embeddings = Question_Embedding.objects.filter(question__id=question_id)
-        
-        vector_literal = f"[{','.join(str(x) for x in child_emb)}]"
 
         # cosine distance → convert to similarity
         similarities = question_embeddings.annotate(
@@ -100,25 +98,21 @@ def assess_speech(request):
         is_correct = best_score >= 0.80
 
         # RAG
-        # combined_input = f"Question: {question_text}\nChild's answer: {result.text}"
+        combined_input = f"Question: {question_text}\nChild's answer: {result.text}"
 
-        # combined_emb = emb_client.embeddings.create(
-        #    input=combined_input,
-        #    model="text-embedding-3-small"
-        # ).data[0].embedding
+        combined_emb = emb_client.embeddings.create(
+            input=combined_input,
+            model="text-embedding-3-small"
+        ).data[0].embedding
 
-        # combined_vector_literal = f"[{','.join(str(x) for x in combined_emb)}]"
+        rag_similarities = (
+            Rag_Context.objects
+            .annotate(distance=CosineDistance("embedding", combined_emb))
+            .order_by("distance")[:5]  # Top 5
+        )
 
-        # rag_sections = Document_Section.objects.annotate(
-        #     cosine=RawSQL("1 - (embedding <=> %s)", (combined_vector_literal,))
-        # ).order_by('-cosine')[:5]
-
-        # rag_contexts = [s.content for s in rag_sections]
-        # rag_context_combined = "\n\n".join(rag_contexts)
-        
-        # add --- RAG Context (Top 5 Document Sections) ---
-        # {rag_context_combined}
-        # to prompt
+        rag_contexts = [ctx.content_chunk for ctx in rag_similarities]
+        rag_context_combined = "\n\n".join(rag_contexts)
 
         # GPT Feedback
         gpt_client = AzureOpenAI(
@@ -127,7 +121,22 @@ def assess_speech(request):
             api_key=AZURE_OPENAI_KEY,
         )
 
-        system_prompt = "You are an encouraging, friendly speech therapist helping children practice pronunciation. Ensure that you are providing constructive feedback on their pronunciation. If the child's response deviates from the question subject matter, then redirect the child's focus back onto the question and ask them to try again. Ensure you are following the professional and ethical speech pathologist guidelines when interacting with the child."
+        system_prompt = f"""
+        You are an encouraging, friendly speech therapist helping children practice pronunciation.
+        Ensure that you are providing constructive feedback on their pronunciation.
+        If the child's response deviates from the question subject matter,
+        then redirect the child's focus back onto the question and ask them to try again.
+        Ensure you are following the professional and ethical speech pathologist guidelines when interacting with the child.
+
+        Use the following context as background knowledge to better understand what the child might mean
+        and to help you give accurate, supportive feedback. Do not quote the context directly.
+        Do not mention that the context exists. Use it only to inform your understanding.
+
+        --- BEGIN CONTEXT ---
+        {rag_context_combined}
+        --- END CONTEXT ---
+        """
+
         user_prompt = f"""
         Question asked: "{question_text}"
         Child's speech: "{result.text}"
@@ -178,6 +187,7 @@ def assess_speech(request):
             "is_correct": is_correct,
             "similarity_score": best_score,
             "matched_answer": best_answer,
+            "RAG_context": rag_context_combined,
         }, status=200)
 
     finally:

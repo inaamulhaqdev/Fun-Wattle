@@ -40,7 +40,11 @@ docker compose down
 
 ## Other Development Information
 
-### Swagger - Backend API Documentation
-The backend is currently documented through swagger, which allows for testing of routes to ensure they work and can communicate properly. In order to access this and test different routes, visit the following URL in your web browser once the backend is running:
-- [Swagger UI](http://localhost:8080/swagger/)
+### Further Information
+To find further information on the codebase, check out the `README.md` files located in:
+- [frontend](./frontend/README.md)
+- [backend](./backend/README.md)
+- [swagger](./swagger/README.md)
+- [test](./backend/controller/test/README.md)
+- [.github](./.github/workflows/README.md)
 

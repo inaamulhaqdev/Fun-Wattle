@@ -1,1 +1,1 @@
-export const API_URL = `https://funwattle-web-service.onrender.com/api`;
+export const API_URL = `https://funwattle-backend-g1xh.onrender.com/api`;
