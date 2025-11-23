@@ -73,12 +73,12 @@ const AddChildDetails = () => {
 
         <Text variant="titleLarge" style={styles.title}>Child Basics</Text>
         
-        <Text variant="titleSmall" style={styles.subtitle}>Let’s start with the basics!</Text>
+        <Text variant="titleSmall" style={styles.subtitle}>Let&apos;s start with the basics!</Text>
 
-        <Text variant="bodyMedium" style={{ paddingBottom: 20 }}>We’ll begin by setting up a simple profile for your child. These details will help us make activities age-appropriate and more personal.</Text>
+        <Text variant="bodyMedium" style={{ paddingBottom: 20 }}>We&apos;ll begin by setting up a simple profile for your child. These details will help us make activities age-appropriate and more personal.</Text>
 
         <Text variant="bodyLarge" style={styles.question}>
-          Enter your child's name.
+          Enter your child&apos;s name.
         </Text>
 
         {/* First Name Input */}
