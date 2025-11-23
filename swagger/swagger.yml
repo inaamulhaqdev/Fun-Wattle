@@ -4,7 +4,7 @@ info:
   description: API for the Funwattle MVP app - a speech therapy assistance app
   version: 1.0.0
 servers:
-  - url: https://funwattle-web-service.onrender.com/api
+  - url: https://funwattle-backend-g1xh.onrender.com/api
     description: Backend Server
   - url: https://localhost:7000/api
     description: Local Development Server
@@ -674,7 +674,7 @@ paths:
         '400':
           description: Invalid coin amount, or non existent coins
         '401':
-          description: Coins added must be positive 
+          description: Coins added must be positive
         '404':
           description: Profile not found
   /profile/{profile_id}/streak/:
@@ -782,7 +782,7 @@ paths:
         '200':
           description: Success
         '404':
-          description: Profile not found    
+          description: Profile not found
   /therapist/:
     get:
       summary: Get All Therapists
@@ -894,7 +894,7 @@ paths:
                     $ref: '#/components/schemas/Shop_Item'
                     nullable: true
         '401':
-          description: Item has not been purchased 
+          description: Item has not been purchased
         '404':
           description: Profile not found
 
@@ -1150,7 +1150,7 @@ components:
     Shop_Item:
       type: object
       properties:
-        id: 
+        id:
           type: string
           format: uuid
         item_type:
@@ -1162,5 +1162,5 @@ components:
         mascot_image:
           type: string
           format: json
-        price: 
+        price:
           type: integer
