@@ -1,0 +1,17 @@
+[
+    {
+        "question_id": "152ca6e5-a284-4c9a-ab38-df7a894931a2", 
+        "question_text": "Describe the cake", 
+        "expected_answers": ["cake is big and colourful", "cake has candles"]
+    }, 
+    {
+        "question_id": "fe54255d-5061-418c-a37b-7882ef05f467", 
+        "question_text": "What can you see?", 
+        "expected_answers": ["there are many balloons", "children dancing", "rug", "gifts"]
+    }, 
+    {
+        "question_id": "8a279683-4092-49dd-bb97-5a7b71d5e03b", 
+        "question_text": "What are the friends doing?", 
+        "expected_answers": ["friends are smiling, celebrating"]
+    }
+]
