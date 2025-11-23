@@ -46,5 +46,5 @@ To find further information on the codebase, check out the `README.md` files loc
 - [backend](./backend/README.md)
 - [swagger](./swagger/README.md)
 - [test](./backend/controller/test/README.md)
-- [.github](./.github/README.md)
+- [.github](./.github/workflows/README.md)
 

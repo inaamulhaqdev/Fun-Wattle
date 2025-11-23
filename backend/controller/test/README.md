@@ -1,5 +1,5 @@
 # Testing 
-The backend code comes with a set of premade tests to ensure that modification will keep the same logic follow. These tests are run as part of the Github runner (see [here](../../../.github/README.md)).
+The backend code comes with a set of premade tests to ensure that modification will keep the same logic follow. These tests are run as part of the Github runner (see [here](../../../.github/workflows/README.md)).
 
 ## Manually running the tests
 Tests can be run with the command
