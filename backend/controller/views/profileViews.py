@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from ..models import *
 from ..serializers import *
 from datetime import datetime
+from .chatViews import create_chats
 
 @api_view(['POST'])
 def create_profile(request):
@@ -112,157 +113,36 @@ def get_profile(request, profile_id):
     except Profile.DoesNotExist:
         return Response({'error': 'Profile not found'}, status=404)
 
-    calc_streak(profile)
+    if profile.profile_type == "child":
+    	calc_streak(profile)
+    # else:
+    # 	create_chats(profile)
 
     serializer = ProfileSerializer(profile)
     return Response(serializer.data, status=200)
 
-
-@api_view(['GET', 'PUT'])
-def coins(request, profile_id):
-	try:
-		profile = Profile.objects.get(id=profile_id)
-	except Profile.DoesNotExist:
-		return Response({'error': 'Profile not found'}, status=404)
+@api_view(['GET', 'POST'])
+def therapist(request):
 	if request.method == 'GET':
-		return Response({
-			'coins':profile.coins
-		}, status=200)
-	if request.method == 'PUT':
-		amount = request.data.get('amount')
-		if amount is None:
-			return Response({'error':'Amount is required'}, status=400)
+		therapist = Profile.objects.filter(profile_type='therapist')
+		serializer = ProfileSerializer(therapist, many=True)
+		return Response(serializer.data, status=200)
+	elif request.method == 'POST':
+		child_profile = request.data.get('child')
+		therapist_profile = request.data.get('therapist')
+		# Therapist User ID
 		try:
-			amount = int(amount)
-		except ValueError:
-			return Response({'error':'Amount must be an integer'}, status=400)
-		if amount < 0:
-			return Response({'error':'Can not add negative coins'}, status=401)
-		profile.coins += amount
-		profile.save()
-		return Response({
-			'coins':profile.coins
-		}, status=200)
-
-
-@api_view(['GET'])
-def get_streak(request, profile_id):
-    try:
-        profile = Profile.objects.get(id=profile_id)
-    except Profile.DoesNotExist:
-        return Response({'error': 'Profile not found'}, status=404)
-    return Response({
-          'streak':profile.streak
-	}, status=200)
-
-
-@api_view(['GET'])
-def shop(request):
-	shop = Mascot_Items.objects.all()
-	serializer = MascotItemsSerializer(shop, many=True)
-	return Response(serializer.data, status=200)
-
-
-@api_view(['GET'])
-def get_item(request, item_id):
-	try:
-		item = Mascot_Items.objects.get(id=item_id)
-	except Mascot_Items.DoesNotExist:
-		return Response({'error': 'Mascot Item not found'}, status=404)
-	serializer = MascotItemsSerializer(item)
-	return Response(serializer.data, status=200)
-
-@api_view(['GET'])
-def get_inv(request, profile_id):
-	try:
-		profile = Profile.objects.get(id=profile_id)
-	except Profile.DoesNotExist:
-		return Response({'error': 'Profile not found'}, status=404)
-	inv = Inventory.objects.filter(
-		profile = profile.id
-	).select_related('mascot_item')
-
-	serializer = MascotItemsSerializer(inv, many=True)
-	return Response(serializer.data, status=200)
-
-@api_view(['POST'])
-def update_inv(request, profile_id, item_id):
-	try:
-		profile = Profile.objects.get(id=profile_id)
-		item = Mascot_Items.objects.get(id=item_id)
-	except Profile.DoesNotExist:
-		return Response({'error': 'Profile not found'}, status=404)
-	except Mascot_Items.DoesNotExist:
-		return Response({'error': 'Mascot Item not found'}, status=404)
-	prev_purchase = Inventory.objects.get(
-		profile = profile.id,
-		mascot_item = item
-	)
-	if prev_purchase:
-		return Response({'error':'Item has already been purchased'}, status=400)
-	if profile.coins < item.price:
-		return Response({'error': 'Item is too expensive'}, status=400)
-	inv_item = Inventory.objects.create(
-		profile=profile,
-		mascot_item=item,
-		equipped=False
-	)
-	profile.coins = profile.coins - item.price
-	profile.save()
-	if not inv_item:
-		return Response({'error':'Failed to purchase item'})
-	return Response({'message':'Success'}, status=200)
-
-def equipped_items(profile_id):
-	qs = Inventory.objects.filter(
-		profile=profile_id,
-		equipped=True,
-	)
-	inv_qs = qs.select_related('mascot_item')
-
-	result = {'head': None, 'torso': None}
-	for inv_item in inv_qs:
-		mi = inv_item.mascot_item
-		if not mi:
-			continue
-		key = mi.item_type
-		result[key] = {MascotItemsSerializer(mi).data}
-	return result
-
-@api_view(['GET', 'PUT'])
-def mascot(request, profile_id):
-	try:
-		profile = Profile.objects.get(id=profile_id)
-	except Profile.DoesNotExist:
-		return Response({'error': 'Profile not found'}, status=404)
-	eqipped_items = equipped_items(profile.id)
-	if equipped_items.length > 2:
-		return Response({'error':'Cannot equip more than 2 items'}, status=400)
-	if request.method == 'GET':
-		items = equipped_items(profile.id)
-		return Response(items, status=200)
-
-	elif request.method == 'PUT':
-		item_id = request.data.get('item')
+			profile = Profile.objects.get(id=child_profile)
+			therapist = Profile.objects.get(id=therapist_profile)
+		except (Profile.DoesNotExist):
+			return Response({'error': 'Either not found'}, status=404)
 		try:
-			item = Mascot_Items.objects.get(id=item_id)
-		except Mascot_Items.DoesNotExist:
-			return Response({'error': 'Mascot Item not found'}, status=404)
-		inv_item_to_equip = Inventory.objects.get(
-			profile = profile.id,
-			mascot_item = item
-		)
-		if not inv_item_to_equip:
-			return Response({'error':'Item has not been purchased'}, status=401)
-		inv_item_to_unequip = Inventory.objects.get(
-			profile = profile.id,
-			equipped = True,
-			mascot_item__item_type = item.item_type,
-		)
-		if inv_item_to_unequip:
-			inv_item_to_unequip.equipped = False
-			inv_item_to_unequip.save()
-		inv_item_to_equip.equipped = True
-		inv_item_to_equip.save()
-		items = equipped_items(profile.id)
-		return Response(items, staus=200)
+			user = User_Profile.objects.get(profile_id=therapist)
+		except (User_Profile.DoesNotExist):
+			return Response({'error': 'Therapist not found'}, status=404)
+		try:
+			User_Profile.objects.get(user_id=user.user_id, profile_id=profile)
+		except (User_Profile.DoesNotExist):
+			User_Profile.objects.create(user_id=user.user_id, profile_id=profile.id)
+			return Response({'message':'Therapist set successfully'}, status=200)
+		return Response({'error':'Profile connection exists'}, status=400)

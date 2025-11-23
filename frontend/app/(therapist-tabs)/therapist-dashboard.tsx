@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, Menu, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { ActivityIndicator, Text, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { Dropdown } from "react-native-element-dropdown";
 import Filters from "../../components/home_screen/CategoryFilters";
 import { supabase } from '@/config/supabase';
 import { API_URL } from '@/config/api';
@@ -21,17 +22,36 @@ const formatDate = (isoString: string): string => {
   });
 };
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning"; 
+  if (hour < 18) return "Good afternoon"; 
+  return "Good evening"; 
+}
+
 export default function TherapistDashboard() {
-  const { childId, session } = useApp();
+  const { childId, session, selectChild } = useApp();
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [therapistName, setTherapistName] = useState('');
-  const [childList, setChildList] = useState<string[]>([]);
+  const [childList, setChildList] = useState<Account[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
-  const [menuVisible, setMenuVisible] = React.useState(false);
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [switchChild, setSwitchChild] = useState(false);
 
-  const loading = loadingProfiles || loadingAssignments;
+  const [greeting, setGreeting] = useState(getGreeting());
+
+  // every 60 seconds, checks if the greeting should be changed according to time (eg. app left open, time switches from morning to midday; greeting changes to 'Good afternoon' without reload)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGreeting(getGreeting());
+    }, 60 * 1000); 
+
+    return () => clearInterval(interval); 
+  }, []);
+
+  const { darkMode } = useApp();
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -63,10 +83,17 @@ export default function TherapistDashboard() {
         const therapistProfile = transformedData.find(profile => profile.type === 'therapist');
         if (therapistProfile) setTherapistName(therapistProfile.name);
 
-        const children = transformedData.filter(p => p.type === 'child').map(p => p.name);
-        setChildList(children);
+        const childrenFull = transformedData.filter(p => p.type === 'child');
+        setChildList(childrenFull);
+        if (childrenFull.length > 0) {
+          const initialChild = childrenFull[0];
+          selectChild({
+            id: initialChild.id,
+            name: initialChild.name,
+            type: initialChild.type,
+          });
+        }
 
-        if (children.length > 0) setSelectedChild(children[0]);
       } catch (error) {
         console.error('Error fetching profiles:', error);
         Alert.alert('Error', 'Failed to load profiles. Please try again.');
@@ -81,6 +108,8 @@ export default function TherapistDashboard() {
   const userId = session.user.id
   const fetchAssignments = React.useCallback(async () => {
     try {
+      if (!firstLoad) setLoadingAssignments(true);
+
       const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
 
       if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
@@ -111,48 +140,65 @@ export default function TherapistDashboard() {
 
       setData(assignedUnitsWithStats);
 
-
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Failed to load learning units.');
     } finally {
-      setLoadingAssignments(false);
+      if (firstLoad) {
+        setFirstLoad(false);
+      } else {
+        setLoadingAssignments(false);
+      }
     }
   }, [childId, userId]);
 
+  // Subscribe to Supabase changes
   useEffect(() => {
-    const channel = supabase
+    const channelResults = supabase
       .channel('schema-db-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: '*', // Listen to all events (insert, update, delete)
           schema: 'public',
           table: 'Assignment'
         },
         () => {
+          // Refresh assignments when Exercise_Result table changes
           fetchAssignments();
         }
       )
       .subscribe();
 
+    // Cleanup subscription on unmount
     return () => {
-      channel.unsubscribe();
+      channelResults.unsubscribe();
     };
   }, [fetchAssignments]);
 
   // Get assignments on focus
-    useFocusEffect(
-      React.useCallback(() => {
-        fetchAssignments();
-      }, [fetchAssignments])
-    );
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchAssignments();
+    }, [fetchAssignments])
+  );
 
-  if (loading) {
+  const handleSwitchChild = async (item: any) => {
+    setSwitchChild(true);
+    selectChild({ id: item.value, name: item.label, type: 'child' });
+    setSelectedChild(item.label);
+    try {
+      await fetchAssignments();
+    } finally {
+      setTimeout(() => setSwitchChild(false), 5000);
+    }
+  };
+
+  if (firstLoad || loadingProfiles) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#FD902B" />
+          <ActivityIndicator size="large" color="#fd9029" />
         </View>
       </SafeAreaView>
     );
@@ -160,48 +206,63 @@ export default function TherapistDashboard() {
 
   return (
     <PaperProvider theme={DefaultTheme}>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-            <Text style={styles.headerTitle}>Good evening, {therapistName}!</Text>
-        </View>
-
+      <View style={styles.header}>
+        <Text variant='titleLarge' style={styles.headerTitle}>
+          {getGreeting()}, {therapistName}!
+        </Text>
+      </View>
+      <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.body}>
           <View style={styles.subtitleRow}>
             {childList.length > 0 ? (
               <>
-                <Menu
-                  visible={menuVisible}
-                  onDismiss={() => setMenuVisible(false)}
-                  anchor={
-                    <TouchableOpacity style={styles.childButton} onPress={() => setMenuVisible(true)}>
-                      <Text style={styles.childText}>{selectedChild}</Text>
-                    </TouchableOpacity>
-                  }
-                  style={styles.menuContainer}
-                >
-                  {childList.map((child) => (
-                    <Menu.Item
-                      key={child}
-                      onPress={() => {
-                        setSelectedChild(child);
-                        setMenuVisible(false);
-                      }}
-                      title={child}
-                      titleStyle={{ color: "#000000ff", fontWeight: "500" }}
-                      style={{ backgroundColor: "#f7f7f7", borderRadius: 10 }}
-                    />
-                  ))}
-                </Menu>
-
-                <Text variant="bodyMedium" style={styles.subtitle}>&apos;s progress this week.</Text>
+              {childList.length > 1 ? (
+              <View style={{ width: 160 }}>
+                <Dropdown
+                  style={{
+                    height: 40,
+                    borderColor: "#ccc",
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    backgroundColor: "#fff"  
+                  }}
+                  placeholderStyle={{ color: "#555" }}
+                  selectedTextStyle={{ color: "#000" }}
+                  containerStyle={{ backgroundColor: "#fff" }}   
+                  itemTextStyle={{ color: "#000" }}              
+                  activeColor="#f2f2f2"          
+                  placeholder="Select child"
+                  value={childId}
+                  data={childList.map((child: any) => ({
+                    label: child.name,
+                    value: child.id,
+                  }))}
+                  labelField="label"
+                  valueField="value"
+                  onChange={(item: any) => {handleSwitchChild(item)}}
+                />
+              </View>
+            ) : (
+              <View style={styles.childButton}>
+                <Text style={styles.childText}>{selectedChild}</Text>
+              </View>
+            )}
+              <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos;s progress this week.</Text>
               </>
             ) : (
               <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
             )}
           </View>
-          {childList.length > 0 && <Filters assignedUnits={data} />}
+          {childList.length > 0 && (<Filters assignedUnits={data} />)}
         </View>
-      </SafeAreaView>
+        {switchChild && (
+          <View style={styles.overlay}>
+            <Text style={{ color: "#fff", marginBottom: 10 }}>Loading…</Text>
+            <ActivityIndicator size="large" color="#fff" />
+          </View>
+        )}
+      </View>
     </PaperProvider>
   );
 }
@@ -209,19 +270,18 @@ export default function TherapistDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffff",
+    backgroundColor: "transparent",
+    position: 'relative'
   },
   loading: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-
   subtitleRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
-    marginTop: 5,
   },
   childText: {
     fontWeight: "600",
@@ -241,26 +301,44 @@ const styles = StyleSheet.create({
   menuContainer: {
     backgroundColor: "#fff",
     borderRadius: 12,
+    elevation: 4, 
+    paddingVertical: 4,
+  },
+  menuItem: {
+    backgroundColor: "#ffffff", 
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    paddingVertical: 6,
+    borderRadius: 0,
   },
   header: {
     backgroundColor: '#fd9029',
-    paddingTop: 65,
-    paddingBottom: 15,
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  headerLeft: {
-    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 100,
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    paddingLeft: 8,
+    paddingBottom: 20,
+    fontWeight: "bold",
+    color: "white",
   },
   body: {
     flex: 1,
-    backgroundColor: 'white',
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 20,
+    marginBottom: -33,
+  },
+  overlay: {
+    position: "absolute",
+    top: "40%",
+    left: 0,
+    right: 0,
+    height: "70%",
+    backgroundColor: "rgba(0,0,0,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
   }
 });

@@ -17,7 +17,7 @@ from controller.models import Question, Question_Embedding
 load_dotenv()
 
 # Azure settings
-AZURE_OPENAI_ENDPOINT = "https://taker-mh6ts5xf-eastus2.cognitiveservices.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2023-05-15"
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_EMB_ENDPOINT")
 AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
 AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME="text-embedding-3-small"
 

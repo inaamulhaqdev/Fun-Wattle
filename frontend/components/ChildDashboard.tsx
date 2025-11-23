@@ -33,28 +33,18 @@ const cleanExerciseType = (exerciseType: string | null | undefined): string => {
   if (!exerciseType || typeof exerciseType !== 'string') {
     return 'multiple_drag';
   }
-  
+
   return exerciseType
-    .trim()                    
-    .replace(/\s+/g, ' ')      
+    .trim()
+    .replace(/\s+/g, ' ')
     .replace(/[\n\r\t]/g, '')
-    .toLowerCase();          
+    .toLowerCase();
 };
 
-// Default tasks (fallback if API fails)
-/* const defaultTasks: Task[] = [
-  { id: '1', name: 'activity1', completed: true },
-  { id: '2', name: 'multiple_drag_exercise', completed: false },
-  { id: '3', name: 'describe_exercise', completed: false },
-  { id: '4', name: 'activity4', completed: false },
-  { id: '5', name: 'activity5', completed: false },
-]; */
-
 // Function to fetch child's coin balance from backend
-/*
 const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: number) => void) => {
   try {
-    const response = await fetch(`${API_URL}/coins/${childId}`, {
+    const response = await fetch(`${API_URL}/profile/${childId}/coins`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -74,7 +64,6 @@ const fetchCoinBalance = async (childId: string, setCoinBalance: (balance: numbe
     setCoinBalance(0);
   }
 };
-*/
 
 // Function to fetch exercises for a learning unit
 const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: string): Promise<any[]> => {
@@ -128,14 +117,14 @@ const fetchExercisesForLearningUnit = async (learningUnitId: string, childId: st
 
       // Execute all completion checks in parallel
       const exercisesWithCompletionStatus = await Promise.all(completionCheckPromises);
-      
+
       // Sort exercises by their order field
       const sortedExercises = exercisesWithCompletionStatus.sort((a, b) => {
         const orderA = a.order || 0;
         const orderB = b.order || 0;
         return orderA - orderB;
       });
-      
+
       console.log('Exercises with completion status (sorted by order):', sortedExercises);
       return sortedExercises;
     } else {
@@ -183,19 +172,51 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
       return;
     }
 
-    // Extract unique learning unit IDs from assignments
+    // Extract unique learning unit IDs from assignments and preserve assignment metadata
     const learningUnitIds = [...new Set(assignmentsData.map((assignment: any) => assignment.learning_unit.id))];
     console.log('Learning unit IDs found:', learningUnitIds);
 
+    // Create a map of learning unit ID to assignment date for sorting
+    const assignmentDateMap = new Map();
+    assignmentsData.forEach((assignment: any) => {
+      const luId = assignment.learning_unit.id;
+      const assignedAt = assignment.assigned_at || assignment.created_at || new Date().toISOString();
+      if (!assignmentDateMap.has(luId) || assignedAt < assignmentDateMap.get(luId)) {
+        assignmentDateMap.set(luId, assignedAt);
+      }
+    });
+    console.log('Assignment date map:', assignmentDateMap);
+
     // Fetch exercises for all learning units in parallel
     const allExercises: any[] = [];
-    const exercisePromises = learningUnitIds.map(learningUnitId => 
-      fetchExercisesForLearningUnit(learningUnitId, childId)
+    const exercisePromises = learningUnitIds.map(learningUnitId =>
+      fetchExercisesForLearningUnit(learningUnitId, childId).then(exercises =>
+        exercises.map(ex => ({
+          ...ex,
+          assignedAt: assignmentDateMap.get(learningUnitId)
+        }))
+      )
     );
     const exerciseResults = await Promise.all(exercisePromises);
     exerciseResults.forEach(exercises => allExercises.push(...exercises));
 
-    console.log('All exercises fetched:', allExercises);
+    // Sort exercises by assignment date first, then by order within each assignment
+    allExercises.sort((a, b) => {
+      const dateA = new Date(a.assignedAt || 0).getTime();
+      const dateB = new Date(b.assignedAt || 0).getTime();
+
+      // First sort by assignment date (earliest first)
+      if (dateA !== dateB) {
+        return dateA - dateB;
+      }
+
+      // If same assignment date, sort by order field
+      const orderA = a.order || 0;
+      const orderB = b.order || 0;
+      return orderA - orderB;
+    });
+
+    console.log('All exercises fetched and sorted by assignment date:', allExercises);
 
     // Transform exercises to Task format
     if (allExercises.length > 0) {
@@ -208,11 +229,11 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
         exerciseId: exercise.id,
         description: exercise.description || ''
       }));
-      
+
       setTasks(basicTasks);
       setIsDataLoaded(true); // Allow UI to show immediately
       console.log('Basic tasks set for immediate display:', basicTasks);
-      
+
       // Then update with actual completion status in background
       setTimeout(async () => {
         const transformedTasks: Task[] = allExercises.map((exercise: any, index: number) => ({
@@ -223,7 +244,7 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
           exerciseId: exercise.id,
           description: exercise.description || ''
         }));
-        
+
         setTasks(transformedTasks);
         console.log('Tasks updated with completion status:', transformedTasks);
       }, 0);
@@ -460,7 +481,7 @@ const ChildDashboard = () => {
 
   // Update global childId with context value or keep fallback
   const childId = contextChildId || globalChildId;
-  
+
   // Update the global variable so other parts of the app can access it
   React.useEffect(() => {
     if (contextChildId) {
@@ -473,7 +494,7 @@ const ChildDashboard = () => {
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
   // const [streakCount, setStreakCount] = useState(0);
-  // const [coinBalance, setCoinBalance] = useState(0);
+  const [coinBalance, setCoinBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isUIReady, setIsUIReady] = useState(false);
@@ -540,7 +561,7 @@ const ChildDashboard = () => {
     // Now childId will always have a value (either from context or fallback)
     console.log('Calling fetchAssignedLearningUnit with childId:', childId);
     fetchAssignedLearningUnit(childId, setTasks, setIsDataLoaded);
-    //fetchCoinBalance(childId, setCoinBalance);
+    fetchCoinBalance(childId, setCoinBalance);
     //fetchStreakCount(childId, setStreakCount);
   }, [childId, contextChildId]);
 
@@ -564,7 +585,7 @@ const ChildDashboard = () => {
             animated: true
           });
         }, 500); // Reduced delay for faster responsiveness
-        
+
         return () => clearTimeout(autoScrollTimeout);
       }
     }
@@ -801,10 +822,10 @@ const ChildDashboard = () => {
     if (task.exerciseType) {
       // Clean the exercise type to handle whitespace and formatting issues
       const cleanedExerciseType = cleanExerciseType(task.exerciseType);
-      
+
       console.log('Original exercise type:', JSON.stringify(task.exerciseType));
       console.log('Cleaned exercise type:', JSON.stringify(cleanedExerciseType));
-      
+
       switch (cleanedExerciseType) {
         case 'multiple_drag':
           routePath = '/multiple_drag_exercise';
@@ -834,7 +855,7 @@ const ChildDashboard = () => {
       bodyType: mascotData.bodyType,
       accessoryId: mascotData.accessoryId?.toString() || ''
     };
-        
+
     // Navigate to the exercise with exercise ID and mascot data
     router.push({
       pathname: routePath as any,
@@ -898,7 +919,7 @@ const ChildDashboard = () => {
           </View>
           <View style={styles.starContainer}>
             <MaterialCommunityIcons name="star-circle" size={24} color="#007ae6ff" />
-            <Text style={styles.starText}>150</Text>
+            <Text style={styles.starText}>{coinBalance}</Text>
           </View>
         </View>
       </View>
@@ -908,7 +929,9 @@ const ChildDashboard = () => {
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         style={styles.verticalScroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { height: tasks.length * 200 + 400 }]}
+        scrollEnabled={true}
+        bounces={true}
         onLayout={() => {
           console.log('ScrollView layout completed');
           // Mark content layout as complete
@@ -1147,7 +1170,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     position: 'relative',
-    minHeight: '100%',
     paddingBottom: 400,
     left: -40,
     top: 20,

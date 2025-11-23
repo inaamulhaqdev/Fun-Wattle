@@ -65,7 +65,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     marginBottom: 0,
-  
   },
   gridItem: {
     flexBasis: "48%",
@@ -83,6 +82,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 11,
+    color: 'black',
     paddingHorizontal: 5,
     textAlign: "center",
     fontWeight: "bold",

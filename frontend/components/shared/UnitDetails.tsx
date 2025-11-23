@@ -3,7 +3,6 @@ import { ScrollView, View, StyleSheet, Alert, Platform } from 'react-native';
 import { Card, IconButton, Divider, Text, Snackbar } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
-import { router } from 'expo-router';
 import { LearningUnit, Exercise } from '../../types/learningUnitTypes';
 import { API_URL } from '@/config/api';
 import { useApp } from '../../context/AppContext';
@@ -24,7 +23,7 @@ export default function DetailView({
   const [showOverlay, setShowOverlay] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
 
-  const { childId, session, exercisesCache, setExercisesForUnit } = useApp();
+  const { darkMode, childId, session, exercisesCache, setExercisesForUnit } = useApp();
   const userId = session.user.id;
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -144,16 +143,19 @@ export default function DetailView({
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
+      <View style={styles.header}>
         <View style={styles.backButton}>
           <IconButton icon="arrow-left" size={30} onPress={onBack} />
         </View>
+      </View> 
+      <ScrollView style={[styles.container, { backgroundColor: darkMode ? '#232323ff' : '#fff' }]}>
 
-        <Text variant="headlineMedium" style={styles.title}>{selectedItem.title}</Text>
-        <Text variant="titleMedium" style={styles.category}>{selectedItem.category}</Text>
-        <Text variant="bodyMedium" style={styles.description}>{selectedItem.description}</Text>
 
-      <Text variant="titleMedium" style={styles.heading}>Exercises</Text>
+        <Text variant="headlineMedium" style={[styles.title, { color: darkMode ? '#fff' : '#000' }]}>{selectedItem.title}</Text>
+        <Text variant="titleMedium" style={[styles.category, { color: darkMode ? '#fff' : '#000' }]}>{selectedItem.category}</Text>
+        <Text variant="bodyMedium" style={[styles.description, { color: darkMode ? '#fff' : '#000' }]}>{selectedItem.description}</Text>
+
+      <Text variant="titleMedium" style={[styles.heading, { color: darkMode ? '#fff' : '#000' }]}>Exercises</Text>
       <Divider style={styles.divider} />
 
         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
@@ -163,7 +165,7 @@ export default function DetailView({
             >
               <Card.Title title={exercise.title} />
               <Card.Content>
-                <Text variant="bodyMedium" style={styles.description}>{exercise.description}</Text>
+                <Text variant="bodyMedium" style={[styles.description, { color: darkMode ? '#fff' : '#000' }]}>{exercise.description}</Text>
               </Card.Content>
             </Card>
           ))}
@@ -183,23 +185,58 @@ export default function DetailView({
                 }
 
                 let result;
+                let message = '';
 
-                if (newStatus === 'Unassigned') {
-                  result = await unassignLearningUnit(selectedItem.id, childId);
-                  setAssignedUnitIds(prev => new Set([...prev].filter(id => id !== selectedItem.id)));
-                } else if (newStatus === 'Assigned as Required') {
-                  result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'required');
-                  setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
-                } else if (newStatus === 'Assigned as Recommended') {
-                  result = await assignLearningUnit(selectedItem.id, childId, userId, retries, 'recommended');
-                  setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
+                switch (newStatus) {
+                  case "Unassign": {
+
+                    result = await unassignLearningUnit(selectedItem.id, childId);
+                    message = "Unassigned";
+
+                    setAssignedUnitIds(prev =>
+                      new Set([...prev].filter(id => id !== selectedItem.id))
+                    );
+                    break;
+                  }
+
+                  case "Assign as Required": {
+                    result = await assignLearningUnit(
+                      selectedItem.id,
+                      childId,
+                      userId,
+                      retries,
+                      "required"
+                    );
+                    message = "Assigned as Required";
+
+                    setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
+                    break;
+                  }
+
+                  case "Assign as Recommended": {
+                    result = await assignLearningUnit(
+                      selectedItem.id,
+                      childId,
+                      userId,
+                      retries,
+                      "recommended"
+                    );
+                    message = "Assigned as Recommended";
+
+                    setAssignedUnitIds(prev => new Set([...prev, selectedItem.id]));
+                    break;
+                  }
+
+                  default:
+                    console.warn("Unknown status:", newStatus);
+                    return;
                 }
 
                 if (!result) return;
 
                 selectedItem.status = newStatus;
 
-                showMessage(`Learning unit successfully ${newStatus.toLowerCase()}!`, 'success');
+                showMessage(`Learning unit successfully ${message.toLowerCase()}`, 'success');
               } catch (error) {
                 console.error('Error updating assignment:', error);
                 showMessage('Failed to update assignment. Please try again.', 'error');
@@ -237,13 +274,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     minHeight: 0,
   },
+  header: {
+    backgroundColor: '#fd9029',
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   backButton: {
-    marginTop: 40,
-    alignSelf: 'flex-start'
+    marginTop: 5,
+    alignSelf: 'flex-start',
   },
   title: {
     fontSize: 25,
     marginTop: 30,
+    paddingLeft: 6,
     fontWeight: '600',
     color: '#000'
   },

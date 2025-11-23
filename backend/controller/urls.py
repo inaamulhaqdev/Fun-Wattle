@@ -6,6 +6,7 @@ from .views.assignmentViews import *
 from .views.resultViews import *
 from .views.azureAIViews import *
 from .views.chatViews import *
+from .views.gamifyViews import *
 
 urlpatterns = [
     # User Routes
@@ -16,13 +17,18 @@ urlpatterns = [
     path('profile/create/', create_profile, name='create_profile'), # POST
     path('profile/<str:user_id>/list/', get_user_profiles, name='get_user_profiles'), # GET
     path('profile/<str:profile_id>/data/', get_profile, name='get_profile'), # GET
+
+    # Gamification Routes - still under profile
     path('profile/<str:profile_id>/coins/', coins, name='manage_coins'), # GET, PUT
     path('profile/<str:profile_id>/streak/', get_streak, name='get_streak'), # GET
     path('profile/shop/', shop, name='shop'), # GET
     path('profile/shop/<str:item_id>/', get_item, name='get_item'), # GET
-    path('profile/<str:profile_id>/inv', get_inv, name='get_inventory'), # GET
+    path('profile/<str:profile_id>/inv/', get_inv, name='get_inventory'), # GET
     path('profile/<str:profile_id>/inv/<str:item_id>/', update_inv, name='update_inventory'), # POST
     path('profile/<str:profile_id>/mascot/', mascot, name='manage_mascot'), # GET, PUT
+
+    # therapist 
+    path('therapist/', therapist, name='therapist' ), # GET, POST
 
     # Content Library Routes
     path('content/learning_units/', get_all_learning_units, name='get_all_learning_units'), # GET

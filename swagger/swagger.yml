@@ -6,6 +6,8 @@ info:
 servers:
   - url: https://funwattle-web-service.onrender.com/api
     description: Backend Server
+  - url: https://localhost:7000/api
+    description: Local Development Server
 
 paths:
   /user/create/:
@@ -618,7 +620,7 @@ paths:
       summary: Add coins to a profile
       description: Add the coin total for a profile ID
       tags:
-        - Profiles
+        - Gamification
       parameters:
         - name: profile_id
           in: path
@@ -641,7 +643,7 @@ paths:
       summary: Get coins for a profile
       description: Retrieve the coin total for a profile ID
       tags:
-        - Profiles
+        - Gamification
       parameters:
         - name: profile_id
           in: path
@@ -680,7 +682,7 @@ paths:
       summary: Get the streak for a profile
       description:  Retrieve the coin total for a profile ID
       tags:
-        - Profiles
+        - Gamification
       parameters:
         - name: profile_id
           in: path
@@ -704,7 +706,7 @@ paths:
       summary: Get everything from the shop
       description:  Retrieve all purchasable items
       tags:
-        - Profiles
+        - Gamification
       responses:
         '200':
           description: Shop returned
@@ -719,7 +721,7 @@ paths:
       summary: Get an item from the shop
       description:  Retrieve a purchasable items
       tags:
-        - Profiles
+        - Gamification
       parameters:
         - name: item_id
           in: path
@@ -741,7 +743,7 @@ paths:
       summary: Get the inventory for the profile
       description:  Retrieve all the items that a user has purchased
       tags:
-        - Profiles
+        - Gamification
       parameters:
         - name: profile_id
           in: path
@@ -764,7 +766,7 @@ paths:
       summary: Add an item to a players inventory
       description: Purchase an item for a profile
       tags:
-        - Profiles
+        - Gamification
       parameters:
         - name: profile_id
           in: path
@@ -781,6 +783,49 @@ paths:
           description: Success
         '404':
           description: Profile not found    
+  /therapist/:
+    get:
+      summary: Get All Therapists
+      description:  Retrieve all therapists registered in the system
+      tags:
+        - Therapist
+      responses:
+        '200':
+          description: Therapist
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Profile'
+    post:
+      summary: Link a therapist to a child
+      description:  Link a therapist to a child profile
+      tags:
+        - Therapist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                child:
+                  type: string
+                  format: uuid
+                therapist:
+                  type: string
+                  format: uuid
+              required:
+                - child
+                - therapist
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Connection exists
+        '404':
+          description: Profile (either) not found
   /profile/{profile_id}/mascot/:
     get:
       summary: Get the equipped mascot items for a profile
@@ -848,8 +893,6 @@ paths:
                   toros:
                     $ref: '#/components/schemas/Shop_Item'
                     nullable: true
-        '400':
-          description: More then 2 items are equipped (DB error)
         '401':
           description: Item has not been purchased 
         '404':

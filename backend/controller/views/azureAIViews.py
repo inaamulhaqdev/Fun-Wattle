@@ -18,7 +18,7 @@ AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "australiaeast")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
-AZURE_OPENAI_EMB_ENDPOINT = "https://taker-mh6ts5xf-eastus2.cognitiveservices.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2023-05-15"
+AZURE_OPENAI_EMB_ENDPOINT = os.getenv("AZURE_OPENAI_EMB_ENDPOINT")
 
 @api_view(['POST'])
 def assess_speech(request):
@@ -84,8 +84,6 @@ def assess_speech(request):
         ).data[0].embedding
 
         question_embeddings = Question_Embedding.objects.filter(question__id=question_id)
-        
-        vector_literal = f"[{','.join(str(x) for x in child_emb)}]"
 
         # cosine distance → convert to similarity
         similarities = question_embeddings.annotate(
@@ -107,8 +105,6 @@ def assess_speech(request):
             model="text-embedding-3-small"
         ).data[0].embedding
 
-        combined_vector_literal = f"[{','.join(str(x) for x in combined_emb)}]"
-
         rag_similarities = (
             Rag_Context.objects
             .annotate(distance=CosineDistance("embedding", combined_emb))
@@ -127,19 +123,20 @@ def assess_speech(request):
 
         system_prompt = f"""
         You are an encouraging, friendly speech therapist helping children practice pronunciation.
-        Ensure that you are providing constructive and supportive feedback on their pronunciation.
+        Ensure that you are providing constructive feedback on their pronunciation.
+        If the child's response deviates from the question subject matter,
+        then redirect the child's focus back onto the question and ask them to try again.
         Ensure you are following the professional and ethical speech pathologist guidelines when interacting with the child.
 
-        If the child's answer is meaningfully incorrect, unrelated, or off-topic,
-        gently guide them toward the correct idea while remaining positive and supportive.
+        Use the following context as background knowledge to better understand what the child might mean
+        and to help you give accurate, supportive feedback. Do not quote the context directly.
+        Do not mention that the context exists. Use it only to inform your understanding.
 
-        Use the reference context below ONLY to help you understand the intended topic or meaning.
-        Do NOT mention or reference the context directly in your output.
-
-        --- REFERENCE CONTEXT ---
+        --- BEGIN CONTEXT ---
         {rag_context_combined}
-        --- END REFERENCE CONTEXT ---
+        --- END CONTEXT ---
         """
+
         user_prompt = f"""
         Question asked: "{question_text}"
         Child's speech: "{result.text}"

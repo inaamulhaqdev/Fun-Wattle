@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Alert, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { AudioRecorder, useAudioRecorder, useAudioRecorderState, RecordingPresets } from 'expo-audio';
 import { Audio } from 'expo-av';
-import { requestAudioPermissions } from '@/components/util/audioHelpers';
+import { requestAudioPermissions, startRecording, stopRecording } from '@/components/util/audioHelpers';
 import { API_URL } from '../config/api';
 import { useApp } from '@/context/AppContext';
 import { Buffer } from 'buffer';
@@ -32,49 +34,6 @@ interface ApiQuestion {
   order: number;
   question_data: string | object;
   created_at: string;
-}
-
-let recording: Audio.Recording | null = null;
-
-export async function startRecordingAV() {
-  try {
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: true,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-    });
-
-    const { recording: rec } = await Audio.Recording.createAsync(
-      Audio.RecordingOptionsPresets.HIGH_QUALITY
-    );
-
-    recording = rec;
-    return true;
-  } catch (err) {
-    console.error("Error starting recording:", err);
-    return false;
-  }
-}
-
-export async function stopRecordingAV() {
-  try {
-    if (!recording) return null;
-
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: false,
-      playThroughEarpieceAndroid: false,
-    });
-
-    return uri;
-  } catch (err) {
-    console.error("Error stopping recording:", err);
-    return null;
-  }
 }
 
 // Fetch questions for a specific exercise by ID
@@ -273,6 +232,10 @@ const DescribeExerciseComponent = () => {
   }[]>([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Audio recorder set up
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(audioRecorder);
 
   // Animation values
   const speechBubbleAnim = React.useRef(new Animated.Value(0)).current;
@@ -475,6 +438,57 @@ const DescribeExerciseComponent = () => {
   //   }
   // };
 
+  // Update coin balance by adding coins
+  const updateCoins = async (coinsToAdd: number) => {
+    console.log('=== UPDATE COINS CALLED ===');
+    console.log('Coins to add:', coinsToAdd);
+    console.log('childId:', childId);
+    
+    if (!childId) {
+      console.log('Missing childId, cannot update coins');
+      return;
+    }
+
+    try {
+      const url = `${API_URL}/profile/${childId}/coins/`;
+      console.log('Updating coins at:', url);
+      console.log('coinscount is:', coinsToAdd);
+
+      const requestData = {
+        amount: coinsToAdd
+      };
+
+      console.log('Request data:', requestData);
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        console.error('Failed to update coins:', response.status, response.statusText);
+        
+        try {
+          const errorText = await response.text();
+          console.error('Error response body:', errorText);
+        } catch (bodyError) {
+          console.error('Could not read error response body:', bodyError);
+        }
+      } else {
+        const data = await response.json();
+        console.log('Coins updated successfully:', data);
+      }
+    } catch (error) {
+      console.error('Error updating coins:', error);
+    }
+  };
+
   // Handle mic button press
   const handleMicPress = async () => {
     if (!isRecording) {
@@ -482,10 +496,10 @@ const DescribeExerciseComponent = () => {
       if (!hasPermission) return;
 
       setQuestionStartTime(Date.now());
-      const started = await startRecordingAV();
+      const started = await startRecording(audioRecorder);
       if (started) setIsRecording(true);
     } else {
-      const uri = await stopRecordingAV();
+      const uri = await stopRecording(audioRecorder);
       setIsRecording(false);
 
       if (!uri) return;
@@ -597,14 +611,6 @@ const DescribeExerciseComponent = () => {
     if (!text) return;
 
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-
-        shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: false, 
-      });
-
       const response = await fetch(`${API_URL}/AI/text_to_speech/`, {
         method: 'POST',
         headers: {
@@ -612,7 +618,7 @@ const DescribeExerciseComponent = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text,
+          text: text,
           voice: 'en-AU-NatashaNeural',
         }),
       });
@@ -636,7 +642,7 @@ const DescribeExerciseComponent = () => {
 
       await sound.playAsync();
     } catch (err) {
-      console.error('Error playing audio:', err);
+      console.error('Error playing feedback audio:', err);
     }
   };
 
@@ -665,16 +671,42 @@ const DescribeExerciseComponent = () => {
         const result = await response.json();
         console.log('Exercise submitted successfully:', result);
   
-        // Navigate back to dashboard after successful submission
-        router.push({
-          pathname: '/child-dashboard',
-          params: { completedTaskId: exerciseId }
-        });
+        // Award 50 coins for completing the entire speaking exercise
+        await updateCoins(50);
+
+        // Show completion screen for 3 seconds before navigating back
+        setTimeout(() => {
+          router.push({
+            pathname: '/child-dashboard',
+            params: { completedTaskId: exerciseId }
+          });
+        }, 3000);
   
       } catch (error) {
         console.error('Error submitting exercise:', error);
       }
     }
+  };
+
+  // Handle back button - return to dashboard without saving
+  const handleBack = () => {
+    Alert.alert(
+      'Leave Exercise?',
+      'Your progress will not be saved. Are you sure you want to go back?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: () => {
+            router.push('/child-dashboard');
+          }
+        }
+      ]
+    );
   };
 
   // Show loading screen while fetching exercise data
@@ -692,24 +724,37 @@ const DescribeExerciseComponent = () => {
   if (isCompleted) {
     return (
       <View style={styles.completedContainer}>
-        <Text style={styles.completedText}>Exercise Completed! 🎉</Text>
-        <Text style={styles.completedSubtext}>Great job describing the beach scene!</Text>
+        <Text style={styles.completedText}>Great Job!</Text>
+        <Text style={styles.completedSubtext}>You completed the speaking exercise!</Text>
+        <View style={styles.coinRewardContainer}>
+          <Text style={styles.coinRewardText}>You earned</Text>
+          <View style={styles.coinAmountContainer}>
+            <MaterialCommunityIcons name="star-circle" size={40} color="#FFD700" />
+            <Text style={styles.coinAmountText}>50 Coins!</Text>
+          </View>
+        </View>
+        <Text style={styles.returningText}>Returning to dashboard...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Progress indicator */}
-      <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>Question {currentQuestion + 1} of {exercise.questions.length}</Text>
-        <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${((currentQuestion + 1) / exercise.questions.length) * 100}%` }
-            ]}
-          />
+      {/* Header with back button and progress indicator */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <FontAwesome name="arrow-left" size={24} color="#666" />
+        </TouchableOpacity>
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>Question {currentQuestion + 1} of {exercise.questions.length}</Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${((currentQuestion + 1) / exercise.questions.length) * 100}%` }
+              ]}
+            />
+          </View>
         </View>
       </View>
 
@@ -841,9 +886,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#E8F4FD',
   },
-  progressContainer: {
-    padding: 20,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  progressContainer: {
+    flex: 1,
+    paddingVertical: 10,
   },
   progressText: {
     fontSize: 16,
@@ -1047,6 +1113,40 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
     textAlign: 'center',
+    marginBottom: 30,
+  },
+  coinRewardContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+    padding: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  coinRewardText: {
+    fontSize: 20,
+    color: '#666',
+    marginBottom: 10,
+  },
+  coinAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  coinAmountText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  returningText: {
+    fontSize: 16,
+    color: '#999',
+    marginTop: 20,
+    fontStyle: 'italic',
   },
   loadingContainer: {
     flex: 1,

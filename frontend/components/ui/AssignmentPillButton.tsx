@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useApp } from '@/context/AppContext';
 
 interface CounterProps {
   value: number;
@@ -7,10 +8,12 @@ interface CounterProps {
 }
 
 export default function Counter({ value, onChange }: CounterProps) {
+  const { darkMode } = useApp();
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Number of question retries</Text>
-      <View style={styles.counter}>
+      <Text style={[styles.label, { color: darkMode ? '#fff' : '#000' }]}>Number of question retries</Text>
+      <View style={[styles.counter, { backgroundColor: darkMode ? '#545454ff' : '#fff' }]}>
 
         {/* Decrement */}
         <TouchableOpacity
@@ -21,7 +24,7 @@ export default function Counter({ value, onChange }: CounterProps) {
         </TouchableOpacity>
 
         {/* Increment */}
-        <Text style={styles.counterValue}>{value}</Text>
+        <Text style={[styles.counterValue, { color: darkMode ? '#fff' : '#000' }]}>{value}</Text>
         <TouchableOpacity
           style={styles.counterButton}
           onPress={() => onChange(value + 1)}

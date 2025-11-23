@@ -1,16 +1,17 @@
-import React, { use, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { router } from 'expo-router';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 // import { useLocalSearchParams } from 'expo-router'; // Commented out - will be used with route params
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-//import { API_URL } from '../config/api';
+import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
 
 const MascotCustomization = () => {
   const { session } = useApp();
+  const childId = session?.profile_id || '';
   // const { currentBodyType, currentAccessoryId } = useLocalSearchParams();
 
   // const saveMascotData = async (mascotData: { bodyType: string; accessoryId?: number }) => {
@@ -48,56 +49,58 @@ const MascotCustomization = () => {
     console.log('Mascot data updated locally:', mascotData);
   };
 
-  // Function to fetch child's coin balance from backend (currenty using hardocoded value)
-  // const fetchCoinBalance = async () => {
-  //   try {
-  //     if (!session?.access_token) {
-  //       Alert.alert('Error', 'You must be authorized to perform this action');
-  //       return;
-  //     }
-  //     const response = await fetch(`${API_URL}/children/current/coins`, {
-  //       method: 'GET',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': `Bearer ${session.access_token}`,
-  //       },
-  //     });
+  // Function to fetch child's coin balance from backend
+  /*
+  const fetchCoinBalance = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/profile/${childId}/coins`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setCoinBalance(data.coins || 0);
-  //       console.log('Coin balance fetched successfully:', data.coins);
-  //     } else {
-  //       console.warn('Failed to fetch coin balance:', response.status);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching coin balance:', error);
-  //   }
-  // };
+      if (response.ok) {
+        const data = await response.json();
+        setCoinBalance(data.coins || 0);
+        console.log('Coin balance fetched successfully:', data.coins);
+      } else {
+        console.warn('Failed to fetch coin balance:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching coin balance:', error);
+    }
+  }, [childId]);
+  */
 
-  // Function to update child's coin balance in backend
-  // const updateCoinBalance = async (newBalance: number) => {
-  //   try {
-  //     const response = await fetch(`${API_URL}/children/current/coins`, {
-  //       method: 'PUT',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': `Bearer ${session.access_token}`,
-  //       },
-  //       body: JSON.stringify({
-  //         coins: newBalance
-  //       }),
-  //     });
 
-  //     if (response.ok) {
-  //       console.log('Coin balance updated successfully:', newBalance);
-  //     } else {
-  //       console.warn('Failed to update coin balance:', response.status);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error updating coin balance:', error);
-  //   }
-  // };
+
+  // Function to update child's coin balance in backend (deduct coins for purchase)
+  const updateCoinBalance = async (coinsToDeduct: number) => {
+    try {
+      const response = await fetch(`${API_URL}/profile/${childId}/coins/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: coinsToDeduct  // Send positive value for adding coins
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Coin balance updated successfully. Deducted:', coinsToDeduct);
+        // Fetch updated balance to ensure sync
+        await fetchCoinBalance();
+      } else {
+        console.warn('Failed to update coin balance:', response.status);
+        Alert.alert('Error', 'Failed to update coin balance. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating coin balance:', error);
+      Alert.alert('Error', 'An error occurred while updating coin balance.');
+    }
+  };
 
   // Function to fetch child's unlocked accessories from backend
   // const fetchUnlockedAccessories = async () => {
@@ -137,13 +140,26 @@ const MascotCustomization = () => {
     unlocked: boolean
   } | null>(null);
   const [selectedBody, setSelectedBody] = useState(bodyOptions[0]); // Default to first body option
-  const [coinBalance, setCoinBalance] = useState(120); // HARDCODED - should be fetched from backend
+  const [coinBalance, setCoinBalance] = useState(1150); // Initial coin balance for testing
   const [unlockedAccessories, setUnlockedAccessories] = useState<number[]>([]); // Track unlocked accessory IDs
 
   // Fetch coin balance on component mount
-  // useEffect(() => {
-  //   fetchCoinBalance();
-  // }, []);
+  /*
+  useEffect(() => {
+    if (childId) {
+      fetchCoinBalance();
+    }
+  }, [childId, fetchCoinBalance]);
+  */
+
+  // Refetch coin balance when screen comes into focus (e.g., after completing an exercise)
+  useFocusEffect(
+    useCallback(() => {
+      if (childId) {
+        fetchCoinBalance();
+      }
+    }, [childId, fetchCoinBalance])
+  );
 
   const handleHome = () => {
     router.push({
@@ -177,21 +193,22 @@ const MascotCustomization = () => {
     return unlockedAccessories.includes(accessoryId);
   };
 
-  const purchaseAccessory = (accessory: any) => {
+  const purchaseAccessory = async (accessory: any) => {
     if (coinBalance >= accessory.cost && !isAccessoryUnlocked(accessory.id)) {
-      const newBalance = coinBalance - accessory.cost;
-      setCoinBalance(newBalance);
+      // Update coin balance in backend first
+      await updateCoinBalance(accessory.cost);
+      
+      // Update local state
       setUnlockedAccessories([...unlockedAccessories, accessory.id]);
       setSelectedAccessory({...accessory, unlocked: true});
-
-      // Update coin balance in backend
-      // updateCoinBalance(newBalance);
 
       // Save mascot data with new accessory
       saveMascotData({
         bodyType: selectedBody.name.toLowerCase(),
         accessoryId: accessory.id
       });
+    } else if (coinBalance < accessory.cost) {
+      Alert.alert('Insufficient Coins', `You need ${accessory.cost - coinBalance} more coins to purchase this accessory.`);
     }
   };
 

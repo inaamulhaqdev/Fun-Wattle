@@ -12,6 +12,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 
 const { width, height } = Dimensions.get('window');
@@ -306,6 +307,7 @@ export default function MultipleDragExercise() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
+  const [totalCoinsEarned, setTotalCoinsEarned] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -452,6 +454,56 @@ export default function MultipleDragExercise() {
     loadExerciseData();
   }, [childId, exerciseId, fallbackExercise]); // loadSavedProgress is called inside useEffect so no need to include it
 
+  // Update coin balance by adding coins
+  const updateCoins = async (coinsToAdd: number) => {
+    console.log('=== UPDATE COINS CALLED ===');
+    console.log('Coins to add:', coinsToAdd);
+    console.log('childId:', childId);
+    
+    if (!childId) {
+      console.log('Missing childId, cannot update coins');
+      return;
+    }
+
+    try {
+      const url = `${API_URL}/profile/${childId}/coins/`;
+      console.log('Updating coins at:', url);
+
+      const requestData = {
+        amount: coinsToAdd
+      };
+
+      console.log('Request data:', requestData);
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        console.error('Failed to update coins:', response.status, response.statusText);
+        
+        try {
+          const errorText = await response.text();
+          console.error('Error response body:', errorText);
+        } catch (bodyError) {
+          console.error('Could not read error response body:', bodyError);
+        }
+      } else {
+        const data = await response.json();
+        console.log('Coins updated successfully:', data);
+      }
+    } catch (error) {
+      console.error('Error updating coins:', error);
+    }
+  };
+
   // Submit question result to backend
   const submitQuestionResult = async (questionId: string, correct: boolean, timeSpent: number, attempts: number) => {
     console.log('=== SUBMIT QUESTION RESULT CALLED ===');
@@ -544,6 +596,11 @@ export default function MultipleDragExercise() {
 
     if (isCorrect) {
       setScore(score + 10);
+      
+      // Award 10 coins for correct answer
+      updateCoins(10);
+      setTotalCoinsEarned(prev => prev + 10);
+      
       setShowCelebration(true);
 
       setTimeout(() => {
@@ -703,6 +760,7 @@ export default function MultipleDragExercise() {
     // Reset the entire exercise
     setCurrentQuestion(0);
     setScore(0);
+    setTotalCoinsEarned(0);
     setAnswered(false);
     setSelectedOption(null);
     setRetryCount(0);
@@ -917,6 +975,15 @@ export default function MultipleDragExercise() {
               <Text style={styles.accuracyText}>
                 {Math.round(finalAccuracy * 100)}% accuracy
               </Text>
+            </View>
+
+            {/* Coins Earned Display */}
+            <View style={styles.coinRewardContainer}>
+              <Text style={styles.coinRewardText}>You earned</Text>
+              <View style={styles.coinAmountContainer}>
+                <MaterialCommunityIcons name="star-circle" size={40} color="#FFD700" />
+                <Text style={styles.coinAmountText}>{totalCoinsEarned} Coins!</Text>
+              </View>
             </View>
 
             {/* Buttons */}
@@ -1364,6 +1431,34 @@ const styles = StyleSheet.create({
   accuracyText: {
     fontSize: 16,
     color: '#666',
+  },
+  coinRewardContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    padding: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    width: '100%',
+  },
+  coinRewardText: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 10,
+  },
+  coinAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  coinAmountText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFD700',
   },
   completionButtons: {
     flexDirection: 'row',

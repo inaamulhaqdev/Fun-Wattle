@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View, Alert } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View, Alert, Image } from "react-native";
 import { Text, DefaultTheme, Provider as PaperProvider, ActivityIndicator } from "react-native-paper";
 import { ActivityCards } from "@/components/ui/ActivityCards";
 import { UnitCard } from "@/components/ui/UnitCard";
 import { useLocalSearchParams } from "expo-router";
 import { useApp } from "@/context/AppContext";
 import { API_URL } from "../config/api";
+import { Asset } from 'expo-asset';
 
 interface Exercise {
   id: string;
@@ -43,6 +44,10 @@ export default function LearningUnitDetails() {
   const [progress, setProgress] = useState(0);
   const [unitAccuracy, setUnitAccuracy] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const [bgLoaded, setBgLoaded] = useState(false);
+
+  const { darkMode } = useApp();
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -104,16 +109,35 @@ export default function LearningUnitDetails() {
     fetchExercises();
   }, [id, childId]);
 
+  useEffect(() => {
+    async function loadBackground() {
+      try {
+        const asset = Asset.fromModule(
+          darkMode
+            ? require('@/assets/images/child-dashboard-background-dark.jpg')
+            : require('@/assets/images/child-dashboard-background.jpg')
+        );
+        await asset.downloadAsync();
+        setBgLoaded(true);
+      } catch (err) {
+        console.error("Image preload failed", err);
+        setBgLoaded(true);
+      }
+    }
+
+    loadBackground();
+  }, [darkMode]);
+
   function formatTime(seconds: number) {
     if (seconds === undefined) return "0";
     if (seconds >= 60) return `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
     return `${seconds} sec`;
   }
 
-  if (loading) {
+  if (loading || !bgLoaded) {
     return (
-      <PaperProvider theme={DefaultTheme}>
-        <View style={styles.loadingContainer}>
+      <PaperProvider>
+        <View style={[styles.loadingContainer, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
           <ActivityIndicator size="large" color="#FD902B" />
         </View>
       </PaperProvider>
@@ -123,17 +147,31 @@ export default function LearningUnitDetails() {
   return (
     <PaperProvider theme={DefaultTheme}>
       <View style={styles.container}>
+        {/* Background Image */}
+        <Image
+          source={
+            darkMode
+              ? require('@/assets/images/child-dashboard-background-dark.jpg')
+              : require('@/assets/images/child-dashboard-background.jpg')
+          }
+          style={styles.backgroundImage}
+          resizeMode="cover"
+          onLoad={() => {
+            console.log('Background image loaded');
+          }}
+        />
+
         <TouchableOpacity>
           <UnitCard
             title={`${title} \n ${category}`}
             duration={formatTime(totalDuration)}
             progress={progress}
-            accuracy={`${(unitAccuracy * 100).toFixed(0)}%`}
+            accuracy={`${unitAccuracy.toFixed(0)}%`}
           />
         </TouchableOpacity>
 
-        <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600", fontSize: 20, marginLeft: 13 }}>
-          Activities
+        <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600", fontSize: 20, marginLeft: 13, color: darkMode ? "white" : "black" }}>
+          Exercises
         </Text>
 
         {loading ? (
@@ -149,7 +187,7 @@ export default function LearningUnitDetails() {
                 completed={exercise.completed ? "Completed" : "Not started"}
                 correct={exercise.num_correct}
                 incorrect={exercise.num_incorrect}
-                accuracy={exercise.accuracy != null ? `${(exercise.accuracy * 100).toFixed(0)}%` : ""}
+                accuracy={exercise.accuracy != null ? `${exercise.accuracy.toFixed(0)}%` : ""}
               />
             ))}
           </ScrollView>
@@ -164,14 +202,24 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    backgroundColor: "#fff7de",
+  },
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '120%',
+    height: '120%',
+    objectFit: "cover",
+    opacity: 0.5
   },
   scrollContainer: {
     paddingBottom: 16,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#fff7de",
+    backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
   },

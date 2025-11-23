@@ -1,50 +1,170 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Alert, Text, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from 'react-native-paper';
-import { router } from 'expo-router';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
+import { router, Stack } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { useApp } from "@/context/AppContext";
 
-export default function Settings() {
+const SettingsPage = () => {
+
+  const { darkMode, setDarkMode } = useApp(); 
+
+  type SettingItemProps = {
+    title: string;
+    subtitle?: string;
+    onPress?: () => void;
+    rightComponent?: React.ReactNode;
+  };
+
+  const SettingItem: React.FC<SettingItemProps> = ({ title, subtitle, onPress, rightComponent }) => (
+    <TouchableOpacity style={styles.settingItem} onPress={onPress}>
+      <View style={styles.settingContent}>
+        <Text style={[styles.settingTitle, { color: darkMode ? '#fff' : '#000' }]}>{title}</Text>
+        {subtitle && <Text style={[styles.settingSubtitle, { color: darkMode ? '#fff' : '#000' }]}>{subtitle}</Text>}
+      </View>
+      {rightComponent || <Feather name="chevron-right" size={20} color={darkMode ? '#fff' : '#000'} />}
+    </TouchableOpacity>
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView}>
-        <Button
-          mode="contained"
-          onPress={() => router.push('/parent/add-child-details')}
-          style={styles.actionButton}
-          contentStyle={{ paddingVertical: 8 }}
-          textColor="white"
-        >
-          Add Child
-        </Button>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settings</Text>
+        </View>
 
-        <Button
-          mode="contained"
-          onPress={() => router.push('/account-selection')}
-          style={styles.actionButton}
-          contentStyle={{ paddingVertical: 8 }}
-          textColor="white"
-        >
-          Change Profile
-        </Button>
-      </ScrollView>
-    </SafeAreaView>
+        <ScrollView style={[styles.content, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+          {/* General Settings */}
+          <View style={[styles.section, { backgroundColor: darkMode ? '#393939ff' : '#fff' }]}>
+            <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#000' }]}>General</Text>
+
+            <SettingItem
+              title="Switch Child"
+              onPress={() => router.push('/switch-child')}
+            />
+
+            <SettingItem
+              title="Add Child"
+              onPress={() => router.push('/parent/add-child-details')}
+            />
+
+            <SettingItem
+              title="Add Therapist"
+              onPress={() => router.push('/link-therapist')}
+            />
+
+            <SettingItem
+              title="Change Profile"
+              onPress={() => router.push('/account-selection')}
+            />
+          </View>
+
+          {/* Accessibility Settings */}
+          <View style={[styles.section, { backgroundColor: darkMode ? '#393939ff' : '#fff' }]}>
+            <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#000' }]}>Accessibility</Text>
+            
+            <SettingItem
+              title="Dark Mode"
+              subtitle="Switch between light and dark mode"
+              rightComponent={
+                <Switch
+                  value={darkMode}
+                  onValueChange={setDarkMode}
+                  trackColor={{ false: '#ddd', true: '#4CAF50' }}
+                  thumbColor={ darkMode ? '#fff' : '#f4f3f4' }
+                />
+              }
+            />
+          </View>
+
+          {/* Logout Section */}
+          <View style={[styles.section, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+            <TouchableOpacity style={styles.logoutButton} onPress={() => {/* TODO: Handle logout */}}>
+              <Text style={styles.logoutText}>Sign Out</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom padding */}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </View>
+    </>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  actionButton: {
-    marginHorizontal: 20,
-    marginVertical: 20,
+  header: {
     backgroundColor: '#fd9029',
-  }
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    paddingTop: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  content: {
+    flex: 1,
+  },
+  section: {
+    backgroundColor: '#fff',
+    marginTop: 20,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    paddingVertical: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  settingContent: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 2,
+  },
+  settingSubtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  logoutButton: {
+    backgroundColor: '#ff4444',
+    marginHorizontal: 16,
+    marginVertical: 16,
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
 });
+
+export default SettingsPage;

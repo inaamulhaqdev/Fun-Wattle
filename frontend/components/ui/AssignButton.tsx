@@ -16,7 +16,7 @@ const AssignButton = ({ onPress }: AssignButtonProps) => (
       contentStyle={{ paddingVertical: 10, paddingHorizontal: 20 }}
       labelStyle={{ fontSize: 16, fontWeight: 'bold' }}
     >
-      Assign Activity
+      Assign Learning Unit
     </Button>
   </View>
 );
