@@ -25,6 +25,10 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Web Deployment
+
+You can access the deployed web version of the frontend application at the following URL: [https://funwattle-web.onrender.com/](https://funwattle-web.onrender.com/)
+
 
 ## Learn more
 
