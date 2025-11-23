@@ -18,4 +18,8 @@ This is where the API logic occurs, and majority of the code functionality for t
 Where the views are set to a specific endpoint, so that they can be called in the API.
 - [controller/test](./controller/test/)
 The test files location. See more in the [README.md](./controller/test/README.md)
-
+- [controller/views/azureAIViews](./controller/views/azureAIViews)
+assess_speech handles speech assessment end-to-end: converting audio, running Azure STT + pronouciation scoring, embedding the transcript, checking semantic correctness via pgvector, and generating GPT feedback.
+text_to_speech converts texts into Azure speech using SSML and returns an MP3 audio response
+- [controller/backend/ai-pipline](./controller/backend/ai-pipline)
+This folder contains Python scripts that load all questions, expected answers and RAG resources, convert them into embeddings using Azure OpenAI, and upload those vectors into Supabase(pgvector) for retrieval during speeech assessment.
