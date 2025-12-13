@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, StyleSheet, Alert, Platform } from 'react-native';
-import { Card, IconButton, Divider, Text, Snackbar } from 'react-native-paper';
+import { ScrollView, View, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
+import { Card, IconButton, Divider, Text, Snackbar, Button } from 'react-native-paper';
 import AssignButton from '../ui/AssignButton';
 import AssignmentStatus from '../ui/AssignmentOverlay';
 import { LearningUnit, Exercise } from '../../types/learningUnitTypes';
 import { API_URL } from '@/config/api';
 import { useApp } from '../../context/AppContext';
+import { router } from 'expo-router';
 
 type DetailProps = {
   selectedItem: LearningUnit;
@@ -155,6 +156,25 @@ export default function DetailView({
         <Text variant="titleMedium" style={[styles.category, { color: darkMode ? '#fff' : '#000' }]}>{selectedItem.category}</Text>
         <Text variant="bodyMedium" style={[styles.description, { color: darkMode ? '#fff' : '#000' }]}>{selectedItem.description}</Text>
 
+      {/* View Full Details Button */}
+      <Button
+        mode="contained"
+        icon="eye"
+        style={styles.viewDetailsButton}
+        onPress={() =>
+          router.push({
+            pathname: "/learning-unit-details",
+            params: {
+              id: selectedItem.id,
+              title: selectedItem.title,
+              category: selectedItem.category,
+            },
+          })
+        }
+      >
+        View Full Details
+      </Button>
+
       <Text variant="titleMedium" style={[styles.heading, { color: darkMode ? '#fff' : '#000' }]}>Exercises</Text>
       <Divider style={styles.divider} />
 
@@ -291,6 +311,12 @@ const styles = StyleSheet.create({
     paddingLeft: 6,
     fontWeight: '600',
     color: '#000'
+  },
+  viewDetailsButton: {
+    backgroundColor: '#FD902B',
+    marginVertical: 20,
+    marginHorizontal: 6,
+    borderRadius: 8,
   },
   category: {
     fontSize: 20,

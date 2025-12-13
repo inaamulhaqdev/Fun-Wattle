@@ -1,14 +1,30 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
+import { supabase } from '@/config/supabase';
 
 const SettingsPage = () => {
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
 
-  const { darkMode, setDarkMode } = useApp(); 
+  const { darkMode, setDarkMode } = useApp();
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        Alert.alert('Error', 'Failed to sign out. Please try again.');
+        console.error('Sign out error:', error);
+        return;
+      }
+      router.replace('/welcome');
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred.');
+      console.error('Sign out exception:', error);
+    }
+  }; 
 
   type SettingItemProps = {
     title: string;
@@ -103,8 +119,8 @@ const SettingsPage = () => {
         </View>
 
         {/* Logout Section */}
-        <View style={[styles.section, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
-          <TouchableOpacity style={styles.logoutButton} onPress={() => router.push('/account-selection')}>
+        <View style={[styles.section, { backgroundColor: darkMode ? '#1c1c1e' : '#fff' }]}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>

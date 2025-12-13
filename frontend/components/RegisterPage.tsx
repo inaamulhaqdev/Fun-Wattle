@@ -9,9 +9,10 @@ import { useRegistration } from '../context/RegistrationContext';
 const RegisterPage = () => {
   const { email, setEmail, password, setPassword, userType, setUserType } = useRegistration();
   const [showPassword, setShowPassword] = useState(false);
-
-  // Check if all fields are filled
-  const isFormValid = email.trim() !== '' && password.trim() !== '' && userType !== null;
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [userTypeError, setUserTypeError] = useState('');
+  const [touched, setTouched] = useState({ email: false, password: false, userType: false });
 
   // Clear form when component mounts
   useEffect(() => {
@@ -20,15 +21,89 @@ const RegisterPage = () => {
     setUserType(null);
   }, []);
 
-  const handleRegister = async () => {
-    if (!email || !password || !userType) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+  // Validate email format
+  const validateEmail = (email: string) => {
+    if (!email.trim()) {
+      return 'Email is required';
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  };
 
-    // Strong password policy: at least 14 characters, one uppercase letter, one number, one special character
-    if (password.length < 14 || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      Alert.alert('Error', 'Password must be at least 14 characters long and include at least one uppercase letter, one number, and one special character.');
+  // Validate password
+  const validatePassword = (password: string) => {
+    if (!password) {
+      return 'Password is required';
+    }
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number';
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return 'Password must contain at least one special character';
+    }
+    return '';
+  };
+
+  // Validate user type
+  const validateUserType = (userType: 'parent' | 'therapist' | null) => {
+    if (!userType) {
+      return 'Please select either Parent or Therapist';
+    }
+    return '';
+  };
+
+  // Real-time validation on change
+  useEffect(() => {
+    if (touched.email) {
+      setEmailError(validateEmail(email));
+    }
+  }, [email, touched.email]);
+
+  useEffect(() => {
+    if (touched.password) {
+      setPasswordError(validatePassword(password));
+    }
+  }, [password, touched.password]);
+
+  useEffect(() => {
+    if (touched.userType) {
+      setUserTypeError(validateUserType(userType));
+    }
+  }, [userType, touched.userType]);
+
+  // Check if all fields are valid
+  const isFormValid = 
+    email.trim() !== '' && 
+    password.trim() !== '' && 
+    userType !== null &&
+    validateEmail(email) === '' &&
+    validatePassword(password) === '' &&
+    validateUserType(userType) === '';
+
+  const handleRegister = async () => {
+    // Mark all fields as touched
+    setTouched({ email: true, password: true, userType: true });
+
+    // Validate all fields
+    const emailErr = validateEmail(email);
+    const passwordErr = validatePassword(password);
+    const userTypeErr = validateUserType(userType);
+
+    setEmailError(emailErr);
+    setPasswordError(passwordErr);
+    setUserTypeError(userTypeErr);
+
+    // If any validation fails, don't proceed
+    if (emailErr || passwordErr || userTypeErr) {
       return;
     }
 
@@ -54,27 +129,38 @@ const RegisterPage = () => {
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Email address</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, emailError && touched.email && styles.inputError]}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              setTouched({ ...touched, email: true });
+            }}
+            onBlur={() => setTouched({ ...touched, email: true })}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            placeholder=""
+            placeholder="your.email@example.com"
           />
+          {emailError && touched.email && (
+            <Text style={styles.errorText}>{emailError}</Text>
+          )}
+          {!emailError && email && touched.email && (
+            <Text style={styles.successText}>✓ Valid email</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Password</Text>
           <View style={styles.passwordContainer}>
             <TextInput
-              style={styles.passwordInput}
+              style={[styles.passwordInput, passwordError && touched.password && styles.inputError]}
               value={password}
               onChangeText={setPassword}
+              onBlur={() => setTouched({ ...touched, password: true })}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoCorrect={false}
-              placeholder=""
+              placeholder="Enter your password"
             />
             <TouchableOpacity
               style={styles.eyeButton}
@@ -87,6 +173,15 @@ const RegisterPage = () => {
               />
             </TouchableOpacity>
           </View>
+          <Text style={styles.helperText}>
+            Must be 8+ characters with uppercase, number, and special character (!@#$%^&*)
+          </Text>
+          {passwordError && touched.password && (
+            <Text style={styles.errorText}>{passwordError}</Text>
+          )}
+          {!passwordError && password && touched.password && (
+            <Text style={styles.successText}>✓ Password meets all requirements</Text>
+          )}
         </View>
 
       {/* User type selection */}
@@ -97,9 +192,13 @@ const RegisterPage = () => {
           <TouchableOpacity
             style={[
               styles.userTypeButton,
-              userType === 'parent' && styles.userTypeButtonSelected
+              userType === 'parent' && styles.userTypeButtonSelected,
+              userTypeError && touched.userType && styles.userTypeButtonError
             ]}
-            onPress={() => setUserType('parent')}
+            onPress={() => {
+              setUserType('parent');
+              setTouched({ ...touched, userType: true });
+            }}
           >
             <ParentIcon
               size={40}
@@ -116,9 +215,13 @@ const RegisterPage = () => {
           <TouchableOpacity
             style={[
               styles.userTypeButton,
-              userType === 'therapist' && styles.userTypeButtonSelected
+              userType === 'therapist' && styles.userTypeButtonSelected,
+              userTypeError && touched.userType && styles.userTypeButtonError
             ]}
-            onPress={() => setUserType('therapist')}
+            onPress={() => {
+              setUserType('therapist');
+              setTouched({ ...touched, userType: true });
+            }}
           >
             <TherapistIcon
               size={40}
@@ -132,7 +235,20 @@ const RegisterPage = () => {
             </Text>
           </TouchableOpacity>
         </View>
+        {userTypeError && touched.userType && (
+          <Text style={styles.errorText}>{userTypeError}</Text>
+        )}
       </View>
+
+        {/* Validation Summary */}
+        {!isFormValid && (email || password || userType) && (
+          <View style={styles.validationSummary}>
+            <Text style={styles.validationSummaryTitle}>Please complete the following:</Text>
+            {validateEmail(email) && <Text style={styles.validationSummaryItem}>• Valid email address</Text>}
+            {validatePassword(password) && <Text style={styles.validationSummaryItem}>• Password requirements (8+ chars, uppercase, number, special)</Text>}
+            {validateUserType(userType) && <Text style={styles.validationSummaryItem}>• Select Parent or Therapist</Text>}
+          </View>
+        )}
 
         {/* Sign Up Button */}
         <TouchableOpacity
@@ -147,7 +263,7 @@ const RegisterPage = () => {
             styles.signUpButtonText,
             isFormValid && styles.signUpButtonTextActive
           ]}>
-            Sign Up
+            {isFormValid ? 'Sign Up' : 'Complete All Fields to Sign Up'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -171,6 +287,77 @@ const styles = StyleSheet.create({
   backIcon: {
     fontSize: 24,
     color: '#000',
+  },
+  formSection: {
+    flex: 1,
+    marginTop: 50,
+  },
+  formTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 30,
+    textAlign: 'left',
+  },
+  inputGroup: {
+    marginBottom: 24,
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  input: {
+    height: 50,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  inputError: {
+    borderColor: '#dc3545',
+    borderWidth: 2,
+  },
+  errorText: {
+    color: '#dc3545',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  successText: {
+    color: '#28a745',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+    fontWeight: '600',
+  },
+  helperText: {
+    color: '#666',
+    fontSize: 11,
+    marginTop: 4,
+    marginLeft: 4,
+    fontStyle: 'italic',
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    height: 50,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    paddingRight: 50,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
   },
   userTypeSection: {
     paddingTop: 20,
@@ -203,7 +390,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     borderColor: '#fd9029',
   },
-
+  userTypeButtonError: {
+    borderColor: '#dc3545',
+  },
   userTypeText: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -212,52 +401,25 @@ const styles = StyleSheet.create({
   userTypeTextSelected: {
     color: '#fd9029',
   },
-  formSection: {
-    flex: 1,
-    marginTop: 50
+  validationSummary: {
+    backgroundColor: '#fff3cd',
+    borderColor: '#ffc107',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 20,
   },
-  formTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 30,
-    textAlign: 'left',
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 16,
-    color: '#000',
+  validationSummaryTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#856404',
     marginBottom: 8,
-    fontWeight: '500',
   },
-  input: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  passwordContainer: {
-    position: 'relative',
-  },
-  passwordInput: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingRight: 50,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 15,
-    top: 15,
+  validationSummaryItem: {
+    fontSize: 12,
+    color: '#856404',
+    marginLeft: 8,
+    marginTop: 4,
   },
   signUpButton: {
     backgroundColor: '#ccc',
@@ -268,10 +430,7 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   signUpButtonActive: {
-    backgroundColor: '#fd9029', // Blue color when form is valid
-  },
-  signUpButtonDisabled: {
-    backgroundColor: '#eee',
+    backgroundColor: '#fd9029',
   },
   signUpButtonText: {
     color: '#888',
@@ -279,7 +438,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   signUpButtonTextActive: {
-    color: '#fff', // White text when button is active
+    color: '#fff',
   },
 });
 

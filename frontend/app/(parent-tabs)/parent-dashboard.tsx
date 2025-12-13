@@ -40,6 +40,13 @@ export default function ParentDashboard() {
 
   const { darkMode } = useApp();
 
+  // Redirect to welcome if no session
+  useEffect(() => {
+    if (!session) {
+      router.replace('/welcome');
+    }
+  }, [session]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setGreeting(getGreeting());
@@ -50,11 +57,13 @@ export default function ParentDashboard() {
 
   const loading = loadingProfiles || loadingAssignments;
 
-  const userId = session.user.id;
+  const userId = session?.user?.id;
 
   // Get profiles
   useEffect(() => {
     const fetchProfiles = async () => {
+      if (!userId) return;
+      
       try {
         if (!session) {
           Alert.alert('No active session', 'Please log in again.');
@@ -114,9 +123,11 @@ export default function ParentDashboard() {
     };
 
     fetchProfiles();
-  }, [childId, profileId, session]);
+  }, [childId, profileId, session, userId]);
 
   const fetchAssignments = React.useCallback(async () => {
+    if (!userId) return;
+    
     try {
 
       const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
@@ -187,6 +198,11 @@ export default function ParentDashboard() {
       fetchAssignments();
     }, [fetchAssignments])
   );
+
+  // Guard: return early if no session after all hooks
+  if (!session) {
+    return null;
+  }
 
   if (loading) {
     return (

@@ -6,10 +6,12 @@ import { supabase } from '../config/supabase';
 import { API_URL } from '../config/api';
 
 import { useChild } from '@/context/ChildContext';
+import { useApp } from '@/context/AppContext';
 
 export default function AddChildExtraQs() {
 
   const { childName, dateOfBirth, childTopGoal, childHomePracticeFrequency, childPracticeDuration, childPreferredActivities, childMotivations, childAttendedTherapist } = useChild();
+  const { selectChild } = useApp();
 
   const handleBack = () => {
     router.back();
@@ -65,6 +67,11 @@ export default function AddChildExtraQs() {
         Alert.alert('Profile Creation Error. Please try again and contact support if the issue persists.');
         return;
       }
+
+      const newChildProfile = await response.json();
+      
+      // Set the newly created child as the active child
+      await selectChild(newChildProfile);
 
       // Navigate to child added confirmation
       router.replace('/child-onboarding/child-added');

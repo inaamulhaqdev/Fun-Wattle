@@ -8,7 +8,7 @@ import { supabase } from '@/config/supabase';
 import { API_URL } from '@/config/api';
 import { Account } from '@/components/AccountSelectionPage';
 import { useApp } from '@/context/AppContext';
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, router } from "expo-router";
 import { AssignedLearningUnit } from "@/types/learningUnitTypes";
 import { fetchUnitStats } from "@/components/util/fetchUnitStats";
 
@@ -42,6 +42,13 @@ export default function TherapistDashboard() {
 
   const [greeting, setGreeting] = useState(getGreeting());
 
+  // Redirect to welcome if no session
+  useEffect(() => {
+    if (!session) {
+      router.replace('/welcome');
+    }
+  }, [session]);
+
   // every 60 seconds, checks if the greeting should be changed according to time (eg. app left open, time switches from morning to midday; greeting changes to 'Good afternoon' without reload)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -63,6 +70,8 @@ export default function TherapistDashboard() {
         }
 
         const user = session.user;
+        console.log('Fetching profiles for therapist user ID:', user.id);
+        
         const response = await fetch(`${API_URL}/profile/${user.id}/list/`, {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`
@@ -71,6 +80,7 @@ export default function TherapistDashboard() {
         if (!response.ok) throw new Error(`Failed to fetch profiles (${response.status})`);
 
         const data = await response.json();
+        console.log('Therapist profiles response:', data);
 
         // Transform API data to match frontend Account type
         const transformedData: Account[] = data.map((profile: any) => ({
@@ -80,10 +90,13 @@ export default function TherapistDashboard() {
           isLocked: !!profile.pin_hash,
         }));
 
+        console.log('Transformed data:', transformedData);
+
         const therapistProfile = transformedData.find(profile => profile.type === 'therapist');
         if (therapistProfile) setTherapistName(therapistProfile.name);
 
         const childrenFull = transformedData.filter(p => p.type === 'child');
+        console.log('Children assigned to therapist:', childrenFull);
         setChildList(childrenFull);
         if (childrenFull.length > 0) {
           const initialChild = childrenFull[0];
@@ -92,6 +105,7 @@ export default function TherapistDashboard() {
             name: initialChild.name,
             type: initialChild.type,
           });
+          setSelectedChild(initialChild.name);
         }
 
       } catch (error) {
@@ -105,20 +119,22 @@ export default function TherapistDashboard() {
     fetchProfiles();
   }, []);
 
-  const userId = session.user.id
+  const userId = session?.user?.id;
   const fetchAssignments = React.useCallback(async () => {
+    if (!childId) return;
+    
     try {
       if (!firstLoad) setLoadingAssignments(true);
 
-      const assignmentsResp = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`);
+      // Fetch assignments directly for the child instead of filtering therapist's assignments
+      const assignmentsResp = await fetch(`${API_URL}/assignment/${childId}/assigned_to/`);
 
       if (!assignmentsResp.ok) throw new Error('Failed to fetch data');
 
       const assignments = await assignmentsResp.json();
+      console.log('Child assignments:', assignments);
 
-      const childAssignments = assignments.filter((a: any) => a.assigned_to.id === childId);
-
-      const assignedUnitsDetails: AssignedLearningUnit[] = childAssignments.map((assignment: any) => ({
+      const assignedUnitsDetails: AssignedLearningUnit[] = assignments.map((assignment: any) => ({
         assignmentId: assignment.id,
         learningUnitId: assignment.learning_unit.id,
         title: assignment.learning_unit.title || '',
@@ -193,6 +209,11 @@ export default function TherapistDashboard() {
       setTimeout(() => setSwitchChild(false), 5000);
     }
   };
+
+  // Guard: return early if no session after all hooks
+  if (!session) {
+    return null;
+  }
 
   if (firstLoad || loadingProfiles) {
     return (

@@ -37,6 +37,8 @@ def get_chat_rooms(request, profile_id):
             'name': name,
             'profile_picture': profile_picture,
             'last_message': last_message_content,
+            'child_name': chat_room.child.name,
+            'child_id': str(chat_room.child.id),
         })
 
     return Response(data, status=200)
@@ -76,23 +78,78 @@ def chat_messages(request, chat_room_id):
         return Response(serializer.data, status=201)
 
 
+@api_view(['POST'])
+def create_chat_room(request):
+    """
+    Create a chat room between two profiles (parent/therapist) for a specific child.
+    Request body: {
+        "profile_1_id": "uuid",  # Parent or Therapist
+        "profile_2_id": "uuid",  # Therapist or Parent
+        "child_id": "uuid"       # Child profile
+    }
+    """
+    profile_1_id = request.data.get('profile_1_id')
+    profile_2_id = request.data.get('profile_2_id')
+    child_id = request.data.get('child_id')
+
+    if not profile_1_id or not profile_2_id or not child_id:
+        return Response({'error': 'Missing required fields: profile_1_id, profile_2_id, child_id'}, status=400)
+
+    # Validate profiles
+    profile_1 = Profile.objects.filter(id=profile_1_id).first()
+    if not profile_1 or profile_1.profile_type not in ['parent', 'therapist']:
+        return Response({'error': 'Invalid profile_1_id or profile must be parent/therapist'}, status=400)
+
+    profile_2 = Profile.objects.filter(id=profile_2_id).first()
+    if not profile_2 or profile_2.profile_type not in ['parent', 'therapist']:
+        return Response({'error': 'Invalid profile_2_id or profile must be parent/therapist'}, status=400)
+
+    child_profile = Profile.objects.filter(id=child_id, profile_type='child').first()
+    if not child_profile:
+        return Response({'error': 'Invalid child_id or profile must be a child'}, status=404)
+
+    # Check if chat room already exists
+    existing_room = Chat_Room.objects.filter(
+        messenger_1__in=[profile_1, profile_2],
+        messenger_2__in=[profile_1, profile_2],
+        child=child_profile
+    ).first()
+
+    if existing_room:
+        return Response({'message': 'Chat room already exists', 'chat_room_id': existing_room.id}, status=200)
+
+    # Create chat room
+    room_name = f"{child_profile.name}'s care team"
+    chat_room = Chat_Room.objects.create(
+        messenger_1=profile_1,
+        messenger_2=profile_2,
+        child=child_profile,
+        room_name=room_name
+    )
+
+    return Response({
+        'message': 'Chat room created successfully',
+        'chat_room_id': chat_room.id,
+        'room_name': room_name
+    }, status=201)
+
+
 def create_chats(profile):
     # Create chat room between a therapist and parent
     user = User_Profile.objects.get(profile=profile)
     children = User_Profile.objects.filter(user_id =user.user_id, profile_id__profile_type='child')
     for child in children:
         existing_chat = Chat_Room.objects.filter(
-            child_profile=child.profile).first()
+            child=child.profile).first()
         if existing_chat: continue
-        therapist_user = User_Profile.objects.get(user=therapist, profile__profile_type='child').first()
-        therapist_profile = User_Profile.objects.get(user=therapist_user, profile__profile_type='therapist').profile
+        therapist_user = User_Profile.objects.filter(user=user, profile__profile_type='therapist').first()
+        if not therapist_user: continue
+        therapist_profile = therapist_user.profile
         Chat_Room.objects.create(
             messenger_1 = profile,
             messenger_2 = therapist_profile,
-            child = child,
-            room_name = child.name
-        )
-
-        
+            child = child.profile,
+            room_name = f"{child.profile.name}'s care team"
+        )        
 
 

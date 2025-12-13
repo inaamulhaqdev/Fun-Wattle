@@ -16,9 +16,9 @@ export interface Account {
 }
 
 const AccountSelectionPage = () => {
-  const { session, setProfile } = useApp(); // Here useApp provides session and lets us set profile and child id's
+  const { session, setProfile, childId } = useApp(); // Here useApp provides session and lets us set profile and child id's
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [firstChild, setFirstChild] = useState<Account | null>(null);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,12 +55,32 @@ const AccountSelectionPage = () => {
           isLocked: profile.pin_hash ? true : false,
         }));
 
-        setAccounts(transformedData);
+        // Filter profiles based on user type
+        // Therapists should only see their own therapist profile, not child profiles
+        const userOwnProfiles = transformedData.filter((profile: Account) => {
+          // If there's a therapist profile, only show parent/therapist profiles (not children)
+          const hasTherapistProfile = transformedData.some((p: Account) => p.type === 'therapist');
+          if (hasTherapistProfile) {
+            return profile.type !== 'child';
+          }
+          // Otherwise (parent user), show all profiles
+          return true;
+        });
 
-        // Set the first child account if it exists
-        const firstChildAccount = transformedData.find((profile: Account) => profile.type === 'child');
-        if (firstChildAccount) {
-          setFirstChild(firstChildAccount);
+        setAccounts(userOwnProfiles);
+
+        // Determine which child to select (only for parent users)
+        const childAccounts = userOwnProfiles.filter((profile: Account) => profile.type === 'child');
+        
+        if (childAccounts.length > 0) {
+          // If there's already a childId in context and it exists in the list, use it
+          if (childId && childAccounts.some((child: Account) => child.id === childId)) {
+            setSelectedChildId(childId);
+          } else {
+            // Otherwise, use the most recently created child (last in the list)
+            const lastChild = childAccounts[childAccounts.length - 1];
+            setSelectedChildId(lastChild.id);
+          }
         }
       } catch (error) {
         console.error('Error fetching profiles:', error);
@@ -71,11 +91,11 @@ const AccountSelectionPage = () => {
     };
 
     fetchAccounts();
-  }, [session]); // Re-run when session changes
+  }, [session, childId]); // Re-run when session changes
 
   const handleAccountSelect = async (account: Account) => {
     // Store profile and child IDs in global context
-    await setProfile(account.id, firstChild?.id);
+    await setProfile(account.id, selectedChildId || undefined);
 
     if (account.isLocked) {
       // Navigate to PIN entry screen for locked accounts

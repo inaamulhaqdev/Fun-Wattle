@@ -94,6 +94,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
             questionData = apiQuestion.question_data;
           }
           console.log(`✅ Question ${index + 1} parsed data:`, questionData);
+          console.log(`✅ Full question data structure:`, JSON.stringify(questionData, null, 2));
           console.log(`✅ Using API question ID: ${apiQuestion.id}`);
           console.log(`API question ID: ${apiQuestion.id}`);
           console.log(`Question data ID (if any): ${questionData.id}`);
@@ -101,7 +102,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
           const transformedQuestion = {
             id: apiQuestion.id, // Use the actual API question ID
             image: questionData.image || undefined,
-            question: questionData.question || 'Question not available',
+            question: questionData.question || questionData.text || questionData.prompt || 'Arrange the words in the correct order',
             options: questionData.options || []
           };
           

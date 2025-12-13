@@ -17,6 +17,7 @@ urlpatterns = [
     path('profile/create/', create_profile, name='create_profile'), # POST
     path('profile/<str:user_id>/list/', get_user_profiles, name='get_user_profiles'), # GET
     path('profile/<str:profile_id>/data/', get_profile, name='get_profile'), # GET
+    path('profile/email/<str:email>/', get_profile_by_email, name='get_profile_by_email'), # GET
 
     # Gamification Routes - still under profile
     path('profile/<str:profile_id>/coins/', coins, name='manage_coins'), # GET, PUT
@@ -55,4 +56,5 @@ urlpatterns = [
     # Chat Routes
     path('chat/<str:profile_id>/rooms/', get_chat_rooms, name='get_chat_rooms'), # GET
     path('chat/<str:chat_room_id>/messages/', chat_messages, name='chat_messages'), # GET, POST
+    path('chat/create-room/', create_chat_room, name='create_chat_room'), # POST
 ]

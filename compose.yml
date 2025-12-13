@@ -3,7 +3,7 @@ services:
   image: swaggerapi/swagger-ui
   container_name: swagger-ui
   ports:
-    - "8080:8080"
+    - "8082:8080"
   environment:
     - SWAGGER_JSON=/usr/share/nginx/html/docs/swagger.yml
     - BASE_URL=/swagger
@@ -37,7 +37,10 @@ services:
      - "19001:19001" # WebSocket debugger port
      - "8081:8081" # Metro bundler port
      - "8000:8000"
-   working_dir: /
+   volumes:
+     - ./frontend:/app
+     - /app/node_modules
+   working_dir: /app
    tty: true
    stdin_open: true
    extra_hosts:

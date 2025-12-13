@@ -53,10 +53,21 @@ def create_profile(request):
  	# If so, create a chat room between them
 	if creating_child_profile:
 		existing_user_profiles = User_Profile.objects.filter(profile__child_details=child_details).exclude(user=user)
-		for existing_user_profile in existing_user_profiles:
+		for existing_user_profile in existing_user_profile:
+			# Get the other user's parent/therapist profile
+			other_profile = existing_user_profile.profile
+			
+			# Get current user's parent/therapist profile
+			current_user_profile = User_Profile.objects.filter(user=user, profile__profile_type__in=['parent', 'therapist']).first()
+			if not current_user_profile:
+				continue
+				
+			# Create chat room
 			new_room = Chat_Room.objects.create(
-				messenger_1=profile,
-				messenger_2=existing_user_profile.profile,
+				messenger_1=current_user_profile.profile,
+				messenger_2=other_profile,
+				child=profile,
+				room_name=f"{profile.name}'s care team"
 			)
 
 			if not new_room:
@@ -83,6 +94,28 @@ def get_user_profiles(request, user_id):
 
 	serializer = ProfileSerializer(profiles, many=True)
 	return Response(serializer.data, status=200)
+
+
+@api_view(['GET'])
+def get_profile_by_email(request, email):
+	"""Get therapist or parent profile by email"""
+	try:
+		user = User.objects.get(email=email)
+	except User.DoesNotExist:
+		return Response({'error': 'User not found with this email'}, status=404)
+
+	# Get the parent or therapist profile for this user
+	user_profile = User_Profile.objects.filter(
+		user=user,
+		profile__profile_type__in=['parent', 'therapist']
+	).first()
+	
+	if not user_profile:
+		return Response({'error': 'No parent or therapist profile found for this user'}, status=404)
+
+	serializer = ProfileSerializer(user_profile.profile)
+	return Response(serializer.data, status=200)
+
 
 def calc_streak(profile):
 	completed_units = Exercise_Result.objects.filter(
@@ -137,12 +170,19 @@ def therapist(request):
 		except (Profile.DoesNotExist):
 			return Response({'error': 'Either not found'}, status=404)
 		try:
-			user = User_Profile.objects.get(profile_id=therapist)
+			# Get the therapist user by finding the User_Profile entry where:
+			# - profile is the therapist profile
+			# - user has user_type='therapist'
+			user_profile = User_Profile.objects.select_related('user').get(
+				profile=therapist,
+				user__user_type='therapist'
+			)
+			therapist_user = user_profile.user
 		except (User_Profile.DoesNotExist):
-			return Response({'error': 'Therapist not found'}, status=404)
+			return Response({'error': 'Therapist user not found'}, status=404)
 		try:
-			User_Profile.objects.get(user_id=user.user_id, profile_id=profile)
+			User_Profile.objects.get(user=therapist_user, profile=profile)
 		except (User_Profile.DoesNotExist):
-			User_Profile.objects.create(user_id=user.user_id, profile_id=profile.id)
+			User_Profile.objects.create(user=therapist_user, profile=profile)
 			return Response({'message':'Therapist set successfully'}, status=200)
 		return Response({'error':'Profile connection exists'}, status=400)

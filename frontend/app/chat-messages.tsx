@@ -102,10 +102,13 @@ export default function ChatMessages() {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || !profileId || !token) {
+    if (!input.trim() || !profileId || !token || !chat_room_id) {
       Alert.alert('Error', 'Missing input, profile ID, or token');
       return;
     }
+
+    const messageContent = input.trim();
+    setInput(''); // Clear input immediately for better UX
 
     try {
       const response = await fetch(`${API_URL}/chat/${chat_room_id}/messages/`, {
@@ -116,7 +119,7 @@ export default function ChatMessages() {
         },
         body: JSON.stringify({
           sender_profile_id: profileId,
-          message_content: input.trim(),
+          message_content: messageContent,
         }),
       });
 
@@ -124,9 +127,19 @@ export default function ChatMessages() {
         throw new Error(`Failed to send message (${response.status})`);
       }
 
-      setInput('');
+      const newMessage = await response.json();
+      
+      // Add the message to cache immediately
+      addMessageToRoom(chat_room_id, newMessage);
+      
+      // Update the last message in the room list
+      updateRoomLastMessage(chat_room_id, messageContent);
+      
     } catch (error) {
+      console.error('Send message error:', error);
       Alert.alert('Error', 'Failed to send message');
+      // Restore input if send failed
+      setInput(messageContent);
     }
   };
 

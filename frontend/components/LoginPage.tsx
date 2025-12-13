@@ -29,7 +29,8 @@ const LoginPage = () => {
       });
       if (error) {
         setLoading(false);
-        Alert.alert('Login Error', error.message);
+        console.error('Login error:', error);
+        Alert.alert('Login Error', `${error.message}\n\nIf you just signed up, please check your email to confirm your account before logging in.`);
         return;
       }
       setLoading(false);
@@ -38,6 +39,7 @@ const LoginPage = () => {
 
     } catch (error) {
       setLoading(false);
+      console.error('Login exception:', error);
       Alert.alert('Login Error', 'Login failed, please try again.');
     }
   };

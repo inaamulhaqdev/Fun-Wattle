@@ -99,6 +99,12 @@ const SettingsPage = () => {
           <Text style={styles.sectionTitle}>Account</Text>
           
           <SettingItem
+            title="Change Profile"
+            subtitle="Switch to a different profile"
+            onPress={() => router.push('/account-selection')}
+          />
+
+          <SettingItem
             title="Profile"
             subtitle="Manage child profile information"
             onPress={() => {/* Navigate to profile */}}
@@ -136,7 +142,7 @@ const SettingsPage = () => {
 
         {/* Logout Section */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.logoutButton} onPress={() => router.push('/account-selection')}>
+          <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/welcome')}>
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>

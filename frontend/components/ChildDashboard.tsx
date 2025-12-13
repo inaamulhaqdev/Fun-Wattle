@@ -4,7 +4,7 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Svg, { Path } from 'react-native-svg';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
 
@@ -565,6 +565,17 @@ const ChildDashboard = () => {
     //fetchStreakCount(childId, setStreakCount);
   }, [childId, contextChildId]);
 
+  // Refresh data when screen comes into focus (for real-time updates)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('=== CHILD DASHBOARD FOCUSED - REFRESHING DATA ===');
+      if (childId) {
+        fetchAssignedLearningUnit(childId, setTasks, setIsDataLoaded);
+        fetchCoinBalance(childId, setCoinBalance);
+      }
+    }, [childId])
+  );
+
   // Auto-scroll to center the next incomplete task when dashboard loads (NOT during completion)
   useEffect(() => {
     if (!isLoading && tasks.length > 0 && !completedTaskId && !bloomingTaskId) {
@@ -881,6 +892,10 @@ const ChildDashboard = () => {
     router.push('/child-stats');
   };
 
+  const handleLearningUnits = () => {
+    router.push('/child-learning-units');
+  };
+
   const completedTasks = tasks.filter(task => task.completed).length;
   const totalTasks = tasks.length;
   console.log('Tasks:', tasks);
@@ -1074,6 +1089,10 @@ const ChildDashboard = () => {
           <FontAwesome6 name="house-chimney-window" size={40} color="#FFD700" />
         </AnimatedNavButton>
 
+        <AnimatedNavButton style={styles.navButton} onPress={handleLearningUnits}>
+          <FontAwesome5 name="book" size={40} color="white" />
+        </AnimatedNavButton>
+
         <AnimatedNavButton style={styles.navButton} onPress={handleStats}>
           <FontAwesome5 name="trophy" size={40} color="white" />
         </AnimatedNavButton>
@@ -1108,6 +1127,10 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#fd9029',
     paddingHorizontal: 20,
     paddingVertical: 15,
@@ -1116,6 +1139,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    zIndex: 10,
   },
   headerLeft: {
     flex: 1,
@@ -1166,7 +1190,7 @@ const styles = StyleSheet.create({
   },
   verticalScroll: {
     flex: 1,
-    marginTop: 0,
+    marginTop: 85,
   },
   scrollContent: {
     position: 'relative',
@@ -1290,11 +1314,16 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     backgroundColor: '#FFB366',
     paddingVertical: 20,
     justifyContent: 'space-around',
     alignItems: 'center',
+    zIndex: 10,
   },
   navButton: {
     alignItems: 'center',

@@ -127,7 +127,7 @@ function InnerLayout() {
                     icon="arrow-left"
                     size={24}
                     onPress={() => {
-                      router.back();
+                      router.push('/(parent-tabs)/settings');
                     }}
                     iconColor={tintColor}
                   />

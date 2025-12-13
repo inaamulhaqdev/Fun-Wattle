@@ -32,6 +32,9 @@ const TermsAndConditionsPage = () => {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: undefined, // Disable email confirmation for development
+        }
       });
 
       if (error || !data.user) {
@@ -41,6 +44,19 @@ const TermsAndConditionsPage = () => {
       }
 
       const user = data.user;
+      
+      // Check if email confirmation is required
+      const needsEmailConfirmation = data.user && !data.session;
+      
+      if (needsEmailConfirmation) {
+        Alert.alert(
+          'Check Your Email', 
+          'A confirmation email has been sent to your email address. Please click the link in the email to verify your account before logging in.',
+          [{ text: 'OK', onPress: () => router.replace('/login') }]
+        );
+        setLoading(false);
+        return;
+      }
 
       // Save user information to postgres via backend API
       await fetch(`${API_URL}/user/create/`, {
