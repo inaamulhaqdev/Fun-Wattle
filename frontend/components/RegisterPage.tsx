@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { ParentIcon, TherapistIcon } from './UserTypeIcons';
@@ -122,8 +122,13 @@ const RegisterPage = () => {
         <Text style={styles.backIcon}>←</Text>
       </TouchableOpacity>
 
-      {/* Sign Up form */}
-      <View style={styles.formSection}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Sign Up form */}
+        <View style={styles.formSection}>
         <Text style={styles.formTitle}>Sign Up</Text>
 
         <View style={styles.inputGroup}>
@@ -266,7 +271,8 @@ const RegisterPage = () => {
             {isFormValid ? 'Sign Up' : 'Complete All Fields to Sign Up'}
           </Text>
         </TouchableOpacity>
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -275,8 +281,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 110,
+    paddingBottom: 40,
   },
   backButton: {
     position: 'absolute',

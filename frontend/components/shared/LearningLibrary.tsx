@@ -104,7 +104,7 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
     <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
       <View style={styles.header}><Text style={styles.headerTitle}>Unit Library</Text></View>
       
-      <View style={{ padding: 16 }}> 
+      <View style={styles.contentContainer}> 
 
         <Searchbar
           placeholder="Search learning units..."
@@ -192,6 +192,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 16,
   },
   headerTitle: {
     fontSize: 20,
