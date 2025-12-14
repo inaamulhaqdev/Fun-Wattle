@@ -121,7 +121,13 @@ export default function TherapistDashboard() {
 
   const userId = session?.user?.id;
   const fetchAssignments = React.useCallback(async () => {
-    if (!childId) return;
+    if (!childId) {
+      // No child selected - clear data and stop loading
+      setData([]);
+      if (firstLoad) setFirstLoad(false);
+      setLoadingAssignments(false);
+      return;
+    }
     
     try {
       if (!firstLoad) setLoadingAssignments(true);
