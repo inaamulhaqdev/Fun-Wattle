@@ -62,7 +62,7 @@ def create_profile(request):
  	# If so, create a chat room between them
 	if creating_child_profile:
 		existing_user_profiles = User_Profile.objects.filter(profile__child_details=child_details).exclude(user=user)
-		for existing_user_profile in existing_user_profile:
+		for existing_user_profile in existing_user_profiles:
 			# Get the other user's parent/therapist profile
 			other_profile = existing_user_profile.profile
 			
