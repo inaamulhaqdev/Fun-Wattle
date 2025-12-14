@@ -36,7 +36,22 @@ const TermsAndConditionsPage = () => {
 
       if (error) {
         console.error('Supabase signup error:', error);
-        Alert.alert('Registration Error', error?.message || 'Failed to create account');
+        
+        // Check if user already exists
+        if (error.message?.toLowerCase().includes('already registered') || 
+            error.message?.toLowerCase().includes('already exists')) {
+          Alert.alert(
+            'Account Already Exists',
+            'An account with this email address already exists. Would you like to go to the login page?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Login', onPress: () => router.replace('/login') }
+            ]
+          );
+        } else {
+          Alert.alert('Registration Error', error?.message || 'Failed to create account');
+        }
+        
         setLoading(false);
         return;
       }
