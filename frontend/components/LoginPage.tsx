@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { supabase } from '../config/supabase';
@@ -30,7 +30,7 @@ const LoginPage = () => {
       if (error) {
         setLoading(false);
         console.error('Login error:', error);
-        Alert.alert('Login Error', `${error.message}\n\nIf you just signed up, please check your email to confirm your account before logging in.`);
+        alert(`Login Error\n\n${error.message}\n\nIf you just signed up, please check your email to confirm your account before logging in.`);
         return;
       }
       setLoading(false);
@@ -40,7 +40,7 @@ const LoginPage = () => {
     } catch (error) {
       setLoading(false);
       console.error('Login exception:', error);
-      Alert.alert('Login Error', 'Login failed, please try again.');
+      alert('Login Error\n\nLogin failed, please try again.');
     }
   };
 
@@ -54,15 +54,15 @@ const LoginPage = () => {
 
   const handleForgotPassword = async() => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address to reset your password');
+      alert('Error\n\nPlease enter your email address to reset your password');
       return;
     }
 
     const { data, error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) {
-      Alert.alert('Error', 'Failed to send password reset email');
+      alert('Error\n\nFailed to send password reset email');
     } else {
-      Alert.alert('Success', 'Password reset email sent');
+      alert('Success\n\nPassword reset email sent');
     }
   };
 
