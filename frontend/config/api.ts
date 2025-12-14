@@ -1,5 +1,2 @@
-// For local development with Docker
-export const API_URL = `http://localhost:7001/api`;
-
-// For production
-// export const API_URL = `https://funwattle-backend-g1xh.onrender.com/api`;
+// Use environment variable with fallback to localhost for development
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://localhost:7001/api`;

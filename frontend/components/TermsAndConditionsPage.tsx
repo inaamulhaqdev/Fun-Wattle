@@ -32,13 +32,17 @@ const TermsAndConditionsPage = () => {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: undefined, // Disable email confirmation for development
-        }
       });
 
-      if (error || !data.user) {
+      if (error) {
+        console.error('Supabase signup error:', error);
         Alert.alert('Registration Error', error?.message || 'Failed to create account');
+        setLoading(false);
+        return;
+      }
+
+      if (!data.user) {
+        Alert.alert('Registration Error', 'Failed to create account - no user data returned');
         setLoading(false);
         return;
       }
