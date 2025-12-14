@@ -9,6 +9,7 @@ def register_user(request):
 	"""
 	Register a new user (Parent or Therapist).
 	Expects JSON with 'user_type', 'id', and 'email'.
+	Creates the user and their initial profile automatically.
 	"""
 
 	id = request.data.get('id')
@@ -29,6 +30,9 @@ def register_user(request):
 		user_type=user_type,
 		email=email
 	)
+
+	# Note: Profile creation is now handled by the frontend ProfileCreationPage
+	# to allow users to set their name and PIN properly
 
 	# Must serialize model before returning it (return the created User)
 	serializer = UserSerializer(user)

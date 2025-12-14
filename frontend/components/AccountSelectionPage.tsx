@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -26,13 +26,16 @@ const AccountSelectionPage = () => {
       setLoading(true);
       try {
         if (!session) {
-          Alert.alert('No active session', 'Please log in again.');
+          console.error('No active session found');
+          alert('No active session\n\nPlease log in again.');
           router.replace('/login');
           setLoading(false);
           return;
         }
 
         const user = session.user;
+        console.log('Fetching profiles for user:', user.id);
+        console.log('API_URL:', API_URL);
 
         const response = await fetch(`${API_URL}/profile/${user.id}/list/`, {
           method: 'GET',
@@ -41,11 +44,17 @@ const AccountSelectionPage = () => {
             'Authorization': `Bearer ${session?.access_token}`
           }
         });
+        
+        console.log('Profile fetch response status:', response.status);
+        
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Failed to fetch profiles:', response.status, errorText);
           throw new Error(`Failed to fetch profiles (${response.status})`);
         }
 
         const data = await response.json();
+        console.log('Fetched profiles data:', data);
 
         // Transform API data to match frontend Account type
         const transformedData = data.map((profile: any) => ({
@@ -84,7 +93,7 @@ const AccountSelectionPage = () => {
         }
       } catch (error) {
         console.error('Error fetching profiles:', error);
-        Alert.alert('Error', 'Failed to load profiles. Please try again.');
+        alert('Error\n\nFailed to load profiles. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -106,7 +115,7 @@ const AccountSelectionPage = () => {
       return;
     } else if (account.type === 'parent') {
       // Parent accounts must have PINs
-      Alert.alert('Error', 'Parent accounts must have a PIN set. Please contact support.');
+      alert('Error\n\nParent accounts must have a PIN set. Please contact support.');
       return;
     } else {
       // Child accounts don't have PINs

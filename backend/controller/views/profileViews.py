@@ -29,6 +29,15 @@ def create_profile(request):
 	if profile_type == 'parent' and not pin_hash:
 		return Response({'error': 'pin_hash is required for parent profile'}, status=400)
 
+	# Check if user already has a parent/therapist profile to prevent duplicates
+	if not creating_child_profile:
+		existing_profile = User_Profile.objects.filter(
+			user=user, 
+			profile__profile_type=profile_type
+		).first()
+		if existing_profile:
+			return Response({'error': 'Profile already exists for this user'}, status=400)
+
 	# Create the profile
 	profile = Profile.objects.create(
 		profile_type=profile_type,
