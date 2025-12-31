@@ -1,32 +1,23 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Modal, ScrollView } from 'react-native';
-import { ActivityIndicator, Button, FAB, Chip } from 'react-native-paper';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { ActivityIndicator, FAB, Chip } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
 import { Alert } from 'react-native';
 import { supabase } from '@/config/supabase';
-import { Ionicons } from '@expo/vector-icons';
 
 const genericProfilePic = require('@/assets/images/default-profile-pic.jpeg');
 
-interface ChildProfile {
-  id: string;
-  name: string;
-  profile_picture?: string;
-}
-
 export default function ChatRooms() {
   const router = useRouter();
-  const { darkMode, profileId, session, chatRooms, setChatRooms, updateRoomLastMessage } = useApp();
+  const { darkMode, profileId, session, chatRooms, setChatRooms, updateRoomLastMessage, childId, selectedChild } = useApp();
   const token = session?.access_token;
   const userId = session?.user?.id;
   const isFetching = React.useRef(false);
   const hasFetched = React.useRef(false);
   const [isInitialLoading, setIsInitialLoading] = React.useState(false);
-  const [showStartChatModal, setShowStartChatModal] = React.useState(false);
-  const [childrenProfiles, setChildrenProfiles] = React.useState<ChildProfile[]>([]);
   const [creatingRoom, setCreatingRoom] = React.useState(false);
 
   const fetch_rooms_data = React.useCallback(async () => {
@@ -92,59 +83,91 @@ export default function ChatRooms() {
     }
   }, [fetch_rooms_data, chatRooms.length]);
 
-  // Fetch children profiles for the start chat modal
-  const fetchChildren = React.useCallback(async () => {
-    if (!userId || !token) return;
-
-    try {
-      const response = await fetch(`${API_URL}/profile/${userId}/list/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch profiles');
-      
-      const profiles = await response.json();
-      const children = profiles.filter((p: any) => p.profile_type === 'child');
-      setChildrenProfiles(children);
-    } catch (error) {
-      console.error('Error fetching children:', error);
+  const handleStartChat = async () => {
+    if (!childId || !selectedChild) {
+      Alert.alert('Error', 'No child selected. Please select a child profile first.');
+      return;
     }
-  }, [userId, token]);
 
-  const handleStartChat = async (childId: string, childName: string) => {
     setCreatingRoom(true);
     try {
-      // Get all assignments for this child to find therapist
-      const assignmentsResp = await fetch(`${API_URL}/assignment/${childId}/assigned_to/`);
-      if (!assignmentsResp.ok) throw new Error('Failed to fetch assignments');
+      // First, check if there's already a chat room for this child
+      const existingRoom = chatRooms.find((room: any) => room.child?.id === childId);
       
-      const assignments = await assignmentsResp.json();
-      
-      if (assignments.length === 0) {
-        Alert.alert('No Therapist', 'This child has no therapist assigned yet.');
+      if (existingRoom) {
+        // Room already exists, just open it
+        openRoom(existingRoom.id, existingRoom.room_name || existingRoom.name);
         setCreatingRoom(false);
         return;
       }
 
-      // Get the therapist who assigned these learning units
-      const therapistUserId = assignments[0].assigned_by.id;
+      // Get all therapist profiles
+      const therapistsResp = await fetch(`${API_URL}/therapist/`);
+      if (!therapistsResp.ok) throw new Error('Failed to fetch therapists');
       
-      // Get therapist's profile
-      const therapistProfileResp = await fetch(`${API_URL}/profile/${therapistUserId}/list/`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const allTherapists = await therapistsResp.json();
+      console.log('All therapists:', allTherapists);
       
-      if (!therapistProfileResp.ok) throw new Error('Failed to fetch therapist profile');
+      if (!userId) throw new Error('User ID not available');
       
-      const therapistProfiles = await therapistProfileResp.json();
-      const therapistProfile = therapistProfiles.find((p: any) => p.profile_type === 'therapist');
+      // Check assignments to find therapist (if any assignments exist)
+      let linkedTherapistProfile = null;
       
-      if (!therapistProfile) {
-        Alert.alert('Error', 'Could not find therapist profile');
+      try {
+        const assignmentsResp = await fetch(`${API_URL}/assignment/${childId}/assigned_to/`);
+        if (assignmentsResp.ok) {
+          const assignments = await assignmentsResp.json();
+          console.log('Assignments for child:', assignments);
+          
+          if (assignments.length > 0) {
+            // Get the therapist user ID from assignment
+            const assignerUserId = assignments[0].assigned_by?.id;
+            
+            // Check if assigner is a therapist
+            const assignerUserResp = await fetch(`${API_URL}/profile/${assignerUserId}/list/`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (assignerUserResp.ok) {
+              const assignerProfiles = await assignerUserResp.json();
+              linkedTherapistProfile = assignerProfiles.find((p: any) => p.profile_type === 'therapist');
+              
+              if (linkedTherapistProfile) {
+                console.log('Found therapist from assignments:', linkedTherapistProfile);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.log('Error checking assignments:', err);
+      }
+      
+      // If no therapist found via assignments, check direct link via backend endpoint
+      if (!linkedTherapistProfile) {
+        console.log('No therapist found from assignments, checking direct links...');
+        
+        try {
+          const childTherapistResp = await fetch(`${API_URL}/child/${childId}/therapist/`);
+          
+          if (childTherapistResp.ok) {
+            linkedTherapistProfile = await childTherapistResp.json();
+            console.log('Found linked therapist via direct link:', linkedTherapistProfile);
+          } else {
+            console.log('No therapist found via direct link endpoint');
+          }
+        } catch (err) {
+          console.log('Error checking direct therapist link:', err);
+        }
+      }
+
+      console.log('Creating chat room with therapist:', linkedTherapistProfile);
+
+      // Check if therapist was found
+      if (!linkedTherapistProfile) {
+        Alert.alert(
+          'No Therapist Assigned', 
+          `${selectedChild.name} doesn't have a therapist assigned yet. Please link a therapist first from Settings > Add Therapist.`
+        );
         setCreatingRoom(false);
         return;
       }
@@ -158,20 +181,29 @@ export default function ChatRooms() {
         },
         body: JSON.stringify({
           profile_1_id: profileId,
-          profile_2_id: therapistProfile.id,
+          profile_2_id: linkedTherapistProfile.id,
           child_id: childId,
         }),
       });
 
-      if (!createRoomResp.ok) throw new Error('Failed to create chat room');
+      if (!createRoomResp.ok) {
+        const errorData = await createRoomResp.json().catch(() => ({}));
+        if (errorData.error === 'Chat room already exists') {
+          // Room already exists, just refresh
+          await fetch_rooms_data();
+          Alert.alert('Info', `Chat with ${linkedTherapistProfile.name} already exists`);
+          setCreatingRoom(false);
+          return;
+        }
+        throw new Error('Failed to create chat room');
+      }
 
       const result = await createRoomResp.json();
       
       // Refresh chat rooms
       await fetch_rooms_data();
       
-      setShowStartChatModal(false);
-      Alert.alert('Success', `Chat created with ${therapistProfile.name} for ${childName}`);
+      Alert.alert('Success', `Chat created with ${linkedTherapistProfile.name} for ${selectedChild.name}`);
       
     } catch (error) {
       console.error('Error creating chat:', error);
@@ -179,11 +211,6 @@ export default function ChatRooms() {
     } finally {
       setCreatingRoom(false);
     }
-  };
-
-  const openStartChatModal = () => {
-    fetchChildren();
-    setShowStartChatModal(true);
   };
 
   const openRoom = (roomId: string, roomName: string) => {
@@ -208,7 +235,9 @@ export default function ChatRooms() {
         ) : chatRooms.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>You have no messages yet.</Text>
-            <Text style={styles.emptySubtext}>Tap the + button to start a chat with your child's therapist</Text>
+            <Text style={styles.emptySubtext}>
+              Tap the + button to start a chat with {selectedChild ? `${selectedChild.name}'s` : "your child's"} therapist
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -228,8 +257,11 @@ export default function ChatRooms() {
                         mode="outlined" 
                         style={styles.childChip}
                         textStyle={styles.chipText}
+                        compact
                       >
-                        {item.child_name || 'Child'}
+                        {(item.child_name && item.child_name.length > 16) 
+                          ? `${item.child_name.substring(0, 16)}...` 
+                          : (item.child_name || 'Child')}
                       </Chip>
                     </View>
                     <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
@@ -244,61 +276,19 @@ export default function ChatRooms() {
       </SafeAreaView>
 
       {/* Floating Action Button */}
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={openStartChatModal}
-        color="#fff"
-      />
-
-      {/* Start Chat Modal */}
-      <Modal
-        visible={showStartChatModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowStartChatModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Start a Chat</Text>
-              <TouchableOpacity onPress={() => setShowStartChatModal(false)}>
-                <Ionicons name="close" size={28} color="#333" />
-              </TouchableOpacity>
-            </View>
-            
-            <Text style={styles.modalSubtitle}>Select a child to chat with their therapist:</Text>
-            
-            <ScrollView style={styles.childrenList}>
-              {childrenProfiles.length === 0 ? (
-                <Text style={styles.noChildrenText}>No children found. Please add a child first.</Text>
-              ) : (
-                childrenProfiles.map((child) => (
-                  <TouchableOpacity
-                    key={child.id}
-                    style={styles.childItem}
-                    onPress={() => handleStartChat(child.id, child.name)}
-                    disabled={creatingRoom}
-                  >
-                    <Image
-                      source={child.profile_picture ? { uri: child.profile_picture } : genericProfilePic}
-                      style={styles.childAvatar}
-                    />
-                    <Text style={styles.childName}>{child.name}</Text>
-                  </TouchableOpacity>
-                ))
-              )}
-            </ScrollView>
-            
-            {creatingRoom && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="#FD902B" />
-                <Text style={styles.loadingText}>Creating chat...</Text>
-              </View>
-            )}
-          </View>
+      {creatingRoom ? (
+        <View style={styles.fabLoading}>
+          <ActivityIndicator size="small" color="#fff" />
         </View>
-      </Modal>
+      ) : (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={handleStartChat}
+          color="#fff"
+          label={selectedChild ? `Chat about ${selectedChild.name}` : "Start Chat"}
+        />
+      )}
     </>
   );
 }
@@ -355,6 +345,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         marginBottom: 4,
+        flex: 1,
     },
     name: {
         fontSize: 16,
@@ -362,15 +353,17 @@ const styles = StyleSheet.create({
         flexShrink: 1,
     },
     childChip: {
-        height: 28,
+        height: 26,
         backgroundColor: '#FFF3E0',
         borderColor: '#FD902B',
-        flexShrink: 0,
+        maxWidth: 150,
     },
     chipText: {
-        fontSize: 11,
+        fontSize: 12,
         color: '#FD902B',
         fontWeight: '600',
+        lineHeight: 16,
+        marginVertical: 0,
     },
     subtitle: {
         fontSize: 13,
@@ -459,21 +452,20 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 20,
     },
-    loadingOverlay: {
+    fabLoading: {
         position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(255,255,255,0.9)',
+        right: 16,
+        bottom: 16,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#FD902B',
         justifyContent: 'center',
         alignItems: 'center',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-    },
-    loadingText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: '#FD902B',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
 });

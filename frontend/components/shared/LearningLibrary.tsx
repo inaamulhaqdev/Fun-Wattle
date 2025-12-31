@@ -52,6 +52,14 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
       const fetchAssignments = async () => {
         try {
           const response = await fetch(`${API_URL}/assignment/${userId}/assigned_by/`, { method: 'GET' });
+          
+          // If user not found (404), just set empty assignments - not an error
+          if (response.status === 404) {
+            setAssignedUnitIds(new Set());
+            setCompletedUnitIds(new Set());
+            return;
+          }
+          
           if (!response.ok) throw new Error(`Failed to fetch assignments (${response.status})`);
 
           const assignments = await response.json();
@@ -67,6 +75,7 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
           setCompletedUnitIds(new Set(completedIds));
         } catch (err) {
           console.error('Error fetching assignments:', err);
+          // Only show alert for real errors, not for "no user" or "no assignments"
           Alert.alert('Error', 'Failed to load assigned learning units.');
         }
       };

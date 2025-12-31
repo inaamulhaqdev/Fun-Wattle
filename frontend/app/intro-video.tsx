@@ -1,20 +1,33 @@
 import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Video } from 'expo-av';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
+import { useApp } from '@/context/AppContext';
 
 export default function IntroVideoScreen() {
+  const { session } = useApp();
   const videoRef = useRef<Video>(null);
   const [progress, setProgress] = useState(0);
 
-  const skipToWelcome = () => {
-    router.push('/welcome');
+  const skipToNext = () => {
+    // If user has a session (came from login), go to account selection
+    // Otherwise (came from splash screen), go to welcome/login
+    if (session) {
+      router.replace('/account-selection');
+    } else {
+      router.replace('/welcome');
+    }
   };
 
   const handlePlaybackStatusUpdate = (status: any) => {
     if (status.isLoaded && status.durationMillis) {
       setProgress(status.positionMillis / status.durationMillis);
+      
+      // Auto-navigate when video finishes
+      if (status.didJustFinish) {
+        skipToNext();
+      }
     }
   };
 
@@ -48,7 +61,7 @@ export default function IntroVideoScreen() {
       </View>
 
       {/* Skip button */}
-      <Pressable style={styles.skipButton} onPress={skipToWelcome}>
+      <Pressable style={styles.skipButton} onPress={skipToNext}>
         <ThemedText style={styles.skipText}>Skip</ThemedText>
         <ThemedText style={styles.skipIcon}>⏭</ThemedText>
       </Pressable>

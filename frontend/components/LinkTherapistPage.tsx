@@ -102,14 +102,18 @@ export default function LinkTherapistPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Link therapist error:', response.status, errorData);
+        console.log('Link therapist error:', response.status, errorData);
         
         let message = 'An error occurred with linking therapist';
         
         // Use backend error message if available
         if (errorData.error) {
           if (errorData.error === 'Profile connection exists') {
-            message = `This therapist is already assigned to ${selectedChild?.name || 'this child'}`;
+            message = `This therapist is already linked to ${selectedChild?.name || 'this child'}. No need to link again.`;
+            showSnackbar(message, 'success');
+            // Since already linked, navigate back as if successful
+            router.back();
+            return;
           } else if (errorData.error === 'Either not found') {
             message = 'Profile not found. Please try again.';
           } else if (errorData.error === 'Therapist not found') {
@@ -131,7 +135,6 @@ export default function LinkTherapistPage() {
           }
         }
         
-        console.log('Showing alert with message:', message);
         showSnackbar(message, 'error');
         return;
       }

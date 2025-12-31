@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ActivityIndicator, Text, DefaultTheme, Provider as PaperProvider } from "react-native-paper";
+import { ActivityIndicator, Text, DefaultTheme, Provider as PaperProvider, Avatar } from "react-native-paper";
 import { Dropdown } from "react-native-element-dropdown";
 import Filters from "../../components/home_screen/CategoryFilters";
 import { supabase } from '@/config/supabase';
@@ -34,6 +34,7 @@ export default function TherapistDashboard() {
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [therapistName, setTherapistName] = useState('');
+  const [therapistAvatar, setTherapistAvatar] = useState('');
   const [childList, setChildList] = useState<Account[]>([]);
   const [selectedChild, setSelectedChild] = useState('');
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
@@ -93,7 +94,17 @@ export default function TherapistDashboard() {
         console.log('Transformed data:', transformedData);
 
         const therapistProfile = transformedData.find(profile => profile.type === 'therapist');
-        if (therapistProfile) setTherapistName(therapistProfile.name);
+        if (therapistProfile) {
+          setTherapistName(therapistProfile.name);
+          // Fetch full therapist profile data for avatar
+          const therapistDataResp = await fetch(`${API_URL}/profile/${therapistProfile.id}/data/`, {
+            headers: { 'Authorization': `Bearer ${session?.access_token}` }
+          });
+          if (therapistDataResp.ok) {
+            const therapistData = await therapistDataResp.json();
+            setTherapistAvatar(therapistData.profile_picture || '');
+          }
+        }
 
         const childrenFull = transformedData.filter(p => p.type === 'child');
         console.log('Children assigned to therapist:', childrenFull);
@@ -234,53 +245,67 @@ export default function TherapistDashboard() {
   return (
     <PaperProvider theme={DefaultTheme}>
       <View style={styles.header}>
-        <Text variant='titleLarge' style={styles.headerTitle}>
-          {getGreeting()}, {therapistName}!
-        </Text>
+        <View style={styles.headerRow}>
+          <Text variant='titleLarge' style={styles.headerTitle}>
+            {getGreeting()}, {therapistName}!
+          </Text>
+          <TouchableOpacity 
+            style={styles.avatarContainer}
+            onPress={() => router.push('/account-selection')}
+          >
+            {therapistAvatar ? (
+              <Avatar.Image size={50} source={{ uri: therapistAvatar }} />
+            ) : (
+              <Avatar.Text 
+                size={50} 
+                label={therapistName.substring(0, 2).toUpperCase()} 
+                style={styles.therapistAvatar}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
       <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
         <View style={styles.body}>
-          <View style={styles.subtitleRow}>
-            {childList.length > 0 ? (
-              <>
+          {childList.length > 0 ? (
+            <>
               {childList.length > 1 ? (
-              <View style={{ width: 160 }}>
-                <Dropdown
-                  style={{
-                    height: 40,
-                    borderColor: "#ccc",
-                    borderWidth: 1,
-                    borderRadius: 8,
-                    paddingHorizontal: 10,
-                    backgroundColor: "#fff"  
-                  }}
-                  placeholderStyle={{ color: "#555" }}
-                  selectedTextStyle={{ color: "#000" }}
-                  containerStyle={{ backgroundColor: "#fff" }}   
-                  itemTextStyle={{ color: "#000" }}              
-                  activeColor="#f2f2f2"          
-                  placeholder="Select child"
-                  value={childId}
-                  data={childList.map((child: any) => ({
-                    label: child.name,
-                    value: child.id,
-                  }))}
-                  labelField="label"
-                  valueField="value"
-                  onChange={(item: any) => {handleSwitchChild(item)}}
-                />
-              </View>
-            ) : (
-              <View style={styles.childButton}>
-                <Text style={styles.childText}>{selectedChild}</Text>
-              </View>
-            )}
-              <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000' }]}>&apos;s progress this week.</Text>
-              </>
-            ) : (
-              <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
-            )}
-          </View>
+                <View style={{ width: 220, marginBottom: 12 }}>
+                  <Dropdown
+                    style={{
+                      height: 40,
+                      borderColor: "#ccc",
+                      borderWidth: 1,
+                      borderRadius: 8,
+                      paddingHorizontal: 10,
+                      backgroundColor: "#fff"  
+                    }}
+                    placeholderStyle={{ color: "#555" }}
+                    selectedTextStyle={{ color: "#000" }}
+                    containerStyle={{ backgroundColor: "#fff" }}   
+                    itemTextStyle={{ color: "#000" }}              
+                    activeColor="#f2f2f2"          
+                    placeholder="Select child"
+                    value={childId}
+                    data={childList.map((child: any) => ({
+                      label: child.name,
+                      value: child.id,
+                    }))}
+                    labelField="label"
+                    valueField="value"
+                    onChange={(item: any) => {handleSwitchChild(item)}}
+                  />
+                </View>
+              ) : (
+                <View style={[styles.childButton, { marginBottom: 12 }]}>
+                  <Text style={styles.childText}>{selectedChild}</Text>
+                </View>
+              )}
+              <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#fff' : '#000', marginBottom: 12 }]}>{selectedChild}&apos;s progress this week.</Text>
+            </>
+          ) : (
+            <Text variant="bodyMedium" style={styles.subtitle}>No children assigned yet.</Text>
+          )}
           {childList.length > 0 && (<Filters assignedUnits={data} />)}
         </View>
         {switchChild && (
@@ -341,14 +366,25 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#fd9029',
     paddingHorizontal: 20,
-    paddingTop: 100,
-    justifyContent: 'center',
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    marginLeft: 12,
+  },
+  therapistAvatar: {
+    backgroundColor: '#E74C3C',
   },
   headerTitle: {
     paddingLeft: 8,
-    paddingBottom: 20,
     fontWeight: "bold",
     color: "white",
+    flex: 1,
   },
   body: {
     flex: 1,

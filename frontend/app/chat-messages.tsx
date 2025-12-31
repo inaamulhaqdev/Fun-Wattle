@@ -151,7 +151,8 @@ export default function ChatMessages() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       {/* header - recipient's name */}
       <View style={styles.header}>
@@ -204,6 +205,7 @@ export default function ChatMessages() {
           );
         }}
         contentContainerStyle={styles.chatArea}
+        keyboardShouldPersistTaps="handled"
       />
       )}
 

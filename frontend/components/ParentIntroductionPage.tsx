@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useApp } from '@/context/AppContext';
 import Feather from '@expo/vector-icons/Feather';
 
 const { width } = Dimensions.get('window');
@@ -48,11 +50,25 @@ const tutorialSlides: TutorialSlide[] = [
 
 const ParentIntroductionPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { profileId } = useApp();
+
+  const markIntroductionAsSeen = async () => {
+    if (!profileId) return;
+    
+    try {
+      const storageKey = `parent_intro_seen_${profileId}`;
+      await AsyncStorage.setItem(storageKey, 'true');
+    } catch (error) {
+      console.error('Error saving introduction status:', error);
+    }
+  };
 
   const nextSlide = () => {
     if (currentSlide < tutorialSlides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else if (currentSlide === tutorialSlides.length - 1) {
+      // Mark as seen before navigating
+      markIntroductionAsSeen();
       // Navigate to parent dashboard
       router.replace('/(parent-tabs)/parent-dashboard');
     }
@@ -65,6 +81,8 @@ const ParentIntroductionPage = () => {
   };
 
   const handleSkip = () => {
+    // Mark as seen before navigating
+    markIntroductionAsSeen();
     // Navigate to parent dashboard
     router.replace('/(parent-tabs)/parent-dashboard');
   };

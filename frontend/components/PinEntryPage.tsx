@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/api';
 import { useApp } from '@/context/AppContext';
 import { verifyPin } from '../utils/pinUtils';
@@ -72,7 +73,17 @@ const PinEntryPage = () => {
           if (verifyPin(enteredPin, correctPinHash)) {
             // Navigate to appropriate dashboard
             if (data.profile_type === 'parent') {
-              router.replace('/parent-introduction');
+              // Check if this parent profile has seen the introduction
+              const storageKey = `parent_intro_seen_${profileId}`;
+              const hasSeenIntro = await AsyncStorage.getItem(storageKey);
+              
+              if (hasSeenIntro === 'true') {
+                // Already seen, go directly to dashboard
+                router.replace('/(parent-tabs)/parent-dashboard');
+              } else {
+                // First time, show introduction
+                router.replace('/parent-introduction');
+              }
             } else { // Therapist
               router.replace('/therapist-dashboard');
             }

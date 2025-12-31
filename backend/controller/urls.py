@@ -30,6 +30,7 @@ urlpatterns = [
 
     # therapist 
     path('therapist/', therapist, name='therapist' ), # GET, POST
+    path('child/<str:child_id>/therapist/', get_child_therapist, name='get_child_therapist'), # GET
 
     # Content Library Routes
     path('content/learning_units/', get_all_learning_units, name='get_all_learning_units'), # GET

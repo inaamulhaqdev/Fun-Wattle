@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
+import { API_URL } from '../config/api';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -33,6 +35,45 @@ const LoginPage = () => {
         alert(`Login Error\n\n${error.message}\n\nIf you just signed up, please check your email to confirm your account before logging in.`);
         return;
       }
+
+      // Check if user has any profiles
+      const user = data.user;
+      const profilesResponse = await fetch(`${API_URL}/profile/${user.id}/list/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (profilesResponse.ok) {
+        const profiles = await profilesResponse.json();
+        if (profiles.length === 0) {
+          // No profiles exist - redirect to membership/profile creation flow
+          console.log('No profiles found, redirecting to membership');
+          setLoading(false);
+          router.push('/membership');
+          return;
+        }
+
+        // Check if user has parent profile
+        const hasParentProfile = profiles.some((profile: any) => profile.profile_type === 'parent');
+        
+        if (hasParentProfile) {
+          // Check if this is first login for this parent
+          const storageKey = `parent_intro_seen_${user.id}`;
+          const hasSeenIntro = await AsyncStorage.getItem(storageKey);
+          
+          if (!hasSeenIntro) {
+            // Mark intro as seen for this user
+            await AsyncStorage.setItem(storageKey, 'true');
+            console.log('First parent login, showing intro video');
+            setLoading(false);
+            router.push('/intro-video');
+            return;
+          }
+        }
+      }
+
       setLoading(false);
       // Navigate to account selection
       router.push('/account-selection');

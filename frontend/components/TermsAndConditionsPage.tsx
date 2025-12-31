@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { supabase } from '../config/supabase';
@@ -40,13 +40,16 @@ const TermsAndConditionsPage = () => {
         // Check if user already exists
         if (error.message?.toLowerCase().includes('already registered') || 
             error.message?.toLowerCase().includes('already exists')) {
-          // Use web-compatible alert for better cross-platform support
-          const goToLogin = confirm('Account Already Exists\n\nAn account with this email address already exists. Would you like to go to the login page?');
-          if (goToLogin) {
-            router.replace('/login');
-          }
+          Alert.alert(
+            'Account Already Exists',
+            'An account with this email address already exists. Would you like to go to the login page?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Go to Login', onPress: () => router.replace('/login') }
+            ]
+          );
         } else {
-          alert(`Registration Error\n\n${error?.message || 'Failed to create account'}`);
+          Alert.alert('Registration Error', error?.message || 'Failed to create account');
         }
         
         setLoading(false);
@@ -54,7 +57,7 @@ const TermsAndConditionsPage = () => {
       }
 
       if (!data.user) {
-        alert('Registration Error\n\nFailed to create account - no user data returned');
+        Alert.alert('Registration Error', 'Failed to create account - no user data returned');
         setLoading(false);
         return;
       }
@@ -65,7 +68,7 @@ const TermsAndConditionsPage = () => {
       const needsEmailConfirmation = data.user && !data.session;
       
       if (needsEmailConfirmation) {
-        alert('Check Your Email\n\nA confirmation email has been sent to your email address. Please click the link in the email to verify your account before logging in.');
+        Alert.alert('Check Your Email', 'A confirmation email has been sent to your email address. Please click the link in the email to verify your account before logging in.');
         router.replace('/login');
         setLoading(false);
         return;
@@ -93,7 +96,7 @@ const TermsAndConditionsPage = () => {
 
     } catch (error: any) {
       console.error('Registration error:', error);
-      alert('Registration Error\n\nRegistration failed. Please try again and contact support if the issue persists.');
+      Alert.alert('Registration Error', 'Registration failed. Please try again and contact support if the issue persists.');
     } finally {
       setLoading(false);
     }

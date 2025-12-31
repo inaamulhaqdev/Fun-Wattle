@@ -1,10 +1,37 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/themed-text';
 
 export default function SplashScreen() {
+  useEffect(() => {
+    checkAuthState();
+  }, []);
+
+  const checkAuthState = async () => {
+    try {
+      const storedSession = await AsyncStorage.getItem('session');
+      if (storedSession) {
+        // User was previously logged in, skip intro and go to account selection
+        const session = JSON.parse(storedSession);
+        
+        // Check if they have a profileId (already selected a profile)
+        const storedProfileId = await AsyncStorage.getItem('profileId');
+        if (storedProfileId) {
+          // They were in a profile, go to pin entry
+          router.replace('/account-selection');
+        } else {
+          // They logged in but haven't selected a profile yet
+          router.replace('/account-selection');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking auth state:', error);
+    }
+  };
+
   const navigateToWelcome = () => {
     router.push('/welcome');
   };

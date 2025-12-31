@@ -10,7 +10,7 @@ import { useApp } from '@/context/AppContext';
 
 export default function AddChildExtraQs() {
 
-  const { childName, dateOfBirth, childTopGoal, childHomePracticeFrequency, childPracticeDuration, childPreferredActivities, childMotivations, childAttendedTherapist } = useChild();
+  const { childName, dateOfBirth, childTopGoal, childHomePracticeFrequency, childPreferredActivities, childMotivations, childAttendedTherapist } = useChild();
   const { selectChild } = useApp();
 
   const handleBack = () => {
@@ -54,7 +54,6 @@ export default function AddChildExtraQs() {
             date_of_birth: dateOfBirth,
             top_goal: childTopGoal,
             home_practice_frequency: childHomePracticeFrequency,
-            practice_duration: childPracticeDuration,
             preferred_activities: childPreferredActivities,
             motivations: childMotivations,
             attended_therapist: childAttendedTherapist,
@@ -63,12 +62,16 @@ export default function AddChildExtraQs() {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Profile creation failed:', response.status, errorText);
         setLoading(false);
-        Alert.alert('Profile Creation Error. Please try again and contact support if the issue persists.');
+        Alert.alert('Child Profile Creation Error', `Profile Creation failed (${response.status}). Please try again and contact support if the issue persists.`);
         return;
       }
 
-      const newChildProfile = await response.json();
+      const responseData = await response.json();
+      console.log('Profile creation response:', responseData);
+      const newChildProfile = responseData.profile;
       
       // Set the newly created child as the active child
       await selectChild(newChildProfile);

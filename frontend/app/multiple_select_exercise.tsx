@@ -8,7 +8,9 @@ import {
   Dimensions,
   Animated,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { API_URL } from '@/config/api';
@@ -19,7 +21,7 @@ interface Question {
   question: string;
   image?: string;
   correctAnswer: string;
-  options: string[];
+  options: Array<{text: string; image?: string}>;
 }
 
 interface ApiQuestion {
@@ -91,13 +93,16 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
           }
           console.log(`Question ${index + 1} data:`, questionData);
 
-          // Extract options text from the nested structure
-          const optionTexts = questionData.options?.map((option: any) => option.text) || [];
-          console.log(`Question ${index + 1} option texts:`, optionTexts);
+          // Extract options with both text and image
+          const options = questionData.options?.map((option: any) => ({
+            text: option.text || '',
+            image: option.image || ''
+          })) || [];
+          console.log(`Question ${index + 1} options:`, options);
 
           // Find the correct answer from the options
           const correctOption = questionData.options?.find((option: any) => option.correct === true);
-          const correctAnswer = correctOption?.text || optionTexts[0] || 'No answer';
+          const correctAnswer = correctOption?.text || correctOption?.image || options[0]?.text || 'No answer';
           console.log(`Question ${index + 1} correct answer:`, correctAnswer);
 
           return {
@@ -105,7 +110,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
             question: questionData.question || 'Question not available',
             image: questionData.image, // Include image support
             correctAnswer: correctAnswer,
-            options: optionTexts
+            options: options
           };
         } catch (parseError) {
           console.error('Error parsing question_data for question:', apiQuestion.id, parseError);
@@ -113,7 +118,11 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
             id: apiQuestion.id || `error_${index + 1}`,
             question: 'Error loading question',
             correctAnswer: 'Error',
-            options: ['Error', 'Loading', 'Question']
+            options: [
+              {text: 'Error', image: undefined},
+              {text: 'Loading', image: undefined},
+              {text: 'Question', image: undefined}
+            ]
           };
         }
       });
@@ -135,6 +144,7 @@ const fetchQuestionsByExerciseId = async (exerciseId: string): Promise<Exercise 
 
 interface ClickableOptionProps {
   text: string;
+  image?: string;
   isCorrect: boolean;
   onPress: (isCorrect: boolean) => void;
   disabled: boolean;
@@ -143,6 +153,7 @@ interface ClickableOptionProps {
 
 const ClickableOption: React.FC<ClickableOptionProps> = ({
   text,
+  image,
   isCorrect,
   onPress,
   disabled,
@@ -179,6 +190,7 @@ const ClickableOption: React.FC<ClickableOptionProps> = ({
       <Animated.View
         style={[
           styles.clickableOption,
+          image && styles.imageOption,
           {
             transform: [{ scale: scale }],
           },
@@ -187,13 +199,21 @@ const ClickableOption: React.FC<ClickableOptionProps> = ({
           isCorrect && isSelected && styles.correctOption
         ]}
       >
-        <Text style={[
-          styles.optionText,
-          isSelected && styles.selectedOptionText,
-          isCorrect && isSelected && styles.correctOptionText
-        ]}>
-          {text}
-        </Text>
+        {image ? (
+          <Image 
+            source={{ uri: image }} 
+            style={styles.optionImage}
+            resizeMode="contain"
+          />
+        ) : (
+          <Text style={[
+            styles.optionText,
+            isSelected && styles.selectedOptionText,
+            isCorrect && isSelected && styles.correctOptionText
+          ]}>
+            {text}
+          </Text>
+        )}
         {isSelected && isCorrect && (
           <Text style={styles.checkMark}>✓</Text>
         )}
@@ -238,19 +258,34 @@ export default function MultipleSelectExercise() {
         id: "fallback_1",
         question: "What is the opposite of 'hot'?",
         correctAnswer: "cold",
-        options: ["warm", "cold", "cool", "fire"]
+        options: [
+          {text: "warm", image: undefined},
+          {text: "cold", image: undefined},
+          {text: "cool", image: undefined},
+          {text: "fire", image: undefined}
+        ]
       },
       {
         id: "fallback_2",
         question: "What is the opposite of 'big'?",
         correctAnswer: "small",
-        options: ["huge", "large", "small", "tiny"]
+        options: [
+          {text: "huge", image: undefined},
+          {text: "large", image: undefined},
+          {text: "small", image: undefined},
+          {text: "tiny", image: undefined}
+        ]
       },
       {
         id: "fallback_3",
         question: "What is the opposite of 'happy'?",
         correctAnswer: "sad",
-        options: ["sad", "young", "sweet", "bright"]
+        options: [
+          {text: "sad", image: undefined},
+          {text: "young", image: undefined},
+          {text: "sweet", image: undefined},
+          {text: "bright", image: undefined}
+        ]
       }
     ]
   }), []);
@@ -290,12 +325,12 @@ export default function MultipleSelectExercise() {
   // Initialize and load exercise data
   useEffect(() => {
     // Load saved progress if available
-    const loadSavedProgress = () => {
+    const loadSavedProgress = async () => {
       if (!childId || !exerciseId) return null;
       
       try {
         const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-        const savedData = localStorage.getItem(storageKey);
+        const savedData = await AsyncStorage.getItem(storageKey);
         
         if (savedData) {
           const progressData = JSON.parse(savedData);
@@ -325,7 +360,7 @@ export default function MultipleSelectExercise() {
           setExercise(fetchedExercise);
           
           // Check for saved progress and restore state
-          const savedProgress = loadSavedProgress();
+          const savedProgress = await loadSavedProgress();
           if (savedProgress) {
             setCurrentQuestion(savedProgress.currentQuestion || 0);
             setScore(savedProgress.score || 0);
@@ -347,7 +382,7 @@ export default function MultipleSelectExercise() {
       setExercise(fallbackExercise);
       
       // Check for saved progress even with fallback data
-      const savedProgress = loadSavedProgress();
+      const savedProgress = await loadSavedProgress();
       if (savedProgress) {
         setCurrentQuestion(savedProgress.currentQuestion || 0);
         setScore(savedProgress.score || 0);
@@ -488,7 +523,7 @@ export default function MultipleSelectExercise() {
     }
 
     try {
-      // Save current progress to localStorage
+      // Save current progress to AsyncStorage
       const progressData = {
         exerciseId,
         childId,
@@ -500,7 +535,7 @@ export default function MultipleSelectExercise() {
       };
 
       const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-      localStorage.setItem(storageKey, JSON.stringify(progressData));
+      await AsyncStorage.setItem(storageKey, JSON.stringify(progressData));
       
       console.log('Progress saved:', progressData);
       
@@ -511,15 +546,15 @@ export default function MultipleSelectExercise() {
     router.back();
   };
 
-  // Clear saved progress from localStorage
-  const clearSavedProgress = () => {
+  // Clear saved progress from AsyncStorage
+  const clearSavedProgress = async () => {
     if (!childId || !exerciseId) {
       return;
     }
 
     try {
       const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-      localStorage.removeItem(storageKey);
+      await AsyncStorage.removeItem(storageKey);
       console.log('Saved progress cleared');
     } catch (error) {
       console.error('Error clearing saved progress:', error);
@@ -752,18 +787,28 @@ export default function MultipleSelectExercise() {
       </View>
 
       {/* Options */}
-      <View style={styles.optionsContainer}>
-        {question.options.map((option: string, index: number) => (
-          <ClickableOption
-            key={`${option}-${index}`}
-            text={option}
-            isCorrect={option === question.correctAnswer}
-            onPress={handleOptionPress}
-            disabled={answered}
-            isSelected={selectedOption === option}
-          />
-        ))}
-      </View>
+      <ScrollView 
+        style={styles.optionsContainer}
+        contentContainerStyle={styles.optionsContentContainer}
+        showsVerticalScrollIndicator={true}
+      >
+        {question.options.map((option: {text: string; image?: string}, index: number) => {
+          const optionKey = option.image || option.text || `option-${index}`;
+          const optionIdentifier = option.text || option.image || '';
+          
+          return (
+            <ClickableOption
+              key={`${optionKey}-${index}`}
+              text={option.text}
+              image={option.image}
+              isCorrect={optionIdentifier === question.correctAnswer}
+              onPress={handleOptionPress}
+              disabled={answered}
+              isSelected={selectedOption === optionIdentifier}
+            />
+          );
+        })}
+      </ScrollView>
 
       {/* Celebration */}
       {showCelebration && (
@@ -909,6 +954,9 @@ const styles = StyleSheet.create({
   optionsContainer: {
     flex: 1,
   },
+  optionsContentContainer: {
+    paddingBottom: 20,
+  },
   clickableOption: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
@@ -922,6 +970,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  imageOption: {
+    justifyContent: 'center',
+    padding: 12,
   },
   selectedOption: {
     backgroundColor: '#E3F2FD',
@@ -940,6 +992,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
     flex: 1,
+  },
+  optionImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 8,
   },
   selectedOptionText: {
     color: '#2196F3',

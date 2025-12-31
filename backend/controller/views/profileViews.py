@@ -1,5 +1,6 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.views.decorators.csrf import csrf_exempt
 from ..models import *
 from ..serializers import *
 from datetime import datetime
@@ -195,3 +196,34 @@ def therapist(request):
 			User_Profile.objects.create(user=therapist_user, profile=profile)
 			return Response({'message':'Therapist set successfully'}, status=200)
 		return Response({'error':'Profile connection exists'}, status=400)
+
+@api_view(['GET'])
+@csrf_exempt
+def get_child_therapist(request, child_id):
+	"""Get the therapist profile linked to a specific child"""
+	try:
+		# Get the child profile
+		child_profile = Profile.objects.get(id=child_id, profile_type='child')
+		
+		# Find all User_Profile entries for this child
+		child_user_profiles = User_Profile.objects.filter(profile=child_profile)
+		
+		# Find therapist users who have access to this child
+		for user_profile in child_user_profiles:
+			if user_profile.user.user_type == 'therapist':
+				# Get the therapist's profile
+				therapist_user_profile = User_Profile.objects.filter(
+					user=user_profile.user,
+					profile__profile_type='therapist'
+				).select_related('profile').first()
+				
+				if therapist_user_profile:
+					serializer = ProfileSerializer(therapist_user_profile.profile)
+					return Response(serializer.data, status=200)
+		
+		return Response({'error': 'No therapist linked to this child'}, status=404)
+		
+	except Profile.DoesNotExist:
+		return Response({'error': 'Child profile not found'}, status=404)
+	except Exception as e:
+		return Response({'error': str(e)}, status=500)

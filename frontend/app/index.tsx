@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/themed-text';
 
 export default function SplashScreen() {
@@ -15,20 +16,41 @@ export default function SplashScreen() {
   const autoNavigateTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const animateIn = () => {
-      // Title animation (starts first)
-      Animated.parallel([
-        Animated.timing(titleOpacity, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(titleTranslateY, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    // Check if user is already logged in
+    checkAuthAndNavigate();
+  }, []);
+
+  const checkAuthAndNavigate = async () => {
+    try {
+      const storedSession = await AsyncStorage.getItem('session');
+      if (storedSession) {
+        // User is logged in, skip animations and go to account selection
+        console.log('User already logged in, navigating to account-selection');
+        router.replace('/account-selection');
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking auth state:', error);
+    }
+
+    // No session found, proceed with normal splash animation
+    animateIn();
+  };
+
+  const animateIn = () => {
+    // Title animation (starts first)
+    Animated.parallel([
+      Animated.timing(titleOpacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(titleTranslateY, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
       // Logo animation (starts 200ms after title)
       setTimeout(() => {
@@ -61,22 +83,12 @@ export default function SplashScreen() {
           }),
         ]).start();
       }, 400);
-    };
 
-    animateIn();
-    
-    // Auto-navigate after 10 seconds
-    autoNavigateTimeoutRef.current = setTimeout(() => {
-      navigateToWelcome();
-    }, 10000);
-
-    // Cleanup timeout on unmount
-    return () => {
-      if (autoNavigateTimeoutRef.current) {
-        clearTimeout(autoNavigateTimeoutRef.current);
-      }
+      // Auto-navigate after 4 seconds
+      autoNavigateTimeoutRef.current = setTimeout(() => {
+        navigateToWelcome();
+      }, 4000);
     };
-  }, [titleOpacity, titleTranslateY, logoOpacity, logoTranslateY, subtitleOpacity, subtitleTranslateY]);
 
   const navigateToWelcome = useCallback(() => {
     // Clear the auto-navigate timeout if user manually navigates

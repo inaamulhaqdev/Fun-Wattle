@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Alert, View } from "react-native";
+import { StyleSheet, Alert, View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, ActivityIndicator } from "react-native-paper";
+import { Text, ActivityIndicator, Avatar } from "react-native-paper";
 import Filters from "@/components/home_screen/CategoryFilters";
 import AddChild from '@/components/ui/AddChildCard';
 import { API_URL } from '@/config/api';
@@ -33,6 +33,7 @@ export default function ParentDashboard() {
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [parentName, setParentName] = useState('');
+  const [parentAvatar, setParentAvatar] = useState('');
   const [selectedChildName, setSelectedChildName] = useState('');
   const [data, setData] = useState<AssignedLearningUnit[]>([]);
 
@@ -220,7 +221,23 @@ export default function ParentDashboard() {
         {!selectedChildName ? (
           <>
             <View style={styles.header}>
-              <Text variant='titleLarge' style={styles.title}>Welcome, {parentName}!</Text>
+              <View style={styles.headerRow}>
+                <Text variant='titleLarge' style={styles.title}>Welcome, {parentName}!</Text>
+                <TouchableOpacity 
+                  style={styles.avatarContainer}
+                  onPress={() => router.push('/account-selection')}
+                >
+                  {parentAvatar ? (
+                    <Avatar.Image size={50} source={{ uri: parentAvatar }} />
+                  ) : (
+                    <Avatar.Text 
+                      size={50} 
+                      label={parentName.substring(0, 2).toUpperCase()} 
+                      style={styles.parentAvatar}
+                    />
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
             <View style={styles.content}>
               <AddChild />
@@ -229,7 +246,23 @@ export default function ParentDashboard() {
         ) : (
           <>
             <View style={styles.header}>
-              <Text variant='titleLarge' style={styles.title}>{getGreeting()}, {parentName}!</Text>
+              <View style={styles.headerRow}>
+                <Text variant='titleLarge' style={styles.title}>{getGreeting()}, {parentName}!</Text>
+                <TouchableOpacity 
+                  style={styles.avatarContainer}
+                  onPress={() => router.push('/account-selection')}
+                >
+                  {parentAvatar ? (
+                    <Avatar.Image size={50} source={{ uri: parentAvatar }} />
+                  ) : (
+                    <Avatar.Text 
+                      size={50} 
+                      label={parentName.substring(0, 2).toUpperCase()} 
+                      style={styles.parentAvatar}
+                    />
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
             <View style={styles.content}>
               <Text variant="bodyMedium" style={[styles.subtitle, { color: darkMode ? '#f8f9fa' : '#000' }]}>{selectedChildName}&apos;s progress this week.</Text>
@@ -250,8 +283,19 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#fd9029',
     paddingHorizontal: 20,
-    paddingTop: 100,
-    justifyContent: 'center',
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    marginLeft: 12,
+  },
+  parentAvatar: {
+    backgroundColor: '#4A90E2',
   },
   content: {
     flex: 1,
@@ -265,9 +309,9 @@ const styles = StyleSheet.create({
   },
   title: {
     paddingLeft: 8,
-    paddingBottom: 20,
     fontWeight: "bold",
     color: "white",
+    flex: 1,
   },
   subtitle: {
     color: "black",

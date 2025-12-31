@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { ActivityIndicator } from 'react-native-paper';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 import { API_URL } from '../config/api';
 import { useApp } from '../context/AppContext';
@@ -16,22 +17,35 @@ export interface Account {
 }
 
 const AccountSelectionPage = () => {
-  const { session, setProfile, childId } = useApp(); // Here useApp provides session and lets us set profile and child id's
+  const { session, setProfile, profileId, childId } = useApp(); // Here useApp provides session and lets us set profile and child id's
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAccounts = async () => {
+      // Don't fetch if there's no session - just redirect to login
+      if (!session) {
+        console.log('No session, redirecting to login');
+        router.replace('/login');
+        setLoading(false);
+        return;
+      }
+
+      // Check if user has a stored profile and navigate directly
+      if (profileId) {
+        const storedProfile = await AsyncStorage.getItem(`profile_${profileId}`);
+        if (storedProfile) {
+          const profile = JSON.parse(storedProfile);
+          console.log('Found cached profile, navigating to:', profile.type);
+          // Note: We'll validate this against fetched profiles below before using it
+        } else {
+          console.log('No cached profile, fetching from API to determine profile type');
+        }
+      }
+
       setLoading(true);
       try {
-        if (!session) {
-          console.error('No active session found');
-          alert('No active session\n\nPlease log in again.');
-          router.replace('/login');
-          setLoading(false);
-          return;
-        }
 
         const user = session.user;
         console.log('Fetching profiles for user:', user.id);
@@ -56,6 +70,14 @@ const AccountSelectionPage = () => {
         const data = await response.json();
         console.log('Fetched profiles data:', data);
 
+        // If no profiles exist, redirect to membership/profile creation
+        if (data.length === 0) {
+          console.log('No profiles found, redirecting to membership');
+          router.replace('/membership');
+          setLoading(false);
+          return;
+        }
+
         // Transform API data to match frontend Account type
         const transformedData = data.map((profile: any) => ({
           id: profile.id.toString(),
@@ -77,6 +99,9 @@ const AccountSelectionPage = () => {
         });
 
         setAccounts(userOwnProfiles);
+
+        // Don't auto-navigate for returning users - let them choose their profile
+        // This was causing automatic profile selection when user taps avatar
 
         // Determine which child to select (only for parent users)
         const childAccounts = userOwnProfiles.filter((profile: Account) => profile.type === 'child');
@@ -106,12 +131,21 @@ const AccountSelectionPage = () => {
     // Store profile and child IDs in global context
     await setProfile(account.id, selectedChildId || undefined);
 
+    // Store profile details for quick navigation on app restart
+    await AsyncStorage.setItem(`profile_${account.id}`, JSON.stringify({
+      type: account.type,
+      isLocked: account.isLocked,
+      name: account.name
+    }));
+
     if (account.isLocked) {
       // Navigate to PIN entry screen for locked accounts
       router.push('/pin-entry');
       return;
     } else if (account.type === 'therapist') {
-      router.replace('/therapist-dashboard');
+      // Mark intro as seen for therapist
+      await AsyncStorage.setItem(`parent_intro_seen_${account.id}`, 'true');
+      router.replace('/(therapist-tabs)/therapist-dashboard');
       return;
     } else if (account.type === 'parent') {
       // Parent accounts must have PINs

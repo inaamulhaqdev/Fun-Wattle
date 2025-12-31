@@ -10,6 +10,8 @@ import { Exercise } from '../types/learningUnitTypes';
 interface ChatRoom {
   id: string;
   name: string;
+  room_name?: string;
+  child_name?: string;
   profile_picture: string;
   last_message: string;
 }
