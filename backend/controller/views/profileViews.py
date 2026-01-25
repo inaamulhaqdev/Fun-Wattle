@@ -5,6 +5,33 @@ from ..models import *
 from ..serializers import *
 from datetime import datetime
 from .chatViews import create_chats
+import requests
+
+SUPABASE_URL = 'https://cvchwjconynpzhktnuxn.supabase.co'
+SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2Y2h3amNvbnlucHpoa3RudXhuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDY0NzQxNCwiZXhwIjoyMDc2MjIzNDE0fQ.Z4OTfF5Cvz5WD5vBwzFSySfRIS3ACycGqd6VrI9ekuA'
+
+def get_user_avatar_from_auth(user_id):
+    """Fetch user avatar from Supabase Auth metadata"""
+    try:
+        headers = {
+            'apikey': SUPABASE_SERVICE_KEY,
+            'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}',
+        }
+        response = requests.get(
+            f'{SUPABASE_URL}/auth/v1/admin/users/{user_id}',
+            headers=headers
+        )
+        if response.status_code == 200:
+            user_data = response.json()
+            # Check for avatar in user_metadata or raw_user_meta_data
+            avatar_url = user_data.get('user_metadata', {}).get('avatar_url') or \
+                        user_data.get('raw_user_meta_data', {}).get('avatar_url') or \
+                        user_data.get('user_metadata', {}).get('picture') or \
+                        user_data.get('raw_user_meta_data', {}).get('picture')
+            return avatar_url
+    except Exception as e:
+        print(f"Error fetching avatar from Supabase Auth: {e}")
+    return None
 
 @api_view(['POST'])
 def create_profile(request):
@@ -38,6 +65,13 @@ def create_profile(request):
 		).first()
 		if existing_profile:
 			return Response({'error': 'Profile already exists for this user'}, status=400)
+
+	# If profile_picture is not provided or empty, generate a default avatar
+	if (not profile_picture or profile_picture.strip() == '') and not creating_child_profile:
+		# Generate default avatar using UI Avatars API
+		name_param = name.replace(' ', '+')
+		bg_color = 'fd9029' if profile_type == 'therapist' else '4A90E2'
+		profile_picture = f'https://ui-avatars.com/api/?name={name_param}&background={bg_color}&color=fff&size=128&bold=true'
 
 	# Create the profile
 	profile = Profile.objects.create(

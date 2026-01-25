@@ -6,6 +6,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Option {
   id: string;
@@ -205,12 +206,12 @@ export const OrderedDragExercise = () => {
   // Initialize and load exercise data
   useEffect(() => {
     // Load saved progress if available
-    const loadSavedProgress = () => {
+    const loadSavedProgress = async () => {
       if (!childId || !exerciseId) return null;
       
       try {
         const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-        const savedData = localStorage.getItem(storageKey);
+        const savedData = await AsyncStorage.getItem(storageKey);
         
         if (savedData) {
           const progressData = JSON.parse(savedData);
@@ -241,7 +242,7 @@ export const OrderedDragExercise = () => {
           setExercise(fetchedExercise);
           
           // Check for saved progress and restore state
-          const savedProgress = loadSavedProgress();
+          const savedProgress = await loadSavedProgress();
           if (savedProgress) {
             setCurrentQuestion(savedProgress.currentQuestion || 0);
             setScore(savedProgress.score || 0);
@@ -263,7 +264,7 @@ export const OrderedDragExercise = () => {
       setExercise(fallbackExercise);
       
       // Check for saved progress even with fallback data
-      const savedProgress = loadSavedProgress();
+      const savedProgress = await loadSavedProgress();
       if (savedProgress) {
         setCurrentQuestion(savedProgress.currentQuestion || 0);
         setScore(savedProgress.score || 0);
@@ -545,7 +546,7 @@ export const OrderedDragExercise = () => {
     }
 
     try {
-      // Save current progress to localStorage or backend
+      // Save current progress to AsyncStorage or backend
       const progressData = {
         exerciseId,
         childId,
@@ -556,9 +557,9 @@ export const OrderedDragExercise = () => {
         timestamp: Date.now()
       };
 
-      // Save to localStorage for now (could be enhanced to save to backend)
+      // Save to AsyncStorage for now (could be enhanced to save to backend)
       const storageKey = `exercise_progress_${exerciseId}_${childId}`;
-      localStorage.setItem(storageKey, JSON.stringify(progressData));
+      await AsyncStorage.setItem(storageKey, JSON.stringify(progressData));
       
       console.log('Progress saved:', progressData);
       

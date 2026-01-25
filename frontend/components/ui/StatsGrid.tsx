@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { View, StyleSheet, Animated } from "react-native";
+import { View, StyleSheet, Animated, TouchableOpacity } from "react-native";
 import { Text } from "react-native-paper";
 
 type Stat = {
@@ -10,9 +10,10 @@ type Stat = {
 type StatsGridProps = {
   stats: Stat[];
   fetchingStats: boolean;
+  onTotalActivitiesPress?: () => void;
 };
 
-export default function StatsGrid({ stats, fetchingStats }: StatsGridProps) {
+export default function StatsGrid({ stats, fetchingStats, onTotalActivitiesPress }: StatsGridProps) {
 
   const formatValue = (value: number) => {
     if (value >= 60) {
@@ -45,6 +46,22 @@ export default function StatsGrid({ stats, fetchingStats }: StatsGridProps) {
           displayValue = formatValue(value);
         }
 
+        const isClickable = label === "Total Activities Done" && onTotalActivitiesPress;
+        
+        if (isClickable) {
+          return (
+            <View key={index} style={styles.gridItem}>
+              <Text style={styles.label}>{label}</Text>
+              <Animated.Text style={[styles.stat, { opacity }]}>
+                {displayValue}
+              </Animated.Text>
+              <TouchableOpacity onPress={onTotalActivitiesPress} activeOpacity={0.7}>
+                <Text style={styles.seeAllButton}>See All Activities →</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        }
+        
         return (
           <View key={index} style={styles.gridItem}>
             <Text style={styles.label}>{label}</Text>
@@ -68,11 +85,12 @@ const styles = StyleSheet.create({
   },
   gridItem: {
     flexBasis: "48%",
-    height: 80,
+    minHeight: 120,
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
+    paddingVertical: 15,
     borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -90,6 +108,14 @@ const styles = StyleSheet.create({
   stat: {
     fontSize: 20,
     paddingTop: 5,
-    textAlign: "center",
+    fontWeight: "bold",
+    color: "#000",
+  },
+  seeAllButton: {
+    fontSize: 12,
+    color: "#fd9029",
+    marginTop: 8,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });

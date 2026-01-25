@@ -32,11 +32,12 @@ export default function TaskCard({
 
           <View style={styles.row}>
             <Text style={styles.details}>{category}</Text>
-            {time != null && (<Text variant="bodySmall" style={styles.details}>{time}</Text>)}
+            {time != null && (<Text variant="bodySmall" style={styles.details}>⏱️ {time}</Text>)}
           </View>
 
-          <View style={styles.row}>
+          <View style={styles.column}>
             <Text style={styles.details}>Date assigned {assigned_date}</Text>
+            {time != null && (<Text variant="bodySmall" style={styles.details}>Last practiced {time}</Text>)}
           </View>
         </Card.Content>
       </Card>
@@ -48,6 +49,9 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  column: {
+    flexDirection: "column",
   },
   card: {
     marginVertical: 6,

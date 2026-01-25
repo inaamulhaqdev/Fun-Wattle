@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Animated, Alert } from 'react-native';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
@@ -17,6 +17,9 @@ interface Task {
   exerciseType?: string; // For routing to correct exercise component
   exerciseId?: string;   // For passing to exercise component
   description?: string;  // Exercise description
+  learningUnitTitle?: string; // Learning unit name
+  exerciseIndex?: number; // Index of exercise in learning unit
+  totalExercises?: number; // Total exercises in learning unit
 }
 
 // Mascot data structure
@@ -189,14 +192,20 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
 
     // Fetch exercises for all learning units in parallel
     const allExercises: any[] = [];
-    const exercisePromises = learningUnitIds.map(learningUnitId =>
-      fetchExercisesForLearningUnit(learningUnitId, childId).then(exercises =>
-        exercises.map(ex => ({
+    const exercisePromises = learningUnitIds.map(learningUnitId => {
+      const assignment = assignmentsData.find((a: any) => a.learning_unit.id === learningUnitId);
+      const learningUnitTitle = assignment?.learning_unit?.title || 'Learning Unit';
+      
+      return fetchExercisesForLearningUnit(learningUnitId, childId).then(exercises =>
+        exercises.map((ex, index) => ({
           ...ex,
-          assignedAt: assignmentDateMap.get(learningUnitId)
+          assignedAt: assignmentDateMap.get(learningUnitId),
+          learningUnitTitle: learningUnitTitle,
+          exerciseIndex: index + 1,
+          totalExercises: exercises.length
         }))
-      )
-    );
+      );
+    });
     const exerciseResults = await Promise.all(exercisePromises);
     exerciseResults.forEach(exercises => allExercises.push(...exercises));
 
@@ -227,7 +236,10 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
         completed: false, // Default to incomplete for faster loading
         exerciseType: cleanExerciseType(exercise.exercise_type),
         exerciseId: exercise.id,
-        description: exercise.description || ''
+        description: exercise.description || '',
+        learningUnitTitle: exercise.learningUnitTitle,
+        exerciseIndex: exercise.exerciseIndex,
+        totalExercises: exercise.totalExercises
       }));
 
       setTasks(basicTasks);
@@ -242,7 +254,10 @@ const fetchAssignedLearningUnit = async (childId: string, setTasks: (tasks: Task
           completed: exercise.completed || false,
           exerciseType: cleanExerciseType(exercise.exercise_type),
           exerciseId: exercise.id,
-          description: exercise.description || ''
+          description: exercise.description || '',
+          learningUnitTitle: exercise.learningUnitTitle,
+          exerciseIndex: exercise.exerciseIndex,
+          totalExercises: exercise.totalExercises
         }));
 
         setTasks(transformedTasks);
@@ -493,7 +508,7 @@ const ChildDashboard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [bloomingTaskId, setBloomingTaskId] = useState<string | null>(null);
   const [mascotData, setMascotData] = useState<MascotData>({ bodyType: 'koala' });
-  // const [streakCount, setStreakCount] = useState(0);
+  const [streakCount, setStreakCount] = useState(0);
   const [coinBalance, setCoinBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -502,9 +517,11 @@ const ChildDashboard = () => {
   const [loadedImagesCount, setLoadedImagesCount] = useState(0);
   const [loadingStartTime] = useState(Date.now());
   const [contentLayoutComplete, setContentLayoutComplete] = useState(false);
+  const [hasFetchedData, setHasFetchedData] = useState(false);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const scrollViewRef = React.useRef<ScrollView>(null);
   const tasksRef = React.useRef<Task[]>([]);
+  const isFetchingRef = useRef(false); // Track if we're currently fetching data
 
   // Keep tasksRef in sync with tasks state
   React.useEffect(() => {
@@ -552,28 +569,44 @@ const ChildDashboard = () => {
 
   // Load assigned activities, coin balance, and streak count on component mount
   useEffect(() => {
-    console.log('=== CHILD DASHBOARD USEEFFECT TRIGGERED ===');
-    console.log('childId value:', childId);
-    console.log('childId type:', typeof childId);
-    console.log('Context childId:', contextChildId);
-    console.log('Using fallback?', !contextChildId);
+    // Only fetch if we haven't fetched yet or if childId changes
+    if ((!hasFetchedData || childId !== contextChildId) && !isFetchingRef.current) {
+      console.log('=== CHILD DASHBOARD USEEFFECT TRIGGERED ===');
+      console.log('childId value:', childId);
+      console.log('childId type:', typeof childId);
+      console.log('Context childId:', contextChildId);
+      console.log('Using fallback?', !contextChildId);
 
-    // Now childId will always have a value (either from context or fallback)
-    console.log('Calling fetchAssignedLearningUnit with childId:', childId);
-    fetchAssignedLearningUnit(childId, setTasks, setIsDataLoaded);
-    fetchCoinBalance(childId, setCoinBalance);
-    //fetchStreakCount(childId, setStreakCount);
-  }, [childId, contextChildId]);
+      isFetchingRef.current = true;
+      // Now childId will always have a value (either from context or fallback)
+      console.log('Calling fetchAssignedLearningUnit with childId:', childId);
+      fetchAssignedLearningUnit(childId, setTasks, setIsDataLoaded);
+      fetchCoinBalance(childId, setCoinBalance);
+      setHasFetchedData(true);
+      // Reset fetching flag after a short delay to allow for completion
+      setTimeout(() => {
+        isFetchingRef.current = false;
+      }, 1000);
+      //fetchStreakCount(childId, setStreakCount);
+    }
+  }, [childId, contextChildId, hasFetchedData]);
 
   // Refresh data when screen comes into focus (for real-time updates)
+  // Only refresh if coming back from completing an exercise
   useFocusEffect(
     React.useCallback(() => {
-      console.log('=== CHILD DASHBOARD FOCUSED - REFRESHING DATA ===');
-      if (childId) {
+      // Only refresh if we already have data, not currently fetching, and are returning to the screen
+      if (hasFetchedData && childId && !isFetchingRef.current) {
+        console.log('=== CHILD DASHBOARD FOCUSED - REFRESHING DATA ===');
+        isFetchingRef.current = true;
         fetchAssignedLearningUnit(childId, setTasks, setIsDataLoaded);
         fetchCoinBalance(childId, setCoinBalance);
+        // Reset fetching flag after fetch completes
+        setTimeout(() => {
+          isFetchingRef.current = false;
+        }, 1000);
       }
-    }, [childId])
+    }, [childId, hasFetchedData])
   );
 
   // Auto-scroll to center the next incomplete task when dashboard loads (NOT during completion)
@@ -900,6 +933,10 @@ const ChildDashboard = () => {
   const totalTasks = tasks.length;
   console.log('Tasks:', tasks);
 
+  // Get the current learning unit name (from the next incomplete task or first task)
+  const nextIncompleteTask = tasks.find(t => !t.completed);
+  const currentLearningUnit = nextIncompleteTask?.learningUnitTitle || tasks[0]?.learningUnitTitle || '';
+
   // Show loading screen while data is being fetched
   if (isLoading) {
     return (
@@ -925,12 +962,15 @@ const ChildDashboard = () => {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>Today&apos;s tasks</Text>
+          {currentLearningUnit && (
+            <Text style={styles.learningUnitHeader}>{currentLearningUnit}</Text>
+          )}
           <Text style={styles.taskCounter}>{completedTasks}/{totalTasks} COMPLETE</Text>
         </View>
         <View style={styles.headerRight}>
           <View style={styles.streakContainer}>
             <FontAwesome6 name="fire" size={24} color="#FF4500" />
-            <Text style={styles.streakText}>5</Text>
+            <Text style={styles.streakText}>{streakCount}</Text>
           </View>
           <View style={styles.starContainer}>
             <MaterialCommunityIcons name="star-circle" size={24} color="#007ae6ff" />
@@ -1051,6 +1091,23 @@ const ChildDashboard = () => {
                     <IncompleteTaskSVG size={60} isAfterNext={isAfterNextTask} />
                   )}
                 </TouchableOpacity>
+                
+                {/* Exercise Info Label */}
+                {!task.completed && !isAfterNextTask && (
+                  <View style={styles.exerciseInfoContainer}>
+                    <Text style={styles.exerciseName} numberOfLines={2}>
+                      {task.name}
+                    </Text>
+                    <View style={styles.progressContainer}>
+                      <Text style={styles.learningUnitName} numberOfLines={1}>
+                        {task.learningUnitTitle}
+                      </Text>
+                      <Text style={styles.progressText}>
+                        {task.exerciseIndex}/{task.totalExercises}
+                      </Text>
+                    </View>
+                  </View>
+                )}
               </View>
             </View>
           );
@@ -1149,6 +1206,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
+  learningUnitHeader: {
+    fontSize: 16,
+    color: '#fff',
+    marginTop: 4,
+    marginBottom: 2,
+    fontWeight: '500',
+    opacity: 0.95,
+  },
   taskCounter: {
     fontSize: 14,
     color: '#fff',
@@ -1208,10 +1273,60 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     width: 200,
-    zIndex: 2,
+    zIndex: 3,
   },
   taskFlowerContainer: {
     marginBottom: 20,
+    alignItems: 'center',
+    minHeight: 250, // Ensure enough space for info card
+  },
+  exerciseInfoContainer: {
+    marginTop: -30, // Move card up closer to the task node
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    minWidth: 160,
+    maxWidth: 200,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 10,
+    zIndex: 5,
+  },
+  exerciseName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 4,
+  },
+  learningUnitName: {
+    fontSize: 11,
+    color: '#666',
+    flex: 1,
+    marginRight: 8,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   incompleteTaskCircle: {
     backgroundColor: 'rgba(113, 224, 49, 1.0)',

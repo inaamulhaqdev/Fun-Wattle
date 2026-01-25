@@ -75,7 +75,8 @@ const TermsAndConditionsPage = () => {
       }
 
       // Save user information to postgres via backend API
-      await fetch(`${API_URL}/user/create/`, {
+      console.log('Creating user in database:', { id: user.id, email: user.email, user_type: userType });
+      const createUserResponse = await fetch(`${API_URL}/user/create/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,6 +87,31 @@ const TermsAndConditionsPage = () => {
           user_type: userType,
         })
       });
+
+      console.log('Create user response status:', createUserResponse.status);
+
+      if (!createUserResponse.ok) {
+        let errorMessage = 'Unknown error';
+        try {
+          const contentType = createUserResponse.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await createUserResponse.json();
+            console.error('Failed to create user (JSON error):', errorData);
+            errorMessage = errorData.error || errorData.detail || 'Failed to create user';
+          } else {
+            const errorText = await createUserResponse.text();
+            console.error('Failed to create user (non-JSON response):', errorText);
+            errorMessage = 'Server error. Please try again.';
+          }
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+        }
+        Alert.alert('Registration Error', `Failed to complete registration: ${errorMessage}`);
+        setLoading(false);
+        return;
+      }
+
+      console.log('User created successfully in database');
 
       // Wait a bit for the session to be fully persisted
       await new Promise(resolve => setTimeout(resolve, 500));

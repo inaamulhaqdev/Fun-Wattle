@@ -23,11 +23,13 @@ const MAPPING = {
   'gearshape.fill': 'settings',
   'bubble.left.and.bubble.right.fill': 'chat-bubble',
   'doc.text.fill': 'article',
+  'chart.bar.fill': 'bar-chart',
   // Outlined versions (using same icons since Material Design default is outlined)
   'house': 'home',
   'book': 'menu-book',
   'gearshape': 'settings',
   'bubble.left.and.bubble.right': 'chat',
+  'chart.bar': 'bar-chart',
   // Other
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',

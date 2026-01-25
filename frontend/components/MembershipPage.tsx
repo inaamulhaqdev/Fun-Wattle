@@ -31,9 +31,21 @@ const MembershipPage = () => {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          console.error('Subscription error:', error);
-          Alert.alert('Error', 'Failed to set up free trial. Please try again.');
+          let errorMessage = 'Failed to set up free trial. Please try again.';
+          try {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const error = await response.json();
+              console.error('Subscription error:', error);
+              errorMessage = error.error || error.detail || errorMessage;
+            } else {
+              const text = await response.text();
+              console.error('Subscription error (non-JSON):', text);
+            }
+          } catch (parseError) {
+            console.error('Error parsing response:', parseError);
+          }
+          Alert.alert('Error', errorMessage);
           return;
         }
       } else if (type === 'paid') {
@@ -48,9 +60,21 @@ const MembershipPage = () => {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          console.error('Subscription error:', error);
-          Alert.alert('Error', 'Failed to set up subscription. Please try again.');
+          let errorMessage = 'Failed to set up subscription. Please try again.';
+          try {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const error = await response.json();
+              console.error('Subscription error:', error);
+              errorMessage = error.error || error.detail || errorMessage;
+            } else {
+              const text = await response.text();
+              console.error('Subscription error (non-JSON):', text);
+            }
+          } catch (parseError) {
+            console.error('Error parsing response:', parseError);
+          }
+          Alert.alert('Error', errorMessage);
           return;
         }
       }

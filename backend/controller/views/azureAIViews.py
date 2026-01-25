@@ -207,6 +207,11 @@ def text_to_speech(request):
     if not text:
         return HttpResponse("Missing 'text' field", status=400)
 
+    # Check if Azure credentials are configured
+    if not AZURE_SPEECH_KEY:
+        print("ERROR: AZURE_SPEECH_KEY environment variable is not set")
+        return HttpResponse("Azure Speech credentials not configured", status=500)
+
     # Azure Speech configuration
     speech_config = speechsdk.SpeechConfig(
         subscription=AZURE_SPEECH_KEY,
@@ -241,7 +246,9 @@ def text_to_speech(request):
     result = synthesizer.speak_ssml_async(ssml_text).get()
 
     if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
-        return HttpResponse("Speech synthesis failed", status=500)
+        error_details = result.cancellation_details if hasattr(result, 'cancellation_details') else 'Unknown error'
+        print(f"Speech synthesis failed. Reason: {result.reason}, Details: {error_details}")
+        return HttpResponse(f"Speech synthesis failed: {error_details}", status=500)
 
     with open(temp_output.name, "rb") as f:
         audio_data = f.read()

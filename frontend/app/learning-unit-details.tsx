@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View, Alert, Image } from "react-native";
-import { Text, DefaultTheme, Provider as PaperProvider, ActivityIndicator } from "react-native-paper";
-import { ActivityCards } from "@/components/ui/ActivityCards";
-import { UnitCard } from "@/components/ui/UnitCard";
-import { useLocalSearchParams } from "expo-router";
+import { Text, DefaultTheme, Provider as PaperProvider, ActivityIndicator, Card } from "react-native-paper";
+import { useLocalSearchParams, router } from "expo-router";
 import { useApp } from "@/context/AppContext";
 import { API_URL } from "../config/api";
 import { Asset } from 'expo-asset';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface Exercise {
   id: string;
@@ -17,6 +16,7 @@ interface Exercise {
   accuracy: number;
   num_correct: number;
   num_incorrect: number;
+  last_practiced: string | null;
 }
 
 const calculateAccuracy = (exercises: Exercise[]) => {
@@ -76,10 +76,18 @@ export default function LearningUnitDetails() {
                 completed: true,
                 accuracy: first.accuracy,
                 num_correct: first.num_correct,
-                num_incorrect: first.num_incorrect
+                num_incorrect: first.num_incorrect,
+                last_practiced: first.completed_at || null
               };
             }
-            return { time_spent: 0, completed: false, accuracy: 0, num_correct: 0, num_incorrect: 0 };
+            return { 
+              time_spent: 0, 
+              completed: false, 
+              accuracy: 0, 
+              num_correct: 0, 
+              num_incorrect: 0,
+              last_practiced: null
+            };
           })
         );
 
@@ -129,10 +137,25 @@ export default function LearningUnitDetails() {
   }, [darkMode]);
 
   function formatTime(seconds: number) {
-    if (seconds === undefined) return "0";
-    if (seconds >= 60) return `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
-    return `${seconds} sec`;
+    if (seconds === undefined) return "0 min total";
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes} min total`;
   }
+
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return 'Not practiced yet';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    }).replace(/\//g, '/') + ' | ' + 
+    date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    }).toLowerCase();
+  };
 
   if (loading || !bgLoaded) {
     return (
@@ -161,37 +184,100 @@ export default function LearningUnitDetails() {
           }}
         />
 
-        <TouchableOpacity>
-          <UnitCard
-            title={`${title} \n ${category}`}
-            duration={formatTime(totalDuration)}
-            progress={progress}
-            accuracy={`${unitAccuracy.toFixed(0)}%`}
-          />
-        </TouchableOpacity>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContainer}>
+          {/* Main Learning Unit Card */}
+          <Card style={[styles.mainCard, darkMode && styles.mainCardDark]} mode="elevated">
+            <Card.Content>
+              <Text variant="titleLarge" style={[styles.mainTitle, darkMode && styles.textDark]}>
+                {title}
+              </Text>
+              <Text variant="bodyMedium" style={[styles.categoryText, darkMode && styles.textSecondaryDark]}>
+                {category}
+              </Text>
+              
+              <View style={styles.headerRow}>
+                <View style={styles.timeContainer}>
+                  <MaterialCommunityIcons name="clock-outline" size={20} color={darkMode ? '#aaa' : '#666'} />
+                  <Text style={[styles.timeText, darkMode && styles.textDark]}>
+                    {formatTime(totalDuration)}
+                  </Text>
+                </View>
+                
+                <Text style={[styles.accuracyText, darkMode && styles.textDark]}>
+                  {unitAccuracy.toFixed(0)}% correct
+                </Text>
+              </View>
 
-        <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: "600", fontSize: 20, marginLeft: 13, color: darkMode ? "white" : "black" }}>
-          Exercises
-        </Text>
+              {/* Progress Bar */}
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBarBackground}>
+                  <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+                </View>
+              </View>
+            </Card.Content>
+          </Card>
 
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FD902B" />
-          </View>
-        ) : (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContainer}>
-            {exercises.map((exercise) => (
-              <ActivityCards
-                key={exercise.id}
-                title={exercise.title}
-                completed={exercise.completed ? "Completed" : "Not started"}
-                correct={exercise.num_correct}
-                incorrect={exercise.num_incorrect}
-                accuracy={exercise.accuracy != null ? `${exercise.accuracy.toFixed(0)}%` : ""}
-              />
-            ))}
-          </ScrollView>
-        )}
+          {/* Exercises Section */}
+          <Text style={[styles.exercisesHeader, darkMode && styles.textDark]}>
+            Exercises
+          </Text>
+
+          {/* Individual Exercise Cards */}
+          {exercises.map((exercise, index) => {
+            const total = exercise.num_correct + exercise.num_incorrect;
+            const accuracy = total > 0 ? Math.round((exercise.num_correct / total) * 100) : 0;
+            const completedCount = exercises.filter(e => e.completed).length;
+
+            return (
+              <Card 
+                key={exercise.id} 
+                style={[styles.activityCard, darkMode && styles.activityCardDark]} 
+                mode="outlined"
+              >
+                <Card.Content>
+                  <Text style={[styles.lastPracticed, darkMode && styles.textSecondaryDark]}>
+                    Last practised: {formatDate(exercise.last_practiced)}
+                  </Text>
+                  
+                  <View style={styles.activityTitleRow}>
+                    <Text style={[styles.activityTitle, darkMode && styles.textDark]}>
+                      {exercise.title}
+                    </Text>
+                    <Text style={[styles.completionStatus, darkMode && styles.textDark]}>
+                      {exercise.completed ? 'Completed' : 'Not started'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.divider} />
+
+                  {/* Stats Table */}
+                  <View style={styles.statsTable}>
+                    <View style={styles.statsColumn}>
+                      <Text style={[styles.statsLabel, darkMode && styles.textDark]}>Correct</Text>
+                      <Text style={[styles.statsValue, darkMode && styles.textDark]}>
+                        {exercise.num_correct}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.statsColumn, styles.statsColumnMiddle]}>
+                      <Text style={[styles.statsLabel, darkMode && styles.textDark]}>Incorrect</Text>
+                      <Text style={[styles.statsValue, darkMode && styles.textDark]}>
+                        {exercise.num_incorrect}
+                      </Text>
+                    </View>
+
+                    <View style={styles.statsColumn}>
+                      <Text style={[styles.statsLabel, darkMode && styles.textDark]}>Accuracy</Text>
+                      <Text style={[styles.statsValue, darkMode && styles.textDark]}>
+                        {accuracy}%
+                      </Text>
+                    </View>
+                  </View>
+                </Card.Content>
+              </Card>
+            );
+          })}
+        </ScrollView>
       </View>
     </PaperProvider>
   );
@@ -222,5 +308,132 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
+  },
+  mainCard: {
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    elevation: 4,
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  mainCardDark: {
+    backgroundColor: '#2a2a2a',
+  },
+  mainTitle: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  categoryText: {
+    fontSize: 14,
+    marginBottom: 12,
+    color: '#666',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  timeText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  accuracyText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  progressBarContainer: {
+    marginTop: 4,
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#666',
+    borderRadius: 4,
+  },
+  exercisesHeader: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  activityCard: {
+    borderRadius: 12,
+    backgroundColor: '#f9f9f9',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  activityCardDark: {
+    backgroundColor: '#1a1a1a',
+    borderColor: '#444',
+  },
+  lastPracticed: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 8,
+  },
+  activityTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  activityTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+  },
+  completionStatus: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginBottom: 12,
+  },
+  statsTable: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statsColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statsColumnMiddle: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  statsLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  statsValue: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  textDark: {
+    color: '#fff',
+  },
+  textSecondaryDark: {
+    color: '#aaa',
   },
 });

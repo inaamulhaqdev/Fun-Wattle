@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { Feather, FontAwesome5, FontAwesome6, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '../config/api';
 import { useApp } from "@/context/AppContext";
 
@@ -18,6 +17,9 @@ const StatsPage = () => {
   const { childId } = useApp();
   const [allExerciseResults, setAllExerciseResults] = useState<any[]>([]);
   const [completedThisWeek, setCompletedThisWeek] = useState<number>(0);
+  const [accuracyRate, setAccuracyRate] = useState<number>(0);
+  const [weeklyData, setWeeklyData] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  
   // Fetch all exercise results for the child
   useEffect(() => {
     const fetchAllExerciseResults = async () => {
@@ -26,11 +28,40 @@ const StatsPage = () => {
         const res = await fetch(`${API_URL}/result/${childId}/all/`);
         const data = res.ok ? await res.json() : [];
         setAllExerciseResults(Array.isArray(data) ? data : []);
-        // Calculate how many exercises completed this week
+        
+        // Calculate accuracy rate from all results
+        const resultsArray = Array.isArray(data) ? data : [];
+        if (resultsArray.length > 0) {
+          const totalCorrect = resultsArray.reduce((sum, result) => sum + (result.num_correct || 0), 0);
+          const totalIncorrect = resultsArray.reduce((sum, result) => sum + (result.num_incorrect || 0), 0);
+          const totalQuestions = totalCorrect + totalIncorrect;
+          const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+          setAccuracyRate(accuracy);
+        } else {
+          setAccuracyRate(0);
+        }
+        
+        // Calculate weekly progress data
         const now = new Date();
         const startOfWeek = new Date(now);
         startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
-        const completed = (Array.isArray(data) ? data : []).filter((result) => {
+        
+        // Initialize array for each day of the week (Sun-Sat)
+        const weekCounts = [0, 0, 0, 0, 0, 0, 0];
+        
+        resultsArray.forEach((result) => {
+          if (!result.completed_at) return;
+          const completedDate = new Date(result.completed_at);
+          if (completedDate >= startOfWeek && completedDate <= now) {
+            const dayOfWeek = completedDate.getDay(); // 0=Sunday, 1=Monday, etc.
+            weekCounts[dayOfWeek]++;
+          }
+        });
+        
+        setWeeklyData(weekCounts);
+        
+        // Calculate how many exercises completed this week
+        const completed = resultsArray.filter((result) => {
           if (!result.completed_at) return false;
           const completedDate = new Date(result.completed_at);
           return completedDate >= startOfWeek && completedDate <= now;
@@ -40,6 +71,7 @@ const StatsPage = () => {
         console.error('Error fetching all exercise results:', err);
         setAllExerciseResults([]);
         setCompletedThisWeek(0);
+        setAccuracyRate(0);
       }
     };
     fetchAllExerciseResults();
@@ -91,23 +123,6 @@ const StatsPage = () => {
     };
     if (childId) fetchCoins();
   }, [childId]);
-  const navigation = useNavigation();
-
-  useFocusEffect(
-    React.useCallback(() => {
-      // Hide tab bar when this screen is focused
-      navigation.getParent()?.setOptions({
-        tabBarStyle: { display: 'none' }
-      });
-
-      // Show tab bar when leaving this screen
-      return () => {
-        navigation.getParent()?.setOptions({
-          tabBarStyle: undefined
-        });
-      };
-    }, [navigation])
-  );
 
   const handleMascotCustomization = () => {
     router.push('/mascot-customization');
@@ -115,6 +130,10 @@ const StatsPage = () => {
 
   const handleHome = () => {
     router.push('/child-dashboard');
+  };
+
+  const handleLearningUnits = () => {
+    router.push('/child-learning-units');
   };
 
   const handleSettings = () => {
@@ -274,7 +293,7 @@ const StatsPage = () => {
             />
             <StatCard
               title="Accuracy Rate"
-              value="87%"
+              value={`${accuracyRate}%`}
               subtitle="Questions correct"
               icon={<FontAwesome5 name="bullseye" size={32} color="#4CAF50" />}
               backgroundColor="#E8F5E8"
@@ -288,27 +307,25 @@ const StatsPage = () => {
             />
           </View>
 
-          {/* Weekly Progress Chart Placeholder */}
+          {/* Weekly Progress Chart */}
           <View style={styles.chartSection}>
             <Text style={styles.sectionTitle}>Weekly Progress</Text>
             <View style={styles.chartPlaceholder}>
               <View style={styles.chartBars}>
-                <View style={[styles.bar, { height: 40 }]} />
-                <View style={[styles.bar, { height: 65 }]} />
-                <View style={[styles.bar, { height: 30 }]} />
-                <View style={[styles.bar, { height: 80 }]} />
-                <View style={[styles.bar, { height: 55 }]} />
-                <View style={[styles.bar, { height: 90 }]} />
-                <View style={[styles.bar, { height: 75 }]} />
+                {weeklyData.map((count, index) => {
+                  // Calculate height based on count (min 20, max 100)
+                  const height = count === 0 ? 20 : Math.min(20 + (count * 15), 100);
+                  return <View key={index} style={[styles.bar, { height }]} />;
+                })}
               </View>
               <View style={styles.chartLabels}>
+                <Text style={styles.chartLabel}>Sun</Text>
                 <Text style={styles.chartLabel}>Mon</Text>
                 <Text style={styles.chartLabel}>Tue</Text>
                 <Text style={styles.chartLabel}>Wed</Text>
                 <Text style={styles.chartLabel}>Thu</Text>
                 <Text style={styles.chartLabel}>Fri</Text>
                 <Text style={styles.chartLabel}>Sat</Text>
-                <Text style={styles.chartLabel}>Sun</Text>
               </View>
             </View>
           </View>
@@ -366,6 +383,10 @@ const StatsPage = () => {
         <View style={styles.bottomNav}>
           <AnimatedNavButton style={styles.navButton} onPress={handleHome}>
             <FontAwesome6 name="house-chimney-window" size={40} color="white" />
+          </AnimatedNavButton>
+
+          <AnimatedNavButton style={styles.navButton} onPress={handleLearningUnits}>
+            <FontAwesome5 name="book" size={40} color="white" />
           </AnimatedNavButton>
 
           <AnimatedNavButton style={styles.navButton}>

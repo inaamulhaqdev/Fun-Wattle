@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useApp } from "@/context/AppContext";
 import { supabase } from '@/config/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SettingsPage = () => {
 
-  const { darkMode, setDarkMode } = useApp(); 
+  const { darkMode, setDarkMode, selectedChild, profileId } = useApp();
+  const [soundEnabled, setSoundEnabled] = useState(true); 
 
   const handleSignOut = async () => {
     try {
@@ -33,72 +35,95 @@ const SettingsPage = () => {
   };
 
   const SettingItem: React.FC<SettingItemProps> = ({ title, subtitle, onPress, rightComponent }) => (
-    <TouchableOpacity style={styles.settingItem} onPress={onPress}>
+    <TouchableOpacity 
+      style={[styles.settingItem, { borderBottomColor: darkMode ? '#555' : '#f0f0f0' }]} 
+      onPress={onPress}
+    >
       <View style={styles.settingContent}>
         <Text style={[styles.settingTitle, { color: darkMode ? '#fff' : '#000' }]}>{title}</Text>
-        {subtitle && <Text style={[styles.settingSubtitle, { color: darkMode ? '#fff' : '#000' }]}>{subtitle}</Text>}
+        {subtitle && <Text style={[styles.settingSubtitle, { color: darkMode ? '#aaa' : '#666' }]}>{subtitle}</Text>}
       </View>
-      {rightComponent || <Feather name="chevron-right" size={20} color={darkMode ? '#fff' : '#000'} />}
+      {rightComponent || <Feather name="chevron-right" size={20} color={darkMode ? '#fff' : '#666'} />}
     </TouchableOpacity>
   );
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-          <Text style={styles.headerTitle}>Settings</Text>
+      <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settings for {selectedChild?.name || 'Child'}</Text>
         </View>
 
-        <ScrollView style={[styles.content, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
-          {/* General Settings */}
-          <View style={[styles.section, { backgroundColor: darkMode ? '#393939ff' : '#fff' }]}>
-            <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#000' }]}>General</Text>
+        <ScrollView style={[styles.content, { backgroundColor: darkMode ? '#000' : '#f8f9fa' }]}>
+          
+          {/* Child-Specific Settings Section */}
+          <View style={[styles.section, { backgroundColor: darkMode ? '#1a1a1a' : '#fff' }]}>
+            <SettingItem
+              title="Assess your child"
+              onPress={() => Alert.alert('Coming Soon', 'Child assessment feature is coming soon!')}
+            />
 
             <SettingItem
-              title="Switch Child"
+              title="Set goals"
+              onPress={() => Alert.alert('Coming Soon', 'Goal setting feature is coming soon!')}
+            />
+
+            <SettingItem
+              title="Set reminders"
+              onPress={() => Alert.alert('Coming Soon', 'Reminders feature is coming soon!')}
+            />
+
+            <SettingItem
+              title="Add/edit therapist"
+              onPress={() => router.push('/link-therapist')}
+            />
+          </View>
+
+          {/* General Settings Header */}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionHeaderText, { color: darkMode ? '#aaa' : '#666' }]}>General settings</Text>
+          </View>
+
+          {/* General Settings Section */}
+          <View style={[styles.section, { backgroundColor: darkMode ? '#1a1a1a' : '#fff' }]}>
+            <SettingItem
+              title="Switch child"
               onPress={() => router.push('/switch-child')}
             />
 
             <SettingItem
-              title="Add Child"
+              title="Add child"
               onPress={() => router.push('/child-onboarding/add-child-details')}
             />
 
             <SettingItem
-              title="Add Therapist"
-              onPress={() => router.push('/link-therapist')}
+              title="Switch profile"
+              onPress={async () => {
+                // Clear stored profile to prevent auto-navigation
+                if (profileId) {
+                  await AsyncStorage.removeItem(`profile_${profileId}`);
+                }
+                router.push('/account-selection');
+              }}
             />
 
             <SettingItem
-              title="Change Profile"
-              onPress={() => router.push('/account-selection')}
+              title="Manage account"
+              onPress={() => Alert.alert('Coming Soon', 'Account management feature is coming soon!')}
             />
-          </View>
 
-          {/* Accessibility Settings */}
-          <View style={[styles.section, { backgroundColor: darkMode ? '#393939ff' : '#fff' }]}>
-            <Text style={[styles.sectionTitle, { color: darkMode ? '#fff' : '#000' }]}>Accessibility</Text>
-            
             <SettingItem
-              title="Dark Mode"
-              subtitle="Switch between light and dark mode"
-              rightComponent={
-                <Switch
-                  value={darkMode}
-                  onValueChange={setDarkMode}
-                  trackColor={{ false: '#ddd', true: '#4CAF50' }}
-                  thumbColor={ darkMode ? '#fff' : '#f4f3f4' }
-                />
-              }
+              title="Support"
+              onPress={() => Alert.alert('Coming Soon', 'Support feature is coming soon!')}
             />
           </View>
 
-          {/* Logout Section */}
-          <View style={[styles.section, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
+          {/* Log out Button */}
+          <View style={styles.logoutContainer}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-              <Text style={styles.logoutText}>Sign Out</Text>
+              <Text style={[styles.logoutText, { color: darkMode ? '#fff' : '#ff4444' }]}>Log out</Text>
             </TouchableOpacity>
           </View>
 
@@ -120,33 +145,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     paddingTop: 50,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    textAlign: 'center',
   },
   content: {
     flex: 1,
   },
   section: {
     backgroundColor: '#fff',
-    marginTop: 20,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    paddingVertical: 8,
+    marginHorizontal: 0,
+    paddingVertical: 0,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+  sectionHeader: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    paddingTop: 24,
+    paddingBottom: 8,
+  },
+  sectionHeaderText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   settingItem: {
     flexDirection: 'row',
@@ -162,25 +187,29 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
-    marginBottom: 2,
+    color: '#000',
+    marginBottom: 4,
   },
   settingSubtitle: {
     fontSize: 14,
     color: '#666',
   },
-  logoutButton: {
-    backgroundColor: '#ff4444',
-    marginHorizontal: 16,
-    marginVertical: 16,
-    paddingVertical: 16,
-    borderRadius: 8,
+  logoutContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 24,
     alignItems: 'center',
+  },
+  logoutButton: {
+    borderWidth: 1,
+    borderColor: '#ff4444',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
   },
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#ff4444',
   },
 });
 

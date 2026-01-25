@@ -12,7 +12,7 @@ export default function Counter({ value, onChange }: CounterProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, { color: darkMode ? '#fff' : '#000' }]}>Number of question retries</Text>
+      <Text style={[styles.label, { color: darkMode ? '#fff' : '#000' }]}>Required Number of question reattempts</Text>
       <View style={[styles.counter, { backgroundColor: darkMode ? '#545454ff' : '#fff' }]}>
 
         {/* Decrement */}

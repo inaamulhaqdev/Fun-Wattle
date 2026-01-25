@@ -10,6 +10,7 @@ import { router, useFocusEffect } from "expo-router";
 import { AssignedLearningUnit } from "@/types/learningUnitTypes";
 import { fetchUnitStats } from "@/components/util/fetchUnitStats";
 import { supabase } from "@/config/supabase";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
@@ -225,7 +226,12 @@ export default function ParentDashboard() {
                 <Text variant='titleLarge' style={styles.title}>Welcome, {parentName}!</Text>
                 <TouchableOpacity 
                   style={styles.avatarContainer}
-                  onPress={() => router.push('/account-selection')}
+                  onPress={async () => {
+                    if (profileId) {
+                      await AsyncStorage.removeItem(`profile_${profileId}`);
+                    }
+                    router.push('/account-selection');
+                  }}
                 >
                   {parentAvatar ? (
                     <Avatar.Image size={50} source={{ uri: parentAvatar }} />
@@ -250,7 +256,12 @@ export default function ParentDashboard() {
                 <Text variant='titleLarge' style={styles.title}>{getGreeting()}, {parentName}!</Text>
                 <TouchableOpacity 
                   style={styles.avatarContainer}
-                  onPress={() => router.push('/account-selection')}
+                  onPress={async () => {
+                    if (profileId) {
+                      await AsyncStorage.removeItem(`profile_${profileId}`);
+                    }
+                    router.push('/account-selection');
+                  }}
                 >
                   {parentAvatar ? (
                     <Avatar.Image size={50} source={{ uri: parentAvatar }} />

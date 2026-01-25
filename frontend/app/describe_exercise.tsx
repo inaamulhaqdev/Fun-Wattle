@@ -624,7 +624,8 @@ const DescribeExerciseComponent = () => {
       });
 
       if (!response.ok) {
-        console.error('TTS failed');
+        const errorText = await response.text();
+        console.error('TTS failed:', response.status, errorText);
         return;
       }
 

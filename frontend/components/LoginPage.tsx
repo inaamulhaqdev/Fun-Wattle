@@ -55,6 +55,17 @@ const LoginPage = () => {
           return;
         }
 
+        // Check if user is a therapist
+        const therapistProfile = profiles.find((profile: any) => profile.profile_type === 'therapist');
+        
+        if (therapistProfile) {
+          // Therapist users go directly to dashboard after login
+          console.log('Therapist login, navigating directly to dashboard');
+          setLoading(false);
+          router.replace('/(therapist-tabs)/therapist-dashboard');
+          return;
+        }
+
         // Check if user has parent profile
         const hasParentProfile = profiles.some((profile: any) => profile.profile_type === 'parent');
         
@@ -75,7 +86,7 @@ const LoginPage = () => {
       }
 
       setLoading(false);
-      // Navigate to account selection
+      // Navigate to account selection for parent users
       router.push('/account-selection');
 
     } catch (error) {

@@ -1,6 +1,14 @@
 export interface Exercise {
+  id: string;
   title: string;
   description: string;
+  order: number;
+  time_spent?: number;
+  completed?: boolean;
+  accuracy?: number;
+  num_correct?: number;
+  num_incorrect?: number;
+  last_practiced?: string | null;
 }
 
 export type AssignedLearningUnit = {
@@ -23,6 +31,8 @@ export interface LearningUnit {
   exercises?: Exercise[];
   status: string;
   image?: string;
+  isAssigned?: boolean;
+  isCompleted?: boolean;
 }
 
 export interface LibraryProps {

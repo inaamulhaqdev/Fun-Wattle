@@ -11,6 +11,7 @@ import { useApp } from '@/context/AppContext';
 import { useFocusEffect, router } from "expo-router";
 import { AssignedLearningUnit } from "@/types/learningUnitTypes";
 import { fetchUnitStats } from "@/components/util/fetchUnitStats";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
@@ -30,7 +31,7 @@ const getGreeting = () => {
 }
 
 export default function TherapistDashboard() {
-  const { childId, session, selectChild } = useApp();
+  const { childId, session, selectChild, profileId } = useApp();
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [therapistName, setTherapistName] = useState('');
@@ -251,7 +252,12 @@ export default function TherapistDashboard() {
           </Text>
           <TouchableOpacity 
             style={styles.avatarContainer}
-            onPress={() => router.push('/account-selection')}
+            onPress={async () => {
+              if (profileId) {
+                await AsyncStorage.removeItem(`profile_${profileId}`);
+              }
+              router.push('/account-selection');
+            }}
           >
             {therapistAvatar ? (
               <Avatar.Image size={50} source={{ uri: therapistAvatar }} />

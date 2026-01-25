@@ -170,6 +170,8 @@ const RegisterPage = () => {
             <TouchableOpacity
               style={styles.eyeButton}
               onPress={() => setShowPassword(!showPassword)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              activeOpacity={0.6}
             >
               <Feather
                 name={showPassword ? "eye-off" : "eye"}
@@ -368,8 +370,10 @@ const styles = StyleSheet.create({
   },
   eyeButton: {
     position: 'absolute',
-    right: 15,
-    top: 15,
+    right: 10,
+    top: 10,
+    padding: 5,
+    zIndex: 1,
   },
   userTypeSection: {
     paddingTop: 20,

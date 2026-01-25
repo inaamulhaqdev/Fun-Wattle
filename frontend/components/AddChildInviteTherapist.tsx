@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Platform, KeyboardAvoidingView, ScrollView, StyleSheet, View, TouchableOpacity } from 'react-native';
 import { Text, TextInput, Button, IconButton, Divider, Checkbox } from 'react-native-paper';
 import { router } from 'expo-router';
+import { useChild } from '@/context/ChildContext';
 
 export default function AddChildInviteTherapist () {
 
@@ -10,11 +11,12 @@ export default function AddChildInviteTherapist () {
   // TODO: Ask how this should work? Do we send an email to the therapist to sign up? 
   const handleNext = () => router.push('/child-onboarding/consent');
 
+  const { childName } = useChild();
+
   const [therapistName, setTherapistName] = useState('');
   const [clinic, setClinic] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [childName, setChildName] = useState('');
   const [assignTherapist, setAssignTherapist] = useState(false);
 
   const allTherapistFieldsFilled =
@@ -23,7 +25,7 @@ export default function AddChildInviteTherapist () {
     email.trim() &&
     phone.trim();
 
-  const isContinueEnabled = childName.trim() && (allTherapistFieldsFilled || assignTherapist);
+  const isContinueEnabled = (allTherapistFieldsFilled || assignTherapist);
 
   return (
     <KeyboardAvoidingView
@@ -90,13 +92,9 @@ export default function AddChildInviteTherapist () {
 
         <Divider style={styles.divider} />
 
-        <TextInput
-          label="Child’s Full Name*"
-          value={childName}
-          onChangeText={setChildName}
-          mode="outlined"
-          style={styles.input}
-        />
+        <Text variant="bodyLarge" style={{ marginBottom: 20 }}>
+          This therapist will be linked to <Text style={{ fontWeight: 'bold' }}>{childName || 'your child'}</Text>.
+        </Text>
 
         <Text variant="bodyLarge">With the information you’ve provided, FunWattle will invite the therapist on your behalf.</Text>
 

@@ -51,7 +51,14 @@ export default function FilteredView({ units, category, statistics, fetchingStat
 
   return (
     <View style={styles.container}>
-      <StatsGrid stats={stats} fetchingStats={fetchingStats} />
+      <StatsGrid 
+        stats={stats} 
+        fetchingStats={fetchingStats}
+        onTotalActivitiesPress={() => {
+          // Navigate to all activities page
+          router.push('/all-activities');
+        }}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {tasks.length === 0 ? (

@@ -2,13 +2,20 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Feather, FontAwesome5, FontAwesome6, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useApp } from '@/context/AppContext';
 
 const SettingsPage = () => {
+  const { childId } = useApp();
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   
   const handleHome = () => {
     router.push('/child-dashboard');
+  };
+
+  const handleLearningUnits = () => {
+    router.push('/child-learning-units');
   };
 
   const handleStats = () => {
@@ -63,9 +70,9 @@ const SettingsPage = () => {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* General Settings */}
+        {/* Preferences Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>General</Text>
+          <Text style={styles.sectionTitle}>My Preferences</Text>
           
           <SettingItem
             title="Sound Effects"
@@ -92,60 +99,43 @@ const SettingsPage = () => {
               />
             }
           />
-        </View>
-
-        {/* Account Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          
-          <SettingItem
-            title="Change Profile"
-            subtitle="Switch to a different profile"
-            onPress={() => router.push('/account-selection')}
-          />
 
           <SettingItem
-            title="Profile"
-            subtitle="Manage child profile information"
-            onPress={() => {/* Navigate to profile */}}
+            title="Mascot Customization"
+            subtitle="Change your mascot's appearance"
+            onPress={handleMascotCustomization}
           />
         </View>
 
-        {/* Support & Info */}
+        {/* General Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support & Information</Text>
+          <Text style={styles.sectionTitle}>General</Text>
           
           <SettingItem
-            title="Help & FAQ"
-            subtitle="Get help with common questions"
-            onPress={() => {/* Navigate to help */}}
+            title="Switch profile"
+            subtitle="Go back to profile selection"
+            onPress={async () => {
+              if (childId) {
+                await AsyncStorage.removeItem(`profile_${childId}`);
+              }
+              router.push('/account-selection');
+            }}
           />
 
           <SettingItem
-            title="Contact Support"
-            subtitle="Get in touch with our team"
+            title="Support"
+            subtitle="Get help when you need it"
             onPress={() => {/* Navigate to support */}}
           />
-
-          <SettingItem
-            title="Privacy Policy"
-            subtitle="Learn about data usage"
-            onPress={() => {/* Navigate to privacy policy */}}
-          />
-
-          <SettingItem
-            title="About"
-            subtitle="App version and information"
-            onPress={() => {/* Navigate to about */}}
-          />
         </View>
 
-        {/* Logout Section */}
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/welcome')}>
-            <Text style={styles.logoutText}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Logout Button */}
+        <TouchableOpacity 
+          style={styles.logoutButton} 
+          onPress={() => router.replace('/welcome')}
+        >
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
 
         {/* Bottom padding */}
         <View style={{ height: 100 }} />
@@ -155,6 +145,10 @@ const SettingsPage = () => {
       <View style={styles.bottomNav}>
         <AnimatedNavButton style={styles.navButton} onPress={handleHome}>
           <FontAwesome6 name="house-chimney-window" size={40} color="white" />
+        </AnimatedNavButton>
+        
+        <AnimatedNavButton style={styles.navButton} onPress={handleLearningUnits}>
+          <FontAwesome5 name="book" size={40} color="white" />
         </AnimatedNavButton>
         
         <AnimatedNavButton style={styles.navButton} onPress={handleStats}>
@@ -234,17 +228,19 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   logoutButton: {
-    backgroundColor: '#ff4444',
+    backgroundColor: '#fff',
     marginHorizontal: 16,
-    marginVertical: 16,
+    marginTop: 20,
     paddingVertical: 16,
     borderRadius: 8,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ff4444',
   },
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#ff4444',
   },
   bottomNav: {
     flexDirection: 'row',

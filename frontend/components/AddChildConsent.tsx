@@ -10,7 +10,7 @@ import { useApp } from '@/context/AppContext';
 
 export default function AddChildExtraQs() {
 
-  const { childName, dateOfBirth, childTopGoal, childHomePracticeFrequency, childPreferredActivities, childMotivations, childAttendedTherapist } = useChild();
+  const { childName, dateOfBirth, childTopGoal, childHomePracticeFrequency, childPreferredActivities, childMotivations, childAttendedTherapist, childCommunicationNeeds } = useChild();
   const { selectChild } = useApp();
 
   const handleBack = () => {
@@ -57,6 +57,7 @@ export default function AddChildExtraQs() {
             preferred_activities: childPreferredActivities,
             motivations: childMotivations,
             attended_therapist: childAttendedTherapist,
+            communication_needs: childCommunicationNeeds,
           }
         }),
       });

@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { Image } from 'react-native';
 import { useApp } from '@/context/AppContext';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -53,6 +54,18 @@ export default function TabLayout() {
           options={{
           title: 'Chat',
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="bubble.left.and.bubble.right" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="reports"
+          options={{
+            title: 'Reports',
+            tabBarIcon: ({ color }) => (
+              <Image
+                source={require('@/assets/icons/reports-icon.png')}
+                style={{ width: 28, height: 28, tintColor: color }}
+              />
+            ),
           }}
         />
         <Tabs.Screen

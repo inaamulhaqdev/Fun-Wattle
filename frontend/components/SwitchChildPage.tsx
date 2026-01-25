@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, FlatList } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Image } from "react-native";
 import { ActivityIndicator } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from "@/config/api";
 import { useApp } from "@/context/AppContext";
 import { router } from "expo-router";
@@ -56,29 +57,33 @@ export default function SwitchChildPage() {
 
   return (
     <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
-      <Text style={[styles.header, { color: darkMode ? '#fff' : '#000' }]}>Your Child Profiles</Text>
-
       {children.length == 0 ? (
         <AddChild />
       ) : (
-        <FlatList
-          data={children}
-          keyExtractor={(child: any) => child.id}
-          renderItem={({ item }) => (
+        <ScrollView contentContainerStyle={styles.profilesContainer}>
+          {children.map((child) => (
             <TouchableOpacity
-              style={[
-                styles.childOption,
-                item.id === childId && styles.activeChild
-              ]}
-              onPress={() => 
-                handleSelect(item)
-              }
+              key={child.id}
+              style={styles.profileCard}
+              onPress={() => handleSelect(child)}
             >
-              <Text style={styles.childName}>{item.name}</Text>
-              {item.id === childId && <Text style={styles.currentLabel}>Current</Text>}
+              <View style={styles.avatarContainer}>
+                <Image
+                  source={{ uri: child.avatar_url || `https://ui-avatars.com/api/?name=${child.name}&size=200&background=random` }}
+                  style={styles.avatar}
+                />
+                {child.id === childId && (
+                  <View style={styles.activeBadge}>
+                    <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                  </View>
+                )}
+              </View>
+              <Text style={[styles.profileName, { color: darkMode ? '#fff' : '#000' }]}>
+                {child.name}
+              </Text>
             </TouchableOpacity>
-          )}
-        />
+          ))}
+        </ScrollView>
       )}
     </View>
   );
@@ -96,31 +101,38 @@ const styles = StyleSheet.create({
     justifyContent: "center", 
     alignItems: "center" 
   },
-  header: {
-    fontSize: 22,
-    fontWeight: "600",
-    marginBottom: 20,
+  profilesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 10,
   },
-  childOption: {
-    padding: 16,
-    borderRadius: 10,
-    backgroundColor: "#f5f5f5",
+  profileCard: {
+    alignItems: 'center',
+    marginHorizontal: 15,
+    marginBottom: 30,
+    width: 120,
+  },
+  avatarContainer: {
+    position: 'relative',
     marginBottom: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
-  activeChild: {
-    backgroundColor: "#FFE6D4",
-    borderWidth: 1,
-    borderColor: "#fd9029",
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#f0f0f0',
   },
-  childName: {
-    fontSize: 17,
+  activeBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 12,
   },
-  currentLabel: {
-    fontSize: 14,
-    color: "#ff8819ff",
-    fontWeight: "600",
+  profileName: {
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

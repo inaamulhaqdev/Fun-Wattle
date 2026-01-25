@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -37,8 +37,7 @@ const AccountSelectionPage = () => {
         const storedProfile = await AsyncStorage.getItem(`profile_${profileId}`);
         if (storedProfile) {
           const profile = JSON.parse(storedProfile);
-          console.log('Found cached profile, navigating to:', profile.type);
-          // Note: We'll validate this against fetched profiles below before using it
+          console.log('Found cached profile, will validate and navigate to:', profile.type);
         } else {
           console.log('No cached profile, fetching from API to determine profile type');
         }
@@ -64,6 +63,16 @@ const AccountSelectionPage = () => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Failed to fetch profiles:', response.status, errorText);
+          
+          // If user not found (404), they need to complete registration or log in again
+          if (response.status === 404) {
+            alert('Session expired or incomplete registration. Please log in again.');
+            await supabase.auth.signOut();
+            router.replace('/login');
+            setLoading(false);
+            return;
+          }
+          
           throw new Error(`Failed to fetch profiles (${response.status})`);
         }
 
@@ -100,8 +109,28 @@ const AccountSelectionPage = () => {
 
         setAccounts(userOwnProfiles);
 
-        // Don't auto-navigate for returning users - let them choose their profile
-        // This was causing automatic profile selection when user taps avatar
+        // Commented out auto-navigation to allow users to manually switch profiles
+        // When user clicks avatar to switch profile, they should see all options
+        // if (profileId) {
+        //   const storedProfile = await AsyncStorage.getItem(`profile_${profileId}`);
+        //   if (storedProfile) {
+        //     const profile = JSON.parse(storedProfile);
+        //     // Validate that this profile still exists in the fetched profiles
+        //     const existingProfile = userOwnProfiles.find((p: Account) => p.id === profileId);
+        //     if (existingProfile) {
+        //       console.log('Auto-navigating to stored profile:', profile.type);
+        //       if (profile.isLocked) {
+        //         router.replace('/pin-entry');
+        //       } else if (profile.type === 'therapist') {
+        //         router.replace('/(therapist-tabs)/therapist-dashboard');
+        //       } else if (profile.type === 'child') {
+        //         router.replace('/child-dashboard');
+        //       }
+        //       setLoading(false);
+        //       return;
+        //     }
+        //   }
+        // }
 
         // Determine which child to select (only for parent users)
         const childAccounts = userOwnProfiles.filter((profile: Account) => profile.type === 'child');
@@ -118,7 +147,9 @@ const AccountSelectionPage = () => {
         }
       } catch (error) {
         console.error('Error fetching profiles:', error);
-        alert('Error\n\nFailed to load profiles. Please try again.');
+        alert('Failed to load profiles. Please log in again.');
+        await supabase.auth.signOut();
+        router.replace('/login');
       } finally {
         setLoading(false);
       }
@@ -159,28 +190,37 @@ const AccountSelectionPage = () => {
   };
 
   const renderAccountCard = (account: Account) => {
+    const profileTypeLabel = account.type === 'parent' ? 'Parent' : account.type === 'child' ? 'Child' : 'Therapist';
+    const avatarUrl = `https://ui-avatars.com/api/?name=${account.name}&size=200&background=random`;
+    
     return (
       <TouchableOpacity
         key={account.id}
-        style={styles.accountCard}
+        style={styles.profileCard}
         onPress={() => handleAccountSelect(account)}
       >
-        {/* Profile Icon */}
-        <View style={styles.profileIcon}>
-          <Feather name="user" size={24} color="#fff" />
+        <View style={styles.avatarContainer}>
+          {/* Profile Avatar */}
+          <Image
+            source={{ uri: avatarUrl }}
+            style={styles.profileAvatar}
+          />
+          
+          {/* Lock Icon Badge */}
+          {account.isLocked && (
+            <View style={styles.lockBadge}>
+              <Feather name="lock" size={20} color="#000" />
+            </View>
+          )}
         </View>
 
         {/* Account Info */}
         <Text style={styles.accountName}>
-          {account.name} ({account.type === 'parent' ? 'Parent' : account.type === 'child' ? 'Child' : 'Therapist'})
+          {account.name}
         </Text>
-
-        {/* Lock Icon */}
-        {account.isLocked && (
-          <View style={styles.lockIcon}>
-            <Feather name="lock" size={20} color="#000" />
-          </View>
-        )}
+        <Text style={styles.accountType}>
+          ({profileTypeLabel})
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -195,7 +235,7 @@ const AccountSelectionPage = () => {
             <ActivityIndicator size="large" color="#FD902B" />
           </View>
         ) : (
-          <ScrollView style={styles.accountsList} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={styles.profilesContainer} showsVerticalScrollIndicator={false}>
             {accounts.map(account => renderAccountCard(account))}
           </ScrollView>
         )}
@@ -227,37 +267,47 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     textAlign: 'left',
   },
-  accountsList: {
-    flex: 1,
-  },
-  accountCard: {
+  profilesContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#000',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    minHeight: 80,
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 10,
   },
-  profileIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#000',
-    justifyContent: 'center',
+  profileCard: {
     alignItems: 'center',
-    marginRight: 16,
+    marginHorizontal: 15,
+    marginBottom: 30,
+    width: 120,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  profileAvatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#f0f0f0',
+  },
+  lockBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 2,
   },
   accountName: {
-    flex: 1,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#000',
+    textAlign: 'center',
   },
-  lockIcon: {
-    marginLeft: 12,
+  accountType: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 2,
   },
 });
 

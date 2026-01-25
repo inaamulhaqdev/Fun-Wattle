@@ -10,8 +10,7 @@ import { API_URL } from '@/config/api';
 import { useApp } from '@/context/AppContext';
 
 const MascotCustomization = () => {
-  const { session } = useApp();
-  const childId = session?.profile_id || '';
+  const { childId } = useApp();
   // const { currentBodyType, currentAccessoryId } = useLocalSearchParams();
 
   // const saveMascotData = async (mascotData: { bodyType: string; accessoryId?: number }) => {
@@ -50,7 +49,6 @@ const MascotCustomization = () => {
   };
 
   // Function to fetch child's coin balance from backend
-  /*
   const fetchCoinBalance = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/profile/${childId}/coins`, {
@@ -71,7 +69,6 @@ const MascotCustomization = () => {
       console.error('Error fetching coin balance:', error);
     }
   }, [childId]);
-  */
 
 
 
@@ -140,17 +137,15 @@ const MascotCustomization = () => {
     unlocked: boolean
   } | null>(null);
   const [selectedBody, setSelectedBody] = useState(bodyOptions[0]); // Default to first body option
-  const [coinBalance, setCoinBalance] = useState(1150); // Initial coin balance for testing
+  const [coinBalance, setCoinBalance] = useState(0); // Fetch from backend
   const [unlockedAccessories, setUnlockedAccessories] = useState<number[]>([]); // Track unlocked accessory IDs
 
   // Fetch coin balance on component mount
-  /*
   useEffect(() => {
     if (childId) {
       fetchCoinBalance();
     }
   }, [childId, fetchCoinBalance]);
-  */
 
   // Refetch coin balance when screen comes into focus (e.g., after completing an exercise)
   useFocusEffect(
@@ -170,6 +165,10 @@ const MascotCustomization = () => {
         accessoryId: selectedAccessory?.id?.toString() || ''
       }
     });
+  };
+
+  const handleLearningUnits = () => {
+    router.push('/child-learning-units');
   };
 
   const handleStats = () => {
@@ -389,6 +388,10 @@ const MascotCustomization = () => {
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navButton} onPress={handleHome}>
           <FontAwesome6 name="house-chimney-window" size={40} color="white" />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={handleLearningUnits}>
+          <FontAwesome5 name="book" size={40} color="white" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={handleStats}>
