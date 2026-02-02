@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, Alert, View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, ActivityIndicator, Avatar } from "react-native-paper";
+import { Ionicons } from '@expo/vector-icons';
 import Filters from "@/components/home_screen/CategoryFilters";
 import AddChild from '@/components/ui/AddChildCard';
 import { API_URL } from '@/config/api';
@@ -225,6 +226,20 @@ export default function ParentDashboard() {
               <View style={styles.headerRow}>
                 <Text variant='titleLarge' style={styles.title}>Welcome, {parentName}!</Text>
                 <TouchableOpacity 
+                  style={styles.notificationIcon}
+                  onPress={() => {
+                    // TODO: Navigate to notifications page
+                    console.log('Notifications clicked');
+                  }}
+                >
+                  <View>
+                    <Ionicons name="notifications-outline" size={28} color="white" />
+                    <View style={styles.notificationBadge}>
+                      <Text style={styles.notificationCount}>1</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity 
                   style={styles.avatarContainer}
                   onPress={async () => {
                     if (profileId) {
@@ -254,6 +269,20 @@ export default function ParentDashboard() {
             <View style={styles.header}>
               <View style={styles.headerRow}>
                 <Text variant='titleLarge' style={styles.title}>{getGreeting()}, {parentName}!</Text>
+                <TouchableOpacity 
+                  style={styles.notificationIcon}
+                  onPress={() => {
+                    // TODO: Navigate to notifications page
+                    console.log('Notifications clicked');
+                  }}
+                >
+                  <View>
+                    <Ionicons name="notifications-outline" size={28} color="white" />
+                    <View style={styles.notificationBadge}>
+                      <Text style={styles.notificationCount}>1</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.avatarContainer}
                   onPress={async () => {
@@ -302,8 +331,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  notificationIcon: {
+    marginRight: 12,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationCount: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
   avatarContainer: {
-    marginLeft: 12,
+    marginLeft: 0,
   },
   parentAvatar: {
     backgroundColor: '#4A90E2',

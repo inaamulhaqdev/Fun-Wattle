@@ -126,6 +126,7 @@ def create_profile(request):
 	}, status=201)
 
 
+@csrf_exempt
 @api_view(['GET'])
 def get_user_profiles(request, user_id):
 	try:

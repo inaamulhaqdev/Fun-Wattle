@@ -92,7 +92,7 @@ function InnerLayout() {
               <Stack.Screen name="(therapist-tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
               <Stack.Screen name="learning-unit-details" options={{
-                title: 'Progress Details',
+                title: 'Learning Unit Details',
                 headerLeft: ({ tintColor}) => (
                   <IconButton
                     icon="arrow-left"

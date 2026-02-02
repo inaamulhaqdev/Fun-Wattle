@@ -99,17 +99,6 @@ const SettingsPage = () => {
             />
 
             <SettingItem
-              title="Switch profile"
-              onPress={async () => {
-                // Clear stored profile to prevent auto-navigation
-                if (profileId) {
-                  await AsyncStorage.removeItem(`profile_${profileId}`);
-                }
-                router.push('/account-selection');
-              }}
-            />
-
-            <SettingItem
               title="Manage account"
               onPress={() => Alert.alert('Coming Soon', 'Account management feature is coming soon!')}
             />

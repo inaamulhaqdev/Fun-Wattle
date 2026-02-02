@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet, View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivityIndicator, Text, DefaultTheme, Provider as PaperProvider, Avatar } from "react-native-paper";
+import { Ionicons } from '@expo/vector-icons';
 import { Dropdown } from "react-native-element-dropdown";
 import Filters from "../../components/home_screen/CategoryFilters";
 import { supabase } from '@/config/supabase';
@@ -251,6 +252,20 @@ export default function TherapistDashboard() {
             {getGreeting()}, {therapistName}!
           </Text>
           <TouchableOpacity 
+            style={styles.notificationIcon}
+            onPress={() => {
+              // TODO: Navigate to notifications page
+              console.log('Notifications clicked');
+            }}
+          >
+            <View>
+              <Ionicons name="notifications-outline" size={28} color="white" />
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationCount}>1</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity 
             style={styles.avatarContainer}
             onPress={async () => {
               if (profileId) {
@@ -380,8 +395,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  notificationIcon: {
+    marginRight: 12,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationCount: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
   avatarContainer: {
-    marginLeft: 12,
+    marginLeft: 0,
   },
   therapistAvatar: {
     backgroundColor: '#E74C3C',

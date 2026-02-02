@@ -207,7 +207,8 @@ const getMascotImages = (mascotData: MascotData) => {
 // };
 
 const DescribeExerciseComponent = () => {
-  const { taskId, bodyType, accessoryId, exerciseId } = useLocalSearchParams();
+  const { taskId, bodyType, accessoryId, exerciseId, practiceMode } = useLocalSearchParams();
+  const isPracticeMode = practiceMode === 'true';
   const { childId: contextChildId } = useApp();
 
   // Fallback childId for testing if context doesn't provide one
@@ -626,6 +627,8 @@ const DescribeExerciseComponent = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('TTS failed:', response.status, errorText);
+        // Don't show alert to user, just log the error and continue
+        // The exercise can still function without audio
         return;
       }
 
@@ -644,6 +647,7 @@ const DescribeExerciseComponent = () => {
       await sound.playAsync();
     } catch (err) {
       console.error('Error playing feedback audio:', err);
+      // Don't show error to user, continue without audio
     }
   };
 
@@ -656,6 +660,15 @@ const DescribeExerciseComponent = () => {
     } else {
       // Exercise completed
       setIsCompleted(true);
+
+      // In practice mode, skip recording results
+      if (isPracticeMode) {
+        console.log('Practice mode: Skipping exercise result submission');
+        setTimeout(() => {
+          router.push('/child-dashboard');
+        }, 3000);
+        return;
+      }
 
       try {
         const response = await fetch(`${API_URL}/result/${childId}/exercise/${exerciseId}/`, {

@@ -112,17 +112,6 @@ const SettingsPage = () => {
           <Text style={styles.sectionTitle}>General</Text>
           
           <SettingItem
-            title="Switch profile"
-            subtitle="Go back to profile selection"
-            onPress={async () => {
-              if (childId) {
-                await AsyncStorage.removeItem(`profile_${childId}`);
-              }
-              router.push('/account-selection');
-            }}
-          />
-
-          <SettingItem
             title="Support"
             subtitle="Get help when you need it"
             onPress={() => {/* Navigate to support */}}

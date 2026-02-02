@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { ActivityIndicator, IconButton } from 'react-native-paper';
 import { Card, Text, Searchbar } from 'react-native-paper';
-import DetailView from './UnitDetails';
 import AssignmentStatus from '../ui/AssignmentOverlay';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import { LearningUnit, LibraryProps } from '../../types/learningUnitTypes';
 import { useApp } from '../../context/AppContext';
 import { API_URL } from '@/config/api';
@@ -39,7 +38,6 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
   const { childId, session, darkMode } = useApp();
   const userId = session?.user?.id;
 
-  const [selectedItem, setSelectedItem] = useState<LearningUnit | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [statusFilter, setStatusFilter] = useState<'All Units' | 'Assigned' | 'Completed'>('All Units');
@@ -210,18 +208,6 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
     }
   };
 
-  // Detail view
-  if (selectedItem) {
-    return (
-      <DetailView
-        selectedItem={selectedItem}
-        assignedUnitIds={assignedUnitIds}
-        setAssignedUnitIds={setAssignedUnitIds}
-        onBack={() => setSelectedItem(null)}
-      />
-    );
-  }
-
   // Library view
   return (
     <View style={[styles.container, { backgroundColor: darkMode ? '#000' : '#fff' }]}>
@@ -304,7 +290,17 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
               <Card style={[styles.card, { backgroundColor: darkMode ? "#3d3d3dff" : 'white' }]}>
                 <TouchableOpacity 
                   activeOpacity={0.7}
-                  onPress={() => setSelectedItem(item)}
+                  onPress={() => {
+                    router.push({
+                      pathname: '/learning-unit-details',
+                      params: {
+                        id: item.id,
+                        title: item.title,
+                        category: item.category,
+                        description: item.description || ''
+                      }
+                    });
+                  }}
                 >
                   {imageUrl && (
                      <Card.Cover source={{ uri: imageUrl }} />
@@ -325,7 +321,17 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
                 <View style={styles.cardHeader}>
                   <TouchableOpacity 
                     style={{ flex: 1 }} 
-                    onPress={() => setSelectedItem(item)}
+                    onPress={() => {
+                      router.push({
+                        pathname: '/learning-unit-details',
+                        params: {
+                          id: item.id,
+                          title: item.title,
+                          category: item.category,
+                          description: item.description || ''
+                        }
+                      });
+                    }}
                   >
                     <Card.Title title={item.title} titleStyle={styles.cardTitleText} />
                   </TouchableOpacity>
@@ -340,7 +346,17 @@ export default function LearningLibrary({ data, loading = false }: LibraryProps)
                     style={styles.menuButton}
                   />
                 </View>
-                <TouchableOpacity onPress={() => setSelectedItem(item)}>
+                <TouchableOpacity onPress={() => {
+                  router.push({
+                    pathname: '/learning-unit-details',
+                    params: {
+                      id: item.id,
+                      title: item.title,
+                      category: item.category,
+                      description: item.description || ''
+                    }
+                  });
+                }}>
                   <Card.Content>
                     <Text>{item.category}</Text>
                     <Text style={styles.timeText}>⏱️ 15 min</Text>

@@ -227,6 +227,7 @@ export default function MultipleSelectExercise() {
   const { childId, session } = useApp();
   const params = useLocalSearchParams();
   const exerciseId = params.exerciseId as string;
+  const practiceMode = params.practiceMode === 'true'; // Check if in practice mode
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -411,6 +412,12 @@ export default function MultipleSelectExercise() {
 
   // Update coin balance by adding coins
   const updateCoins = async (coinsToAdd: number) => {
+    // Skip coin updates in practice mode
+    if (practiceMode) {
+      console.log('Practice mode: Skipping coin update');
+      return;
+    }
+
     console.log('=== UPDATE COINS CALLED ===');
     console.log('Coins to add:', coinsToAdd);
     console.log('childId:', childId);
@@ -461,6 +468,12 @@ export default function MultipleSelectExercise() {
 
   // Submit question result to backend
   const submitQuestionResult = async (questionId: string, correct: boolean, timeSpent: number, attempts: number) => {
+    // Skip recording results in practice mode
+    if (practiceMode) {
+      console.log('Practice mode: Skipping result submission');
+      return;
+    }
+
     console.log('=== SUBMIT QUESTION RESULT CALLED ===');
     console.log('Parameters:', { questionId, correct, timeSpent, attempts });
     console.log('childId:', childId);
@@ -517,6 +530,13 @@ export default function MultipleSelectExercise() {
 
   // Save progress and exit
   const saveProgressAndExit = async () => {
+    // In practice mode, just navigate back without saving
+    if (practiceMode) {
+      console.log('Practice mode: Skipping progress save');
+      router.back();
+      return;
+    }
+
     if (!childId || !exerciseId) {
       router.back();
       return;
@@ -640,6 +660,17 @@ export default function MultipleSelectExercise() {
     
     // Show completion screen first
     setShowCompletionScreen(true);
+    
+    // In practice mode, skip recording results and just navigate back
+    if (practiceMode) {
+      console.log('Practice mode: Skipping exercise result submission');
+      
+      // Navigate back to child dashboard after 3 seconds
+      setTimeout(() => {
+        router.push('/child-dashboard');
+      }, 3000);
+      return;
+    }
     
     try {
       console.log('Complete button pressed');

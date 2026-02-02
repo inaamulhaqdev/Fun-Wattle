@@ -20,13 +20,23 @@ AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
 AZURE_OPENAI_EMB_ENDPOINT = os.getenv("AZURE_OPENAI_EMB_ENDPOINT")
 
+# Log Azure credentials status at module load
+print(f"Azure Speech Key configured: {'Yes' if AZURE_SPEECH_KEY else 'No'}")
+print(f"Azure Speech Region: {AZURE_SPEECH_REGION}")
+print(f"Azure OpenAI Endpoint configured: {'Yes' if AZURE_OPENAI_ENDPOINT else 'No'}")
+
 @api_view(['POST'])
 def assess_speech(request):
+    print(f"DEBUG: request.FILES = {request.FILES}")
+    print(f"DEBUG: request.data = {request.data}")
+    print(f"DEBUG: request.POST = {request.POST}")
+    
     audio_file = request.FILES.get('file')
     question_id = request.data.get('questionId')
     question_text = request.data.get('questionText')
 
     if not audio_file:
+        print("ERROR: No audio file found in request")
         return Response({'error': 'audio file is required'}, status=400)
 
     temp_input = tempfile.NamedTemporaryFile(delete=False, suffix=".m4a")
@@ -72,90 +82,42 @@ def assess_speech(request):
             "pronunciation_score": pron_result.pronunciation_score,
         }
 
-        emb_client = AzureOpenAI(
-            api_version="2024-12-01-preview",
-            azure_endpoint=AZURE_OPENAI_EMB_ENDPOINT,
-            api_key=AZURE_OPENAI_KEY
-        )
-
-        child_emb = emb_client.embeddings.create(
-            input=result.text,
-            model="text-embedding-3-small"
-        ).data[0].embedding
-
-        question_embeddings = Question_Embedding.objects.filter(question__id=question_id)
-
-        # cosine distance → convert to similarity
-        similarities = question_embeddings.annotate(
-            distance=CosineDistance('embedding', child_emb)
-        ).order_by('distance')
-
-        best = similarities.first()
-        if best is None:
-            return Response({"error": "No embeddings exist for this question"}, status=500)
-        best_score = 1 - best.distance        
-        best_answer = best.expected_answer_text
-        is_correct = best_score >= 0.80
-
-        # RAG
-        combined_input = f"Question: {question_text}\nChild's answer: {result.text}"
-
-        combined_emb = emb_client.embeddings.create(
-            input=combined_input,
-            model="text-embedding-3-small"
-        ).data[0].embedding
-
-        rag_similarities = (
-            Rag_Context.objects
-            .annotate(distance=CosineDistance("embedding", combined_emb))
-            .order_by("distance")[:5]  # Top 5
-        )
-
-        rag_contexts = [ctx.content_chunk for ctx in rag_similarities]
-        rag_context_combined = "\n\n".join(rag_contexts)
+        # Skip embedding comparison for now - just use speech recognition and pronunciation
+        # Simplified feedback without correctness checking
 
         # GPT Feedback
+        if not AZURE_OPENAI_ENDPOINT:
+            return Response({'error': 'Azure OpenAI endpoint not configured'}, status=500)
+
         gpt_client = AzureOpenAI(
             api_version="2024-12-01-preview",
             azure_endpoint=AZURE_OPENAI_ENDPOINT,
             api_key=AZURE_OPENAI_KEY,
         )
 
-        system_prompt = f"""
-        You are an encouraging, friendly speech therapist helping children practice pronunciation.
-        Ensure that you are providing constructive feedback on their pronunciation.
-        If the child's response deviates from the question subject matter,
-        then redirect the child's focus back onto the question and ask them to try again.
-        Ensure you are following the professional and ethical speech pathologist guidelines when interacting with the child.
-
-        Use the following context as background knowledge to better understand what the child might mean
-        and to help you give accurate, supportive feedback. Do not quote the context directly.
-        Do not mention that the context exists. Use it only to inform your understanding.
-
-        --- BEGIN CONTEXT ---
-        {rag_context_combined}
-        --- END CONTEXT ---
+        system_prompt = """
+        You are an encouraging, friendly speech therapist helping children practice pronunciation and speaking skills.
+        Provide constructive feedback on their pronunciation and how well they answered the question.
+        If the child's response deviates from the question, gently redirect them.
+        Follow professional speech pathologist guidelines when interacting with the child.
         """
 
         user_prompt = f"""
         Question asked: "{question_text}"
         Child's speech: "{result.text}"
 
-        Expected best match: "{best_answer}"
-        Cosine similarity: {best_score:.2f}
-        Correct: {is_correct}
-
         Pronunciation Assessment Results: {json.dumps(pron_data, indent=2)}
+        
         Generate exactly three sentences giving feedback:
-        - First sentence: encouraging and positive
-        - Second sentence: area to improve
+        - First sentence: encouraging and positive about their effort
+        - Second sentence: constructive feedback on pronunciation or clarity
         - Third sentence: fun motivational line
         DO NOT include any headings, labels, numbers, bullets, markdown symbols, or emojis.
         Output ONLY the sentences themselves, nothing else.
         """
 
         response_gpt = gpt_client.chat.completions.create(
-            model="feedback-gpt4o-mini",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
@@ -164,7 +126,7 @@ def assess_speech(request):
             temperature=0.8,
         )
 
-        feedback_text = response_gpt.choices[0].message.content
+        feedback_text = response_gpt.choices[0].message.content or ""
 
         labels_to_remove = [
             r'Encouraging Summary\s*:\s*',
@@ -184,10 +146,6 @@ def assess_speech(request):
             "transcript": result.text,
             "pronunciation": pron_data,
             "feedback": feedback_text,
-            "is_correct": is_correct,
-            "similarity_score": best_score,
-            "matched_answer": best_answer,
-            "RAG_context": rag_context_combined,
         }, status=200)
 
     finally:
@@ -246,9 +204,20 @@ def text_to_speech(request):
     result = synthesizer.speak_ssml_async(ssml_text).get()
 
     if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
-        error_details = result.cancellation_details if hasattr(result, 'cancellation_details') else 'Unknown error'
-        print(f"Speech synthesis failed. Reason: {result.reason}, Details: {error_details}")
-        return HttpResponse(f"Speech synthesis failed: {error_details}", status=500)
+        if result.reason == speechsdk.ResultReason.Canceled:
+            cancellation = result.cancellation_details  # type: ignore[attr-defined]
+            if cancellation:
+                error_msg = f"Speech synthesis canceled. Reason: {cancellation.reason}"  # type: ignore[union-attr]
+                if cancellation.reason == speechsdk.CancellationReason.Error:  # type: ignore[union-attr]
+                    error_msg += f", Error details: {cancellation.error_details}"  # type: ignore[union-attr]
+                print(f"ERROR: {error_msg}")
+                return HttpResponse(error_msg, status=500)
+            else:
+                return HttpResponse("Speech synthesis canceled", status=500)
+        else:
+            error_details = result.cancellation_details if hasattr(result, 'cancellation_details') else 'Unknown error'  # type: ignore[attr-defined]
+            print(f"Speech synthesis failed. Reason: {result.reason}, Details: {error_details}")
+            return HttpResponse(f"Speech synthesis failed: {error_details}", status=500)
 
     with open(temp_output.name, "rb") as f:
         audio_data = f.read()
